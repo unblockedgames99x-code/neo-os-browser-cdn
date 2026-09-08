@@ -1,0 +1,177 @@
+﻿{
+    "version":  1,
+    "generatedFrom":  "user-provided Wallpaper Engine installation",
+    "projects":  [
+                     {
+                         "id":  "we-arsenal",
+                         "title":  "Arsenal",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/arsenal.jpg",
+                         "sourceFolder":  "arsenal"
+                     },
+                     {
+                         "id":  "we-audiophile",
+                         "title":  "Audiophile",
+                         "type":  "application",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/audiophile.jpg",
+                         "sourceFolder":  "audiophile"
+                     },
+                     {
+                         "id":  "we-beach",
+                         "title":  "Beach",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/beach.jpg",
+                         "sourceFolder":  "beach"
+                     },
+                     {
+                         "id":  "we-corsair_collection",
+                         "title":  "CORSAIR Collection",
+                         "type":  "web",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/corsair_collection.gif",
+                         "sourceFolder":  "corsair_collection"
+                     },
+                     {
+                         "id":  "we-corsair_o_tron",
+                         "title":  "Corsair-O-Tron",
+                         "type":  "web",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/corsair_o_tron.gif",
+                         "sourceFolder":  "corsair_o_tron"
+                     },
+                     {
+                         "id":  "we-deep_space",
+                         "title":  "Deep Space",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/deep_space.jpg",
+                         "sourceFolder":  "deep_space"
+                     },
+                     {
+                         "id":  "we-demon_core",
+                         "title":  "Demon Core",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/demon_core.jpg",
+                         "sourceFolder":  "demon_core"
+                     },
+                     {
+                         "id":  "we-dino_run",
+                         "title":  "Dino Run",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/dino_run.gif",
+                         "sourceFolder":  "dino_run"
+                     },
+                     {
+                         "id":  "we-dna_fragment",
+                         "title":  "DNA Fragment",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/dna_fragment.jpg",
+                         "sourceFolder":  "dna_fragment"
+                     },
+                     {
+                         "id":  "we-eagleflag",
+                         "title":  "Eagle Flag",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/eagleflag.jpg",
+                         "sourceFolder":  "eagleflag"
+                     },
+                     {
+                         "id":  "we-fantasticcar",
+                         "title":  "Fantastic Car",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/fantasticcar.jpg",
+                         "sourceFolder":  "fantasticcar"
+                     },
+                     {
+                         "id":  "we-neon_sunset",
+                         "title":  "Neon Sunset",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/neon_sunset.jpg",
+                         "sourceFolder":  "neon_sunset"
+                     },
+                     {
+                         "id":  "we-razer_bedroom",
+                         "title":  "Razer Bedroom",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/razer_bedroom.gif",
+                         "sourceFolder":  "razer_bedroom"
+                     },
+                     {
+                         "id":  "we-razer_vortex",
+                         "title":  "Razer Vortex",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/razer_vortex.gif",
+                         "sourceFolder":  "razer_vortex"
+                     },
+                     {
+                         "id":  "we-retro",
+                         "title":  "Retro",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/retro.jpg",
+                         "sourceFolder":  "retro"
+                     },
+                     {
+                         "id":  "we-ricepod",
+                         "title":  "Ricepod",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/ricepod.jpg",
+                         "sourceFolder":  "ricepod"
+                     },
+                     {
+                         "id":  "we-sheep",
+                         "title":  "Sheep",
+                         "type":  "application",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/sheep.jpg",
+                         "sourceFolder":  "sheep"
+                     },
+                     {
+                         "id":  "we-shimmering_particles",
+                         "title":  "Shimmering Particles",
+                         "type":  "scene",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/shimmering_particles.jpg",
+                         "sourceFolder":  "shimmering_particles"
+                     },
+                     {
+                         "id":  "we-techno",
+                         "title":  "Techno",
+                         "type":  "application",
+                         "author":  "Wallpaper Engine",
+                         "official":  true,
+                         "preview":  "./assets/wallpaper-engine-projects/techno.jpg",
+                         "sourceFolder":  "techno"
+                     }
+                 ]
+}
