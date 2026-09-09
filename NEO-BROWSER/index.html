@@ -10,8 +10,12 @@
     <meta name="color-scheme" content="dark" />
     <script src="../neo-app-theme.js?v=20260907-theme-system-v2&amp;styles=launcher-picture-alignment-v12"></script>
     <script>
-        if (new URLSearchParams(location.search).get("neo-app-mode") === "1") {
+        const neoLaunchParams = new URLSearchParams(location.search);
+        if (neoLaunchParams.get("neo-app-mode") === "1") {
             document.documentElement.classList.add("neo-app-mode");
+        }
+        if (neoLaunchParams.get("neo-youtube-mode") === "1") {
+            document.documentElement.classList.add("neo-youtube-mode");
         }
     </script>
     <style id="neo-critical">
@@ -61,7 +65,7 @@
     <script src="assets/app.js?v=20260907-no-tour-v1" defer></script>
     <script src="assets/neo-minimal-browser.js?v=20260907-runtime-recovery-v1" defer></script>
     <script src="assets/neo.js?v=20260907-persistent-tabs-v2" defer></script>
-    <script src="assets/app-mode.js?v=20260828-media-focus-v6" defer></script>
+    <script src="assets/app-mode.js?v=20260908-youtube-pip-v1" defer></script>
 </head>
 
 <body class="neo-browser-minimal">
@@ -1766,7 +1770,7 @@
                 "></div>
                 <iframe id="frame" title="Web content"
                     sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-pointer-lock allow-downloads"
-                    allow="clipboard-read; clipboard-write; fullscreen; autoplay; camera; microphone; gamepad"
+                    allow="clipboard-read; clipboard-write; fullscreen; autoplay; picture-in-picture; camera; microphone; gamepad"
                     srcdoc="<!doctype html><html style='background:#050505;color-scheme:dark'><body style='margin:0;background:#050505'></body></html>"></iframe>
             </div>
 

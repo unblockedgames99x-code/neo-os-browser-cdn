@@ -1,6 +1,10 @@
 (() => {
   "use strict";
 
+  const params = new URLSearchParams(window.location.search);
+  const appMode = params.get("neo-app-mode") === "1";
+  const youtubeMode = appMode && params.get("neo-youtube-mode") === "1";
+
   const setMuted = (muted) => {
     document.querySelectorAll("audio, video").forEach((media) => {
       media.muted = muted;
@@ -76,8 +80,7 @@
     syncInitialRoute();
   }
 
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("neo-app-mode") !== "1") return;
+  if (!appMode) return;
 
   let target;
   try {
@@ -86,6 +89,141 @@
     return;
   }
   if (!/^https?:$/.test(target.protocol)) return;
+
+  const mountYouTubePictureInPicture = () => {
+    if (!youtubeMode) return;
+    const frame = document.getElementById("frame");
+    if (!frame) return;
+    const currentAllow = frame.getAttribute("allow") || "";
+    if (!/(?:^|;)\s*picture-in-picture\s*(?:;|$)/i.test(currentAllow)) {
+      frame.setAttribute("allow", `${currentAllow}; picture-in-picture`);
+    }
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "neo-youtube-pip";
+    button.hidden = true;
+    button.setAttribute("aria-label", "Pop out video");
+    button.title = "Pop out video";
+    button.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3.5" y="4.5" width="17" height="13" rx="2"></rect>
+        <rect x="11" y="11" width="9" height="7" rx="1.4"></rect>
+      </svg>
+      <span>Pop out video</span>`;
+    document.body.appendChild(button);
+
+    let timer = 0;
+    let messageTimer = 0;
+    let currentVideo = null;
+    const wiredVideos = new WeakSet();
+
+    const frameDocument = () => {
+      try { return frame.contentDocument; } catch { return null; }
+    };
+
+    const videoScore = (video) => {
+      if (!video) return 0;
+      const rect = video.getBoundingClientRect();
+      if (rect.width < 160 || rect.height < 90) return 0;
+      const style = video.ownerDocument.defaultView.getComputedStyle(video);
+      if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) return 0;
+      return rect.width * rect.height * (video.paused ? 1 : 2);
+    };
+
+    const findVideo = () => {
+      const doc = frameDocument();
+      if (!doc) return null;
+      return Array.from(doc.querySelectorAll("video")).reduce((best, video) => (
+        videoScore(video) > videoScore(best) ? video : best
+      ), null);
+    };
+
+    const setButtonMessage = (message) => {
+      window.clearTimeout(messageTimer);
+      const label = button.querySelector("span");
+      if (label) label.textContent = message;
+      button.classList.add("has-message");
+      messageTimer = window.setTimeout(() => {
+        if (label) label.textContent = "Pop out video";
+        button.classList.remove("has-message");
+      }, 2200);
+    };
+
+    const syncButton = () => {
+      if (document.hidden) {
+        button.hidden = true;
+        return;
+      }
+      const video = findVideo();
+      currentVideo = video;
+      if (!video) {
+        button.hidden = true;
+        button.classList.remove("is-active");
+        return;
+      }
+
+      if (!wiredVideos.has(video)) {
+        wiredVideos.add(video);
+        ["loadedmetadata", "play", "pause", "enterpictureinpicture", "leavepictureinpicture"].forEach((name) => {
+          video.addEventListener(name, syncButton, { passive: true });
+        });
+      }
+
+      const rect = video.getBoundingClientRect();
+      const frameRect = frame.getBoundingClientRect();
+      const center = frameRect.left + rect.left + rect.width / 2;
+      const isActive = video.ownerDocument.pictureInPictureElement === video;
+      button.style.left = `${Math.max(86, Math.min(window.innerWidth - 86, center))}px`;
+      button.style.top = `${Math.max(12, frameRect.top + rect.top + 14)}px`;
+      button.hidden = false;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-label", isActive ? "Close popped out video" : "Pop out video");
+      button.title = isActive ? "Close popped out video" : "Pop out video";
+    };
+
+    button.addEventListener("click", async () => {
+      const video = currentVideo || findVideo();
+      if (!video) {
+        setButtonMessage("Start a video first");
+        return;
+      }
+      const doc = video.ownerDocument;
+      try {
+        if (doc.pictureInPictureElement) {
+          await doc.exitPictureInPicture();
+        } else if (typeof video.requestPictureInPicture === "function" && doc.pictureInPictureEnabled !== false) {
+          video.disablePictureInPicture = false;
+          await video.requestPictureInPicture();
+        } else if (typeof video.webkitSetPresentationMode === "function") {
+          video.webkitSetPresentationMode("picture-in-picture");
+        } else {
+          setButtonMessage("Pop-out unavailable");
+          return;
+        }
+        syncButton();
+      } catch {
+        setButtonMessage("Play the video, then retry");
+      }
+    });
+
+    const startPolling = () => {
+      window.clearInterval(timer);
+      syncButton();
+      if (!document.hidden) timer = window.setInterval(syncButton, 900);
+    };
+    frame.addEventListener("load", startPolling);
+    document.addEventListener("visibilitychange", startPolling);
+    window.addEventListener("resize", syncButton, { passive: true });
+    window.addEventListener("pagehide", () => {
+      window.clearInterval(timer);
+      window.clearTimeout(messageTimer);
+      button.remove();
+    }, { once: true });
+    startPolling();
+  };
+
+  mountYouTubePictureInPicture();
 
   const navigate = () => {
     const address = document.getElementById("url");
