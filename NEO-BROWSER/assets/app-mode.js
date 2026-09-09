@@ -1,7 +1,9 @@
 (() => {
   "use strict";
 
-  const params = new URLSearchParams(window.location.search);
+  const sourceUrl = document.querySelector('meta[name="neo-source-url"]')?.content || "";
+  const launchSearch = window.location.search || (sourceUrl ? new URL(sourceUrl, document.baseURI).search : "");
+  const params = new URLSearchParams(launchSearch);
   const appMode = params.get("neo-app-mode") === "1";
   const youtubeMode = appMode && params.get("neo-youtube-mode") === "1";
 

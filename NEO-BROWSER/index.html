@@ -10,7 +10,9 @@
     <meta name="color-scheme" content="dark" />
     <script src="../neo-app-theme.js?v=20260907-theme-system-v2&amp;styles=launcher-picture-alignment-v12"></script>
     <script>
-        const neoLaunchParams = new URLSearchParams(location.search);
+        const neoSourceUrl = document.querySelector('meta[name="neo-source-url"]')?.content || "";
+        const neoLaunchSearch = location.search || (neoSourceUrl ? new URL(neoSourceUrl, document.baseURI).search : "");
+        const neoLaunchParams = new URLSearchParams(neoLaunchSearch);
         if (neoLaunchParams.get("neo-app-mode") === "1") {
             document.documentElement.classList.add("neo-app-mode");
         }
