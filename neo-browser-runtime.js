@@ -565,7 +565,7 @@
       // Plain domains and search phrases are handled below.
     }
     if (!input.includes(" ") && input.includes(".")) return `https://${input}`;
-    return `https://html.duckduckgo.com/html/?q=${encodeURIComponent(input)}`;
+    return `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(input)}`;
   }
 
   function externalDestination(value) {
