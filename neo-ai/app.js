@@ -6,11 +6,13 @@
   var STORAGE_KEY = "neo_ai_workspace_v1";
   var API_URL = "https://text.pollinations.ai/openai";
   var FALLBACK_API_URL = "https://text.pollinations.ai/";
+  var PUTER_SDK_URL = "https://js.puter.com/v2/";
   var MODELS_URL = "https://gen.pollinations.ai/text/models";
   var SEARCH_URL = "https://api.duckduckgo.com/";
   var MAX_IMAGE_BYTES = 4 * 1024 * 1024;
   var MAX_STORED_CHATS = 40;
   var activeRequest = null;
+  var puterSdkPromise = null;
   var pendingImages = [];
   var toastTimer = 0;
 
@@ -355,6 +357,70 @@
     throw lastError || new Error("The AI service is unavailable.");
   }
 
+  function loadPuterSdk() {
+    if (window.puter && window.puter.ai && typeof window.puter.ai.chat === "function") return Promise.resolve(window.puter);
+    if (puterSdkPromise) return puterSdkPromise;
+    puterSdkPromise = new Promise(function (resolve, reject) {
+      var script = document.querySelector('script[data-neo-puter-sdk]');
+      var timeout = window.setTimeout(function () { reject(new Error("The backup AI took too long to load.")); }, 15000);
+      function finish() {
+        window.clearTimeout(timeout);
+        if (window.puter && window.puter.ai && typeof window.puter.ai.chat === "function") resolve(window.puter);
+        else reject(new Error("The backup AI did not initialize."));
+      }
+      if (!script) {
+        script = document.createElement("script");
+        script.src = PUTER_SDK_URL;
+        script.async = true;
+        script.dataset.neoPuterSdk = "true";
+        document.head.appendChild(script);
+      }
+      script.addEventListener("load", finish, { once: true });
+      script.addEventListener("error", function () {
+        window.clearTimeout(timeout);
+        reject(new Error("The backup AI could not load."));
+      }, { once: true });
+    }).catch(function (error) {
+      puterSdkPromise = null;
+      throw error;
+    });
+    return puterSdkPromise;
+  }
+
+  function puterResponseText(response) {
+    if (typeof response === "string") return response;
+    if (response && typeof response.text === "string") return response.text;
+    var content = response && response.message && response.message.content;
+    if (typeof content === "string") return content;
+    if (Array.isArray(content)) {
+      return content.map(function (part) {
+        return typeof part === "string" ? part : (part && (part.text || part.content)) || "";
+      }).join("");
+    }
+    return "";
+  }
+
+  async function requestPuter(chat, signal, onProgress) {
+    var puter = await loadPuterSdk();
+    if (signal.aborted) throw new DOMException("Generation stopped", "AbortError");
+    var response = await puter.ai.chat(apiMessages(chat), false, { model: "gpt-5.4-nano", stream: true });
+    var answer = "";
+    if (response && typeof response[Symbol.asyncIterator] === "function") {
+      for await (var part of response) {
+        if (signal.aborted) throw new DOMException("Generation stopped", "AbortError");
+        var chunk = puterResponseText(part);
+        if (!chunk) continue;
+        answer += chunk;
+        if (onProgress) onProgress(answer);
+      }
+    } else {
+      answer = puterResponseText(response);
+      if (onProgress && answer) onProgress(answer);
+    }
+    if (!answer.trim()) throw new Error("The backup AI returned an empty response.");
+    return answer;
+  }
+
   function addTypingMessage() {
     var article = document.createElement("article");
     article.className = "message assistant";
@@ -412,8 +478,17 @@
       } catch (primaryFailure) {
         if (primaryFailure.name === "AbortError") throw primaryFailure;
         response = null;
-        typing.querySelector(".message-content").textContent = "Connecting through backup…";
-        full = await requestFallback(chat, controller.signal);
+        typing.querySelector(".message-content").textContent = "Connecting to backup AI…";
+        try {
+          full = await requestPuter(chat, controller.signal, function (partial) {
+            typing.querySelector(".message-content").innerHTML = renderMarkdown(partial || "Thinking…");
+            conversation.scrollTop = conversation.scrollHeight;
+          });
+        } catch (puterFailure) {
+          if (puterFailure.name === "AbortError") throw puterFailure;
+          typing.querySelector(".message-content").textContent = "Trying another connection…";
+          full = await requestFallback(chat, controller.signal);
+        }
       }
       if (response) {
         var isEventStream = /text\/event-stream/i.test(response.headers.get("content-type") || "");
