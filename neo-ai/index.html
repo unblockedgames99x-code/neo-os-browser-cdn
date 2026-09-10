@@ -7,9 +7,9 @@
   <title>NEO AI</title>
   <link rel="icon" href="../assets/neo-ai-logo.svg?v=20260910-chatgpt-white-v1">
   <link rel="stylesheet" href="../neo-theme-system.css?v=20260910-ai-v1">
-  <link rel="stylesheet" href="app.css?v=20260910-ai-chat-menu-v1">
+  <link rel="stylesheet" href="app.css?v=20260910-ai-cowork-v1">
   <script defer src="../neo-app-theme.js?v=20260910-ai-v1"></script>
-  <script defer src="app.js?v=20260910-ai-chat-menu-v1"></script>
+  <script defer src="app.js?v=20260910-ai-cowork-v1"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -46,11 +46,13 @@
         <button class="icon-button sidebar-open" type="button" data-action="open-sidebar" aria-label="Open sidebar">
           <svg><use href="#i-menu"></use></svg>
         </button>
-        <div class="model-badge" aria-label="AI model: OpenAI GPT-5.4 mini" title="OpenAI GPT-5.4 mini">
+        <button class="model-badge" id="model-badge" type="button" data-action="models" aria-label="Choose AI model" title="Choose AI model">
           <img src="../assets/neo-ai-logo.svg?v=20260910-chatgpt-white-v1" alt="">
-          <span><strong>GPT-5.4 mini</strong><small>OpenAI</small></span>
-        </div>
+          <span><strong id="active-model-name">GPT 5.6 Luna</strong><small id="active-model-provider">OpenAI</small></span>
+          <svg><use href="#i-chevron"></use></svg>
+        </button>
         <div class="top-actions">
+          <button class="top-action" id="cowork-top" type="button" data-action="cowork" aria-pressed="false"><svg><use href="#i-cowork"></use></svg><span>Cowork</span></button>
           <button class="top-action" type="button" data-action="study" aria-pressed="false"><svg><use href="#i-study"></use></svg><span>Study</span></button>
           <button class="top-action" type="button" data-action="screen"><svg><use href="#i-screen"></use></svg><span>Screen capture</span></button>
           <button class="icon-button" type="button" data-action="settings" aria-label="AI settings"><svg><use href="#i-settings"></use></svg></button>
@@ -61,7 +63,7 @@
         <div class="welcome" id="welcome">
           <div class="welcome-mark"><img src="../assets/neo-ai-logo.svg?v=20260910-chatgpt-white-v1" alt=""></div>
           <h1>What can I help you with?</h1>
-          <p>Ask anything, add an image, search the web, or switch on study mode. Chats stay on this device.</p>
+          <p>Choose from 30 AI models, ask several models to work together, add files, search the web, or create images and video. Chats stay on this device.</p>
           <div class="prompt-grid" id="prompt-grid">
             <button type="button" data-prompt="Explain this simply: "><svg><use href="#i-sparkles"></use></svg><span><strong>Explain simply</strong><small>Break down a hard topic</small></span></button>
             <button type="button" data-prompt="Summarize the following: "><svg><use href="#i-lines"></use></svg><span><strong>Summarize</strong><small>Pull out the main points</small></span></button>
@@ -81,9 +83,11 @@
         <form class="composer" id="composer">
           <div class="tools-menu" id="tools-menu" hidden>
             <div class="menu-label">Sources</div>
-            <button type="button" data-action="pick-image"><svg><use href="#i-image"></use></svg><span><strong>Add images</strong><small>Upload, paste, or drop</small></span></button>
+            <button type="button" data-action="pick-file"><svg><use href="#i-paperclip"></use></svg><span><strong>Add files &amp; images</strong><small>Upload, paste, or drop</small></span></button>
             <button type="button" data-action="web" aria-pressed="false"><svg><use href="#i-globe"></use></svg><span><strong>Web search</strong><small>Include current sources</small></span><i class="toggle"></i></button>
             <div class="menu-label">Tools</div>
+            <button type="button" data-action="models"><svg><use href="#i-model"></use></svg><span><strong>Choose model</strong><small>Text, image, and video models</small></span></button>
+            <button type="button" data-action="cowork" aria-pressed="false"><svg><use href="#i-cowork"></use></svg><span><strong>AI Coworkers</strong><small>Several models, one answer</small></span><i class="toggle"></i></button>
             <button type="button" data-action="study" aria-pressed="false"><svg><use href="#i-study"></use></svg><span><strong>Study mode</strong><small>Quizzes, flashcards, and more</small></span><i class="toggle"></i></button>
           </div>
           <button class="composer-tool" type="button" data-action="tools" aria-label="Add and tools" aria-expanded="false"><svg><use href="#i-plus"></use></svg></button>
@@ -96,7 +100,7 @@
     </main>
   </div>
 
-  <input id="image-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+  <input id="image-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,text/plain,text/markdown,text/csv,application/json,.js,.jsx,.ts,.tsx,.html,.css,.py,.java,.c,.cpp,.h,.md,.txt,.csv,.json" multiple hidden>
   <div class="toast" id="toast" role="status" hidden></div>
   <div class="chat-context-menu" id="chat-context-menu" role="menu" aria-label="Chat options" hidden>
     <button type="button" role="menuitem" data-chat-menu-action="rename"><svg><use href="#i-pen"></use></svg><span>Rename</span></button>
@@ -121,6 +125,38 @@
     <button class="danger-button" type="button" data-action="clear-chats">Clear all chats</button>
   </dialog>
 
+  <dialog id="models-dialog" class="catalog-dialog">
+    <div class="dialog-head"><div><small>30 AVAILABLE MODELS</small><h2>Choose a model</h2></div><button class="icon-button" type="button" data-action="close-dialog" aria-label="Close"><svg><use href="#i-close"></use></svg></button></div>
+    <div class="model-toolbar">
+      <label class="model-search"><svg><use href="#i-search"></use></svg><input id="model-search" type="search" placeholder="Search models or providers" autocomplete="off"></label>
+      <div class="model-filters" id="model-filters" aria-label="Model type"><button type="button" data-model-filter="all" aria-pressed="true">All</button><button type="button" data-model-filter="text" aria-pressed="false">Chat</button><button type="button" data-model-filter="image" aria-pressed="false">Image</button><button type="button" data-model-filter="video" aria-pressed="false">Video</button></div>
+    </div>
+    <div class="model-list" id="model-list"></div>
+    <div class="generation-options">
+      <label><span>Reasoning effort</span><select id="reasoning-setting"><option value="auto">Automatic</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+      <div id="image-options" class="option-group" hidden>
+        <label><span>Image ratio</span><select id="image-ratio"><option value="1:1">Square 1:1</option><option value="16:9">Wide 16:9</option><option value="9:16">Portrait 9:16</option><option value="4:3">Landscape 4:3</option></select></label>
+        <label><span>Style</span><select id="image-style"><option value="auto">Automatic</option><option value="photorealistic">Photorealistic</option><option value="cinematic">Cinematic</option><option value="illustration">Illustration</option><option value="anime">Anime</option></select></label>
+      </div>
+      <div id="video-options" class="option-group" hidden>
+        <label><span>Duration</span><select id="video-duration"><option value="5">5 seconds</option><option value="10">10 seconds</option></select></label>
+        <label><span>Resolution</span><select id="video-resolution"><option value="480p">480p</option><option value="720p">720p</option><option value="1080p">1080p</option></select></label>
+        <label class="check-label"><span>Generate audio</span><input id="video-audio" type="checkbox" checked></label>
+        <label><span>Seed</span><input id="video-seed" type="number" min="0" step="1" placeholder="Random"></label>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="cowork-dialog" class="cowork-dialog">
+    <div class="dialog-head"><div><small>AI COWORKERS</small><h2>Models that work together</h2></div><button class="icon-button" type="button" data-action="close-dialog" aria-label="Close"><svg><use href="#i-close"></use></svg></button></div>
+    <div class="cowork-body">
+      <label class="cowork-master"><span><strong>Use AI Coworkers</strong><small>Ask multiple models, then let the lead model combine their work.</small></span><input id="cowork-enabled" type="checkbox"></label>
+      <div class="cowork-modes" aria-label="Cowork mode"><button type="button" data-cowork-mode="auto" aria-pressed="true"><strong>Auto</strong><small>Balanced team of 3</small></button><button type="button" data-cowork-mode="custom" aria-pressed="false"><strong>Custom</strong><small>Pick up to 5</small></button></div>
+      <div class="cowork-summary" id="cowork-summary"></div>
+      <div class="cowork-models" id="cowork-models"></div>
+    </div>
+  </dialog>
+
   <svg class="svg-defs" aria-hidden="true">
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
@@ -140,6 +176,9 @@
     <symbol id="i-pen" viewBox="0 0 24 24"><path d="m4 20 4.5-1L19 8.5 15.5 5 5 15.5 4 20ZM13.5 7l3.5 3.5"/></symbol>
     <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
     <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 20"/></symbol>
+    <symbol id="i-paperclip" viewBox="0 0 24 24"><path d="m8 12 6.5-6.5a3.5 3.5 0 0 1 5 5L10 20a5 5 0 0 1-7-7l9-9"/></symbol>
+    <symbol id="i-model" viewBox="0 0 24 24"><path d="M12 3 4 7v10l8 4 8-4V7l-8-4Z"/><path d="m4 7 8 4 8-4M12 11v10"/></symbol>
+    <symbol id="i-cowork" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c.3-4 2-6 5-6s4.7 2 5 6M13 15c1-.9 2.2-1.3 3.6-1.3 2.7 0 4.1 1.8 4.4 5.3"/></symbol>
     <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></symbol>
     <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M10 13h.01M14 13h.01M18 13h.01M7 16h10"/></symbol>

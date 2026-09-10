@@ -4,16 +4,53 @@
   if (window.NEO_AI_APP) return;
 
   var STORAGE_KEY = "neo_ai_workspace_v1";
-  var AI_MODEL_ID = "openai/gpt-5.4-mini";
-  var PUTER_MODEL_ID = "gpt-5.4-mini";
+  var DEFAULT_MODEL_ID = "gpt-5-6-luna";
+  var FALLBACK_MODEL_ID = "gpt-5.4-mini";
+  var AI_MODELS = [
+    { id: "gpt-5-6-luna", puterId: "gpt-5.6-luna", name: "GPT 5.6 Luna", provider: "OpenAI", context: 1050000, reasoning: true, vision: true, type: "text" },
+    { id: "gemma-3-12b", puterId: "gemma-3-12b-it", name: "Gemma 3 12B", provider: "Google", context: 131072, vision: true, type: "text" },
+    { id: "llama-4-maverick", name: "Llama 4 Maverick", provider: "Meta", context: 1000000, reasoning: true, vision: true, type: "text" },
+    { id: "grok-4-3", puterId: "grok-4.3", name: "Grok 4.3", provider: "xAI", context: 1000000, reasoning: true, vision: true, type: "text" },
+    { id: "grok-4-6", puterId: "grok-4.6", name: "Grok 4.6", provider: "xAI", context: 256000, reasoning: true, vision: true, type: "text" },
+    { id: "grok-code-fast-1", name: "Grok Code Fast 1", provider: "xAI", context: 256000, reasoning: true, type: "text" },
+    { id: "deepseek-v4-flash", name: "DeepSeek V4 Flash", provider: "DeepSeek", context: 1000000, reasoning: true, type: "text" },
+    { id: "qwen3.8-max", name: "Qwen 3.8 Max", provider: "Qwen", context: 1000000, reasoning: true, vision: true, type: "text" },
+    { id: "qwen3.7-max", name: "Qwen 3.7 Max", provider: "Qwen", context: 1000000, reasoning: true, type: "text" },
+    { id: "qwen3.7-plus", name: "Qwen 3.7 Plus", provider: "Qwen", context: 1000000, reasoning: true, vision: true, type: "text" },
+    { id: "qwen3.6-plus", name: "Qwen 3.6 Plus", provider: "Qwen", context: 1000000, reasoning: true, type: "text" },
+    { id: "qwen3.5-plus", name: "Qwen 3.5 Plus", provider: "Qwen", context: 1000000, reasoning: true, vision: true, type: "text" },
+    { id: "qwen3.5-omni-plus", name: "Qwen 3.5 Omni Plus", provider: "Qwen", context: 262144, reasoning: true, vision: true, type: "text" },
+    { id: "qwen3-coder-480b", puterId: "qwen3-coder-480b-a35b-instruct", name: "Qwen3 Coder 480B", provider: "Qwen", context: 262144, reasoning: true, type: "text" },
+    { id: "qwen-image-3.0-pro", name: "Qwen Image 3.0 Pro", provider: "Qwen", type: "image" },
+    { id: "qwen-image-2.0-pro", name: "Qwen Image 2.0 Pro", provider: "Qwen", type: "image" },
+    { id: "qwen-video", name: "Qwen Video", provider: "Qwen", type: "video" },
+    { id: "seedance-2.0", name: "Seedance 2.0", provider: "ByteDance", type: "video", puterId: "seedance-2-0" },
+    { id: "seedance-2.0-fast", name: "Seedance 2.0 Fast", provider: "ByteDance", type: "video", puterId: "seedance-2-0-mini" },
+    { id: "kimi-k2-6", puterId: "kimi-k2.6", name: "Kimi K2.6", provider: "Moonshot", context: 262144, reasoning: true, type: "text" },
+    { id: "kimi-k2-7-code", puterId: "kimi-k2.7-code", name: "Kimi K2.7 Code", provider: "Moonshot", context: 262144, reasoning: true, type: "text" },
+    { id: "glm-5.3-flash", name: "GLM 5.3 Flash", provider: "Z.ai", context: 1000000, reasoning: true, vision: true, type: "text" },
+    { id: "nemotron-3.5-lightning", puterId: "nemotron-3.5-lightning", name: "Nemotron 3.5 Lightning", provider: "NVIDIA", context: 262144, reasoning: true, type: "text" },
+    { id: "deepseek-v4-flash-0731", name: "DeepSeek V4 Flash 0731", provider: "DeepSeek", context: 1000000, reasoning: true, type: "text" },
+    { id: "gemma-4-31b", puterId: "gemma-4-31b-it", name: "Gemma 4 31B", provider: "Google", context: 262144, reasoning: true, vision: true, type: "text" },
+    { id: "qwen3.6-27b", name: "Qwen3.6 27B", provider: "Qwen", context: 262144, reasoning: true, type: "text" },
+    { id: "muse-glimmer-30b", puterId: "muse-glimmer-30b", name: "Muse Glimmer 30B", provider: "Meta", context: 131072, type: "text" },
+    { id: "inkling-small", puterId: "inkling-small", name: "Inkling Small", provider: "Thinking Machines", context: 524288, reasoning: true, type: "text" },
+    { id: "glm-5.2", name: "GLM 5.2", provider: "Z.ai", context: 1000000, reasoning: true, type: "text" },
+    { id: "qwen3.8-2.4t", puterId: "qwen3.8-2.4t-a95b", name: "Qwen3.8 2.4T", provider: "Qwen", context: 1000000, reasoning: true, vision: true, type: "text" }
+  ];
+  var COWORK_MODEL_IDS = ["gpt-5-6-luna", "grok-4-3", "llama-4-maverick", "qwen3.8-max", "qwen3.5-plus", "grok-code-fast-1", "deepseek-v4-flash", "qwen3.7-plus", "kimi-k2-6"];
+  var AUTO_COWORK_MODELS = ["gpt-5-6-luna", "qwen3.8-max", "grok-4-3"];
   var REFERENCE_API_URL = "https://photon.girlspreples.org/api/v1/q";
   var PUTER_SDK_URL = "https://js.puter.com/v2/";
   var SEARCH_URL = "https://api.duckduckgo.com/";
   var MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+  var MAX_TEXT_BYTES = 1024 * 1024;
   var MAX_STORED_CHATS = 40;
   var activeRequest = null;
   var puterSdkPromise = null;
   var pendingImages = [];
+  var pendingFiles = [];
+  var modelFilter = "all";
   var toastTimer = 0;
 
   function byId(id) { return document.getElementById(id); }
@@ -34,17 +71,36 @@
   var attachmentStrip = byId("attachment-strip");
   var shortcutsDialog = byId("shortcuts-dialog");
   var settingsDialog = byId("settings-dialog");
+  var modelsDialog = byId("models-dialog");
+  var coworkDialog = byId("cowork-dialog");
+  var modelList = byId("model-list");
+  var modelSearch = byId("model-search");
+  var coworkModels = byId("cowork-models");
   var chatContextMenu = byId("chat-context-menu");
 
   function id(prefix) {
     return prefix + "_" + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
   }
 
+  function getModel(modelId) {
+    return AI_MODELS.find(function (model) { return model.id === modelId; }) || AI_MODELS[0];
+  }
+
+  function formatContext(context) {
+    if (!context) return "Generation";
+    if (context >= 1000000) return (context / 1000000).toFixed(context % 1000000 ? 1 : 0) + "M context";
+    return Math.round(context / 1024) + "K context";
+  }
+
   function defaultState() {
     return {
       activeId: "",
       chats: [],
-      settings: { model: AI_MODEL_ID, study: false, web: false, compact: false, enterSends: true }
+      settings: {
+        model: DEFAULT_MODEL_ID, study: false, web: false, compact: false, enterSends: true, reasoning: "auto",
+        cowork: { enabled: false, auto: true, models: AUTO_COWORK_MODELS.slice() },
+        media: { imageRatio: "1:1", imageStyle: "auto", videoDuration: 5, videoResolution: "720p", videoAudio: true, videoSeed: "" }
+      }
     };
   }
 
@@ -53,13 +109,32 @@
       var parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
       if (!parsed || !Array.isArray(parsed.chats)) return defaultState();
       parsed.settings = Object.assign(defaultState().settings, parsed.settings || {});
-      parsed.settings.model = AI_MODEL_ID;
+      parsed.settings.cowork = Object.assign(defaultState().settings.cowork, parsed.settings.cowork || {});
+      parsed.settings.media = Object.assign(defaultState().settings.media, parsed.settings.media || {});
+      if (!AI_MODELS.some(function (model) { return model.id === parsed.settings.model; })) parsed.settings.model = DEFAULT_MODEL_ID;
+      parsed.settings.cowork.models = (Array.isArray(parsed.settings.cowork.models) ? parsed.settings.cowork.models : AUTO_COWORK_MODELS).filter(function (modelId) { return COWORK_MODEL_IDS.includes(modelId); }).slice(0, 5);
+      if (!parsed.settings.cowork.models.length) parsed.settings.cowork.models = AUTO_COWORK_MODELS.slice();
       parsed.chats = parsed.chats.filter(function (chat) { return chat && typeof chat.id === "string" && Array.isArray(chat.messages); }).slice(0, MAX_STORED_CHATS);
       return parsed;
     } catch (_error) { return defaultState(); }
   }
 
   var state = loadState();
+
+  function getModel(modelId) {
+    return AI_MODELS.find(function (model) { return model.id === modelId; }) || AI_MODELS[0];
+  }
+
+  function formatContext(value) {
+    if (!value) return "Generation";
+    if (value >= 1000000) return (Math.round(value / 100000) / 10) + "M context";
+    return Math.round(value / 1024) + "K context";
+  }
+
+  function selectedCoworkModels() {
+    var ids = state.settings.cowork.auto ? AUTO_COWORK_MODELS : state.settings.cowork.models;
+    return ids.map(getModel).filter(function (model) { return model.type === "text"; }).slice(0, 5);
+  }
 
   function saveState() {
     state.chats = state.chats.slice(0, MAX_STORED_CHATS);
@@ -93,6 +168,41 @@
     var clean = String(text || "").replace(/\s+/g, " ").trim();
     if (!clean) return "New chat";
     return clean.length > 48 ? clean.slice(0, 47).trimEnd() + "…" : clean;
+  }
+
+  function renderModelList() {
+    if (!modelList) return;
+    var query = modelSearch ? modelSearch.value.trim().toLowerCase() : "";
+    var visible = AI_MODELS.filter(function (model) {
+      return (modelFilter === "all" || model.type === modelFilter) && (!query || (model.name + " " + model.provider + " " + model.id).toLowerCase().includes(query));
+    });
+    modelList.innerHTML = visible.map(function (model) {
+      var active = model.id === state.settings.model;
+      var details = model.type === "text" ? formatContext(model.context) + (model.vision ? " · Vision" : "") + (model.reasoning ? " · Reasoning" : "") : model.type === "image" ? "Image generation" : "Video generation";
+      return '<button class="model-row' + (active ? ' active' : '') + '" type="button" data-model-id="' + escapeHtml(model.id) + '" aria-pressed="' + String(active) + '"><span class="provider-mark">' + escapeHtml(model.provider.slice(0, 1)) + '</span><span><strong>' + escapeHtml(model.name) + '</strong><small>' + escapeHtml(model.provider + " · " + details) + '</small></span><em>' + (active ? 'Selected' : model.type) + '</em></button>';
+    }).join("") || '<div class="empty-models">No matching models</div>';
+    var selected = getModel(state.settings.model);
+    byId("image-options").hidden = selected.type !== "image";
+    byId("video-options").hidden = selected.type !== "video";
+    byId("reasoning-setting").closest("label").hidden = selected.type !== "text";
+  }
+
+  function renderCoworkSettings() {
+    if (!coworkModels) return;
+    var selectedIds = state.settings.cowork.auto ? AUTO_COWORK_MODELS : state.settings.cowork.models;
+    byId("cowork-top").classList.toggle("is-active", state.settings.cowork.enabled);
+    byId("cowork-dialog").classList.toggle("cowork-auto", state.settings.cowork.auto);
+    byId("cowork-top").querySelector("span").textContent = state.settings.cowork.enabled ? "Cowork · " + selectedIds.length : "Cowork";
+    byId("cowork-dialog").querySelectorAll("[data-cowork-mode]").forEach(function (button) { button.setAttribute("aria-pressed", String((button.dataset.coworkMode === "auto") === state.settings.cowork.auto)); });
+    byId("cowork-top").setAttribute("aria-pressed", String(state.settings.cowork.enabled));
+    var enabledInput = byId("cowork-enabled");
+    if (enabledInput) enabledInput.checked = state.settings.cowork.enabled;
+    coworkModels.innerHTML = COWORK_MODEL_IDS.map(function (modelId) {
+      var model = getModel(modelId);
+      var checked = selectedIds.includes(model.id);
+      return '<label class="cowork-model' + (checked ? ' selected' : '') + '"><input type="checkbox" data-cowork-model="' + escapeHtml(model.id) + '"' + (checked ? ' checked' : '') + (state.settings.cowork.auto ? ' disabled' : '') + '><span class="provider-mark">' + escapeHtml(model.provider.slice(0, 1)) + '</span><span><strong>' + escapeHtml(model.name) + '</strong><small>' + escapeHtml(model.provider) + '</small></span></label>';
+    }).join("");
+    byId("cowork-summary").textContent = state.settings.cowork.auto ? "Auto team: GPT 5.6 Luna, Qwen 3.8 Max, and Grok 4.3." : selectedIds.length + " of 5 models selected.";
   }
 
   function showToast(text) {
@@ -239,6 +349,13 @@
     var content = "";
     var imageSources = Array.isArray(message.images) ? message.images : (message.image ? [message.image] : []);
     imageSources.forEach(function (source) { content += '<img class="message-image" src="' + escapeHtml(source) + '" alt="Attached image">'; });
+    if (message.media && message.media.src) {
+      if (message.media.type === "video") content += '<video class="message-media" src="' + escapeHtml(message.media.src) + '" controls playsinline preload="metadata"></video>';
+      else content += '<img class="message-media" src="' + escapeHtml(message.media.src) + '" alt="Generated image">';
+    }
+    if (Array.isArray(message.files) && message.files.length) {
+      content += '<div class="message-files">' + message.files.map(function (file) { return '<span><svg><use href="#i-paperclip"></use></svg>' + escapeHtml(file.name) + '</span>'; }).join("") + '</div>';
+    }
     content += renderMarkdown(message.content || "");
     var actions = message.role === "assistant"
       ? '<button type="button" data-message-action="copy">Copy</button><button type="button" data-message-action="regenerate">Regenerate</button>'
@@ -250,7 +367,13 @@
         return url ? '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer" title="' + escapeHtml(url) + '">' + escapeHtml(source.title || new URL(url).hostname) + "</a>" : "";
       }).join("") + "</div>";
     }
-    article.innerHTML = '<div class="message-avatar">' + avatar + '</div><div class="message-body"><div class="message-role">' + (message.role === "assistant" ? "NEO AI" : "You") + '</div><div class="message-content">' + content + "</div>" + sources + '<div class="message-actions">' + actions + "</div></div>";
+    var modelMeta = "";
+    if (message.role === "assistant" && message.model) {
+      var model = getModel(message.model);
+      modelMeta = '<span class="answer-model">' + escapeHtml(model.name) + '</span>';
+      if (Array.isArray(message.coworkModels) && message.coworkModels.length) modelMeta += '<span class="answer-cowork">Cowork · ' + message.coworkModels.length + ' models</span>';
+    }
+    article.innerHTML = '<div class="message-avatar">' + avatar + '</div><div class="message-body"><div class="message-role">' + (message.role === "assistant" ? "NEO AI" : "You") + modelMeta + '</div><div class="message-content">' + content + "</div>" + sources + '<div class="message-actions">' + actions + "</div></div>";
     return article;
   }
 
@@ -265,12 +388,29 @@
   }
 
   function updateToggles() {
+    var model = getModel(state.settings.model);
     document.body.classList.toggle("study-active", state.settings.study);
     document.querySelectorAll('[data-action="study"]').forEach(function (button) { button.setAttribute("aria-pressed", String(state.settings.study)); });
     document.querySelectorAll('[data-action="web"]').forEach(function (button) { button.setAttribute("aria-pressed", String(state.settings.web)); });
+    document.querySelectorAll('[data-action="cowork"]').forEach(function (button) { button.setAttribute("aria-pressed", String(state.settings.cowork.enabled)); });
+    byId("active-model-name").textContent = model.name;
+    byId("active-model-provider").textContent = model.provider + (model.type === "text" ? "" : " · " + model.type);
+    byId("model-badge").setAttribute("aria-label", "Choose AI model. Current: " + model.provider + " " + model.name);
+    byId("model-badge").title = model.provider + " · " + model.name;
     byId("web-setting").checked = state.settings.web;
     byId("compact-setting").checked = state.settings.compact;
     byId("enter-setting").checked = state.settings.enterSends;
+    byId("reasoning-setting").value = state.settings.reasoning;
+    byId("image-ratio").value = state.settings.media.imageRatio;
+    byId("image-style").value = state.settings.media.imageStyle;
+    byId("video-duration").value = String(state.settings.media.videoDuration);
+    byId("video-resolution").value = state.settings.media.videoResolution;
+    byId("video-audio").checked = state.settings.media.videoAudio;
+    byId("video-seed").value = state.settings.media.videoSeed;
+    byId("cowork-top").disabled = model.type !== "text";
+    byId("cowork-top").title = model.type === "text" ? "Set up AI Coworkers" : "Cowork is available with chat models";
+    renderModelList();
+    renderCoworkSettings();
   }
 
   function renderAll() {
@@ -281,30 +421,39 @@
   }
 
   function renderAttachments() {
-    attachmentStrip.hidden = !pendingImages.length;
-    attachmentStrip.innerHTML = pendingImages.map(function (image, index) {
+    attachmentStrip.hidden = !pendingImages.length && !pendingFiles.length;
+    var imagesHtml = pendingImages.map(function (image, index) {
       return '<div class="attachment"><img src="' + escapeHtml(image.dataUrl) + '" alt="' + escapeHtml(image.name) + '"><button type="button" data-remove-image="' + index + '" aria-label="Remove image">×</button></div>';
     }).join("");
+    var filesHtml = pendingFiles.map(function (file, index) {
+      return '<div class="attachment file-attachment"><svg><use href="#i-paperclip"></use></svg><span title="' + escapeHtml(file.name) + '">' + escapeHtml(file.name) + '</span><button type="button" data-remove-file="' + index + '" aria-label="Remove file">×</button></div>';
+    }).join("");
+    attachmentStrip.innerHTML = imagesHtml + filesHtml;
   }
 
   function autoSize() {
     promptBox.style.height = "auto";
     promptBox.style.height = Math.min(160, Math.max(40, promptBox.scrollHeight)) + "px";
-    sendButton.disabled = !promptBox.value.trim() && !pendingImages.length;
+    sendButton.disabled = !promptBox.value.trim() && !pendingImages.length && !pendingFiles.length;
   }
 
   function addFiles(fileList) {
-    var files = Array.from(fileList || []).filter(function (file) { return /^image\/(?:png|jpeg|webp|gif)$/i.test(file.type); }).slice(0, 4 - pendingImages.length);
+    var files = Array.from(fileList || []).slice(0, 8 - pendingImages.length - pendingFiles.length);
     if (!files.length) return;
     files.forEach(function (file) {
-      if (file.size > MAX_IMAGE_BYTES) { showToast(file.name + " is larger than 4 MB"); return; }
+      var isImage = /^image\/(?:png|jpeg|webp|gif)$/i.test(file.type);
+      var isText = /^text\//i.test(file.type) || /\.(?:md|txt|csv|json|js|jsx|ts|tsx|html|css|py|java|c|cpp|h)$/i.test(file.name || "");
+      if (!isImage && !isText) { showToast(file.name + " is not a supported file"); return; }
+      if (isImage && file.size > MAX_IMAGE_BYTES) { showToast(file.name + " is larger than 4 MB"); return; }
+      if (isText && file.size > MAX_TEXT_BYTES) { showToast(file.name + " is larger than 1 MB"); return; }
       var reader = new FileReader();
       reader.onload = function () {
-        pendingImages.push({ name: file.name || "image", dataUrl: String(reader.result) });
+        if (isImage) pendingImages.push({ name: file.name || "image", dataUrl: String(reader.result) });
+        else pendingFiles.push({ name: file.name || "document.txt", text: String(reader.result) });
         renderAttachments();
         autoSize();
       };
-      reader.readAsDataURL(file);
+      if (isImage) reader.readAsDataURL(file); else reader.readAsText(file);
     });
   }
 
@@ -329,7 +478,7 @@
     promptBox.setAttribute("aria-busy", String(busy));
     sendButton.hidden = busy;
     stopButton.hidden = !busy;
-    sendButton.disabled = busy || (!promptBox.value.trim() && !pendingImages.length);
+    sendButton.disabled = busy || (!promptBox.value.trim() && !pendingImages.length && !pendingFiles.length);
   }
 
   function systemPrompt() {
@@ -342,6 +491,9 @@
   function apiMessages(chat) {
     var selected = chat.messages.slice(-24).map(function (message) {
       var content = message.content || "";
+      if (message.role === "user" && Array.isArray(message.files) && message.files.length) {
+        content += "\n\nAttached files:\n" + message.files.map(function (file) { return "--- " + file.name + " ---\n" + file.text; }).join("\n\n");
+      }
       var imageSources = Array.isArray(message.images) ? message.images : (message.image ? [message.image] : []);
       if (message.role === "user" && imageSources.length) {
         content = [{ type: "text", text: content || "Describe these images." }].concat(imageSources.map(function (source) {
@@ -387,7 +539,8 @@
     catch (_error) { var fallback = new Error("Generation stopped"); fallback.name = "AbortError"; return fallback; }
   }
 
-  async function requestReference(messages, signal, onProgress) {
+  async function requestReference(messages, modelId, signal, onProgress) {
+    var model = getModel(modelId);
     var relayController = new AbortController();
     var timedOut = false;
     var timeout = 0;
@@ -401,7 +554,8 @@
     armTimeout();
     try {
       var requestId = id("request");
-      var payload = { requestId: requestId, messages: messages, model: AI_MODEL_ID };
+      var payload = { requestId: requestId, messages: messages, model: model.id };
+      if (model.reasoning && state.settings.reasoning !== "auto") payload.reasoning_effort = state.settings.reasoning;
       var mode = requestMode();
       if (mode) payload.mode = mode;
       var response = await fetch(REFERENCE_API_URL, {
@@ -415,9 +569,9 @@
       });
       if (!response.ok) {
         var problem = await response.text().catch(function () { return ""; });
-        throw new Error("GPT-5.4 mini relay failed (" + response.status + "). " + problem.slice(0, 120));
+        throw new Error(model.name + " relay failed (" + response.status + "). " + problem.slice(0, 120));
       }
-      if (!response.body || typeof response.body.getReader !== "function") throw new Error("GPT-5.4 mini relay did not provide a stream.");
+      if (!response.body || typeof response.body.getReader !== "function") throw new Error(model.name + " did not provide a stream.");
       var reader = response.body.getReader();
       var decoder = new TextDecoder();
       var buffer = "";
@@ -433,7 +587,7 @@
         if (packet.e === "chat:token" && packet.d.token) {
           answer += String(packet.d.token);
           if (onProgress) onProgress(answer);
-        } else if (packet.e === "chat:error") relayError = String(packet.d.error || "The GPT-5.4 mini relay failed.");
+        } else if (packet.e === "chat:error") relayError = String(packet.d.error || (model.name + " failed."));
         else if (packet.e === "chat:done") finished = true;
         else if (packet.e === "chat:cancelled") throw abortError();
       }
@@ -449,11 +603,11 @@
       }
       if (buffer.trim() && !finished && !relayError) consumeLine(buffer);
       if (relayError) throw new Error(relayError);
-      if (!answer.trim()) throw new Error("GPT-5.4 mini returned an empty response.");
+      if (!answer.trim()) throw new Error(model.name + " returned an empty response.");
       return answer;
     } catch (error) {
       if (signal.aborted) throw abortError();
-      if (timedOut || error.name === "AbortError") throw new Error("GPT-5.4 mini took too long to respond.");
+      if (timedOut || error.name === "AbortError") throw new Error(model.name + " took too long to respond.");
       throw error;
     } finally {
       clearTimeout(timeout);
@@ -504,10 +658,19 @@
     return "";
   }
 
-  async function requestPuter(messages, signal, onProgress) {
+  async function requestPuter(messages, modelId, signal, onProgress) {
     var puter = await loadPuterSdk();
     if (signal.aborted) throw new DOMException("Generation stopped", "AbortError");
-    var response = await puter.ai.chat(messages, false, { model: PUTER_MODEL_ID, stream: true, normalize: true });
+    var model = getModel(modelId);
+    var options = { model: model.puterId || model.id, stream: true, normalize: true };
+    if (model.reasoning && state.settings.reasoning !== "auto") options.reasoning_effort = state.settings.reasoning;
+    var response;
+    try {
+      response = await puter.ai.chat(messages, false, options);
+    } catch (modelError) {
+      if (model.id === DEFAULT_MODEL_ID) response = await puter.ai.chat(messages, false, { model: FALLBACK_MODEL_ID, stream: true, normalize: true });
+      else throw modelError;
+    }
     var answer = "";
     if (response && typeof response[Symbol.asyncIterator] === "function") {
       for await (var part of response) {
@@ -523,6 +686,90 @@
     }
     if (!answer.trim()) throw new Error("The backup AI returned an empty response.");
     return answer;
+  }
+
+  async function requestModel(messages, modelId, signal, onProgress) {
+    try {
+      return await requestReference(messages, modelId, signal, onProgress);
+    } catch (relayFailure) {
+      if (relayFailure.name === "AbortError") throw relayFailure;
+      return requestPuter(messages, modelId, signal, onProgress);
+    }
+  }
+
+  function mediaSource(result) {
+    if (!result) return "";
+    if (typeof result === "string") return result;
+    return String(result.src || (result.getAttribute && (result.getAttribute("data-source") || result.getAttribute("src"))) || "");
+  }
+
+  async function generateMedia(model, prompt, signal) {
+    var puter = await loadPuterSdk();
+    if (signal.aborted) throw abortError();
+    var result;
+    var usedFallback = false;
+    if (model.type === "image") {
+      if (typeof puter.ai.txt2img !== "function") throw new Error("Image generation is unavailable in this browser.");
+      var ratioParts = state.settings.media.imageRatio.split(":").map(Number);
+      var imagePrompt = prompt + (state.settings.media.imageStyle === "auto" ? "" : ". Style: " + state.settings.media.imageStyle + ".");
+      try {
+        result = await puter.ai.txt2img(imagePrompt, { model: model.puterId || model.id, ratio: { w: ratioParts[0], h: ratioParts[1] } });
+      } catch (_modelError) {
+        usedFallback = true;
+        result = await puter.ai.txt2img(imagePrompt, { model: "gpt-image-1-mini", ratio: { w: ratioParts[0], h: ratioParts[1] } });
+      }
+    } else {
+      if (typeof puter.ai.txt2vid !== "function") throw new Error("Video generation is unavailable in this browser.");
+      var videoOptions = {
+        model: model.puterId || model.id,
+        seconds: Number(state.settings.media.videoDuration) || 5,
+        size: state.settings.media.videoResolution,
+        generate_audio: Boolean(state.settings.media.videoAudio)
+      };
+      if (state.settings.media.videoSeed !== "") videoOptions.seed = Number(state.settings.media.videoSeed);
+      if (pendingImages[0]) videoOptions.input_reference = pendingImages[0].dataUrl;
+      try {
+        result = await puter.ai.txt2vid(prompt, videoOptions);
+      } catch (_modelError) {
+        usedFallback = true;
+        videoOptions.model = model.provider === "ByteDance" ? "seedance-2-0-mini" : "veo-3.1-lite";
+        result = await puter.ai.txt2vid(prompt, videoOptions);
+      }
+    }
+    if (signal.aborted) throw abortError();
+    var source = mediaSource(result);
+    if (!safeUrl(source) && !/^(?:data:(?:image|video)\/|blob:)/i.test(source)) throw new Error("The generator returned no playable media.");
+    return { src: source, fallback: usedFallback };
+  }
+
+  async function runCowork(requestMessages, sourceMessage, controller, typing) {
+    var team = selectedCoworkModels();
+    if (!team.length) throw new Error("Choose at least one Cowork model.");
+    typing.querySelector(".message-content").innerHTML = '<span class="cowork-progress">Consulting ' + team.length + ' AI coworkers…</span>';
+    var settled = await Promise.allSettled(team.map(function (model) {
+      var specialist = requestMessages.map(function (message) { return { role: message.role, content: message.content }; });
+      if (specialist[0] && specialist[0].role === "system") specialist[0].content += " You are one member of an AI coworker team. Independently solve the user's request. Focus on accuracy, useful details, and any risks or corrections the lead model should know.";
+      else specialist.unshift({ role: "system", content: "You are one member of an AI coworker team. Independently solve the user's request. Focus on accuracy, useful details, and any risks or corrections the lead model should know." });
+      return requestModel(specialist, model.id, controller.signal, null).then(function (answer) { return { model: model, answer: answer }; });
+    }));
+    var results = settled.filter(function (item) { return item.status === "fulfilled"; }).map(function (item) { return item.value; });
+    if (!results.length) throw new Error("The Cowork models could not connect.");
+    if (results.length === 1) return { text: results[0].answer, models: [results[0].model.id] };
+    var synthesis = [
+      { role: "system", content: systemPrompt() + " You are the lead of an AI coworker team. Reconcile the independent drafts below into one accurate, cohesive final answer. Resolve conflicts, remove repetition, and do not mention this internal synthesis unless the user asks." },
+      { role: "user", content: "Original request:\n" + sourceMessage.content + "\n\nCoworker drafts:\n\n" + results.map(function (item) { return "### " + item.model.name + "\n" + item.answer; }).join("\n\n") }
+    ];
+    typing.querySelector(".message-content").innerHTML = '<span class="cowork-progress">Combining ' + results.length + ' model answers…</span>';
+    try {
+      var combined = await requestModel(synthesis, team[0].id, controller.signal, function (partial) {
+        typing.querySelector(".message-content").innerHTML = renderMarkdown(partial || "Combining answers…");
+        conversation.scrollTop = conversation.scrollHeight;
+      });
+      return { text: combined, models: results.map(function (item) { return item.model.id; }) };
+    } catch (error) {
+      if (error.name === "AbortError") throw error;
+      return { text: results.map(function (item) { return "### " + item.model.name + "\n" + item.answer; }).join("\n\n"), models: results.map(function (item) { return item.model.id; }) };
+    }
   }
 
   function addTypingMessage() {
@@ -544,7 +791,22 @@
     messages.hidden = false;
     var typing = addTypingMessage();
     var webResults = [];
+    var selectedModel = getModel(state.settings.model);
     try {
+      if (selectedModel.type !== "text") {
+        typing.querySelector(".message-content").textContent = selectedModel.type === "image" ? "Creating image…" : "Creating video… this can take a few minutes.";
+        var generated = await generateMedia(selectedModel, sourceMessage.content, controller.signal);
+        var mediaAssistant = {
+          id: id("msg"), role: "assistant", model: selectedModel.id, created: Date.now(),
+          content: "Created with **" + selectedModel.name + "**" + (generated.fallback ? " through a compatible generation route." : "."),
+          media: { type: selectedModel.type, src: generated.src }
+        };
+        chat.messages.push(mediaAssistant);
+        chat.updated = Date.now();
+        saveState();
+        renderAll();
+        return;
+      }
       var outboundMessages;
       if (state.settings.web) {
         try {
@@ -565,21 +827,28 @@
       }
       var full = "";
       var requestMessages = outboundMessages || apiMessages(chat);
-      try {
-        full = await requestReference(requestMessages, controller.signal, function (partial) {
-          typing.querySelector(".message-content").innerHTML = renderMarkdown(partial || "Thinking…");
-          conversation.scrollTop = conversation.scrollHeight;
-        });
-      } catch (relayFailure) {
-        if (relayFailure.name === "AbortError") throw relayFailure;
-        typing.querySelector(".message-content").textContent = "Reconnecting to GPT-5.4 mini…";
-        full = await requestPuter(requestMessages, controller.signal, function (partial) {
-          typing.querySelector(".message-content").innerHTML = renderMarkdown(partial || "Thinking…");
-          conversation.scrollTop = conversation.scrollHeight;
-        });
+      var coworkModelIds = [];
+      if (state.settings.cowork.enabled) {
+        var coworkResult = await runCowork(requestMessages, sourceMessage, controller, typing);
+        full = coworkResult.text;
+        coworkModelIds = coworkResult.models;
+      } else {
+        try {
+          full = await requestReference(requestMessages, selectedModel.id, controller.signal, function (partial) {
+            typing.querySelector(".message-content").innerHTML = renderMarkdown(partial || "Thinking…");
+            conversation.scrollTop = conversation.scrollHeight;
+          });
+        } catch (relayFailure) {
+          if (relayFailure.name === "AbortError") throw relayFailure;
+          typing.querySelector(".message-content").textContent = "Reconnecting to " + selectedModel.name + "…";
+          full = await requestPuter(requestMessages, selectedModel.id, controller.signal, function (partial) {
+            typing.querySelector(".message-content").innerHTML = renderMarkdown(partial || "Thinking…");
+            conversation.scrollTop = conversation.scrollHeight;
+          });
+        }
       }
       full = full.trim() || "I could not produce a response. Please try again.";
-      var assistant = { id: id("msg"), role: "assistant", content: full, created: Date.now(), sources: webResults.map(function (item) { return { title: item.title, url: item.url }; }) };
+      var assistant = { id: id("msg"), role: "assistant", model: selectedModel.id, coworkModels: coworkModelIds.length ? coworkModelIds : undefined, content: full, created: Date.now(), sources: webResults.map(function (item) { return { title: item.title, url: item.url }; }) };
       chat.messages.push(assistant);
       chat.updated = Date.now();
       saveState();
@@ -605,16 +874,20 @@
     if (event) event.preventDefault();
     if (activeRequest) return;
     var text = promptBox.value.trim();
-    if (!text && !pendingImages.length) return;
+    if (!text && !pendingImages.length && !pendingFiles.length) return;
     var chat = ensureChat();
     var imageSources = pendingImages.map(function (image) { return image.dataUrl; });
-    var message = { id: id("msg"), role: "user", content: text || "What is in these images?", images: imageSources.length ? imageSources : undefined, created: Date.now() };
+    var attachedFiles = pendingFiles.map(function (file) { return { name: file.name, text: file.text }; });
+    var selectedModel = getModel(state.settings.model);
+    var fallbackPrompt = selectedModel.type === "image" ? "Create an image from the attached reference." : selectedModel.type === "video" ? "Create a video from the attached reference." : "What is in these images?";
+    var message = { id: id("msg"), role: "user", content: text || fallbackPrompt, images: imageSources.length ? imageSources : undefined, files: attachedFiles.length ? attachedFiles : undefined, created: Date.now() };
     chat.messages.push(message);
     if (chat.messages.length === 1 || chat.title === "New chat") chat.title = titleFrom(message.content);
     chat.updated = Date.now();
     state.chats.sort(function (a, b) { return b.updated - a.updated; });
     promptBox.value = "";
     pendingImages = [];
+    pendingFiles = [];
     saveState();
     renderAll();
     autoSize();
@@ -671,9 +944,11 @@
       else if (action === "open-sidebar") { appShell.classList.remove("sidebar-hidden"); appShell.classList.add("mobile-sidebar"); }
       else if (action === "close-sidebar") { appShell.classList.remove("mobile-sidebar"); if (innerWidth > 700) appShell.classList.add("sidebar-hidden"); }
       else if (action === "tools") { toolsMenu.hidden = !toolsMenu.hidden; actionNode.setAttribute("aria-expanded", String(!toolsMenu.hidden)); }
-      else if (action === "pick-image") { toolsMenu.hidden = true; imageInput.click(); }
+      else if (action === "pick-file" || action === "pick-image") { toolsMenu.hidden = true; imageInput.click(); }
       else if (action === "web") toggleSetting("web");
       else if (action === "study") toggleSetting("study");
+      else if (action === "models") { renderModelList(); openDialog(modelsDialog); if (modelSearch) setTimeout(function () { modelSearch.focus(); }, 0); }
+      else if (action === "cowork") { if (getModel(state.settings.model).type !== "text") showToast("Choose a chat model to use Cowork"); else openDialog(coworkDialog); }
       else if (action === "screen") captureScreen();
       else if (action === "shortcuts") openDialog(shortcutsDialog);
       else if (action === "settings") openDialog(settingsDialog);
@@ -706,6 +981,31 @@
       promptBox.focus();
     }
 
+    var filterButton = event.target.closest("[data-model-filter]");
+    if (filterButton) {
+      modelFilter = filterButton.dataset.modelFilter;
+      byId("model-filters").querySelectorAll("button").forEach(function (button) { button.setAttribute("aria-pressed", String(button === filterButton)); });
+      renderModelList();
+    }
+
+    var modelButton = event.target.closest("[data-model-id]");
+    if (modelButton) {
+      state.settings.model = getModel(modelButton.dataset.modelId).id;
+      if (getModel(state.settings.model).type !== "text") state.settings.cowork.enabled = false;
+      saveState();
+      updateToggles();
+      if (getModel(state.settings.model).type === "text") modelsDialog.close();
+      showToast(getModel(state.settings.model).name + " selected");
+    }
+
+    var coworkModeButton = event.target.closest("[data-cowork-mode]");
+    if (coworkModeButton) {
+      state.settings.cowork.auto = coworkModeButton.dataset.coworkMode === "auto";
+      if (state.settings.cowork.auto) state.settings.cowork.models = AUTO_COWORK_MODELS.slice();
+      saveState();
+      updateToggles();
+    }
+
     var row = event.target.closest(".chat-row");
     if (row && event.target.closest(".chat-open")) {
       closeChatContextMenu();
@@ -725,6 +1025,12 @@
       renderAttachments();
       autoSize();
     }
+    var removeFile = event.target.closest("[data-remove-file]");
+    if (removeFile) {
+      pendingFiles.splice(Number(removeFile.dataset.removeFile), 1);
+      renderAttachments();
+      autoSize();
+    }
 
     var codeButton = event.target.closest("[data-copy-code]");
     if (codeButton) copyText(codeButton.closest(".code-block").querySelector("code").textContent);
@@ -741,6 +1047,7 @@
         promptBox.value = message.content;
         var imageSources = Array.isArray(message.images) ? message.images : (message.image ? [message.image] : []);
         if (imageSources.length) pendingImages = imageSources.map(function (source, imageIndex) { return { name: "attached-image-" + (imageIndex + 1), dataUrl: source }; });
+        if (Array.isArray(message.files)) pendingFiles = message.files.map(function (file) { return { name: file.name, text: file.text }; });
         chatNow.messages = chatNow.messages.slice(0, index);
         saveState();
         renderAll();
@@ -777,6 +1084,25 @@
     }
   });
   imageInput.addEventListener("change", function () { addFiles(imageInput.files); imageInput.value = ""; });
+  modelSearch.addEventListener("input", renderModelList);
+  byId("cowork-enabled").addEventListener("change", function (event) { state.settings.cowork.enabled = event.target.checked; saveState(); updateToggles(); });
+  coworkModels.addEventListener("change", function (event) {
+    var input = event.target.closest("[data-cowork-model]");
+    if (!input || state.settings.cowork.auto) return;
+    var selected = COWORK_MODEL_IDS.filter(function (modelId) { var box = coworkModels.querySelector('[data-cowork-model="' + modelId + '"]'); return box && box.checked; });
+    if (selected.length > 5) { input.checked = false; showToast("Choose up to 5 Cowork models"); return; }
+    if (!selected.length) { input.checked = true; showToast("Keep at least one Cowork model"); return; }
+    state.settings.cowork.models = selected;
+    saveState();
+    renderCoworkSettings();
+  });
+  byId("reasoning-setting").addEventListener("change", function (event) { state.settings.reasoning = event.target.value; saveState(); });
+  byId("image-ratio").addEventListener("change", function (event) { state.settings.media.imageRatio = event.target.value; saveState(); });
+  byId("image-style").addEventListener("change", function (event) { state.settings.media.imageStyle = event.target.value; saveState(); });
+  byId("video-duration").addEventListener("change", function (event) { state.settings.media.videoDuration = Number(event.target.value); saveState(); });
+  byId("video-resolution").addEventListener("change", function (event) { state.settings.media.videoResolution = event.target.value; saveState(); });
+  byId("video-audio").addEventListener("change", function (event) { state.settings.media.videoAudio = event.target.checked; saveState(); });
+  byId("video-seed").addEventListener("change", function (event) { state.settings.media.videoSeed = event.target.value; saveState(); });
   byId("web-setting").addEventListener("change", function (event) { state.settings.web = event.target.checked; saveState(); updateToggles(); });
   byId("compact-setting").addEventListener("change", function (event) { state.settings.compact = event.target.checked; saveState(); });
   byId("enter-setting").addEventListener("change", function (event) { state.settings.enterSends = event.target.checked; saveState(); });
@@ -795,8 +1121,8 @@
   });
   window.addEventListener("paste", function (event) {
     if (!event.clipboardData) return;
-    var images = Array.from(event.clipboardData.files || []).filter(function (file) { return file.type.startsWith("image/"); });
-    if (images.length) { event.preventDefault(); addFiles(images); }
+    var files = Array.from(event.clipboardData.files || []);
+    if (files.length) { event.preventDefault(); addFiles(files); }
   });
   window.addEventListener("dragover", function (event) { if (event.dataTransfer && Array.from(event.dataTransfer.types || []).includes("Files")) event.preventDefault(); });
   window.addEventListener("drop", function (event) {
@@ -814,8 +1140,11 @@
 
   window.NEO_AI_APP = Object.freeze({
     newChat: createChat,
-    model: AI_MODEL_ID,
+    models: AI_MODELS.map(function (model) { return Object.assign({}, model); }),
+    getModel: function () { return Object.assign({}, getModel(state.settings.model)); },
     getState: function () { return JSON.parse(JSON.stringify(state)); },
+    selectModel: function (modelId) { state.settings.model = getModel(modelId).id; saveState(); updateToggles(); },
+    setCowork: function (value) { state.settings.cowork.enabled = Boolean(value) && getModel(state.settings.model).type === "text"; saveState(); updateToggles(); },
     setWebSearch: function (value) { state.settings.web = Boolean(value); saveState(); updateToggles(); },
     setStudyMode: function (value) { state.settings.study = Boolean(value); saveState(); updateToggles(); },
     submit: function (text) { promptBox.value = String(text || ""); autoSize(); return submitMessage(); }
