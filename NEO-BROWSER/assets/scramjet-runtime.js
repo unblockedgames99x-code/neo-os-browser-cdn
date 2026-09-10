@@ -5,6 +5,14 @@
   const serviceWorkerUrl = new URL("sw.js?v=20260828-controller-handoff-v3", pageBase);
   const serviceWorkerScope = pageBase.pathname;
   const proxyBase = new URL("~/", pageBase).pathname;
+  if (location.href === "about:srcdoc") {
+    const NativeURL = globalThis.URL;
+    globalThis.URL = class URL extends NativeURL {
+      constructor(input, base) {
+        super(input, /^about:srcdoc(?:[?#]|$)/i.test(String(base || "")) ? pageBase.href : base);
+      }
+    };
+  }
   const initialServiceWorker = navigator.serviceWorker?.controller || null;
   const canRegisterServiceWorker = pageBase.origin === location.origin || Boolean(
     initialServiceWorker && new URL(initialServiceWorker.scriptURL).origin === pageBase.origin
