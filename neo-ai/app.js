@@ -235,7 +235,7 @@
     var article = document.createElement("article");
     article.className = "message " + message.role;
     article.dataset.messageIndex = String(index);
-    var avatar = message.role === "assistant" ? '<img src="../assets/neo-ai-logo.svg?v=20260910-ai-logo-v2" alt="">' : "You";
+    var avatar = message.role === "assistant" ? '<img src="../assets/neo-ai-logo.svg?v=20260910-chatgpt-white-v1" alt="">' : "You";
     var content = "";
     var imageSources = Array.isArray(message.images) ? message.images : (message.image ? [message.image] : []);
     imageSources.forEach(function (source) { content += '<img class="message-image" src="' + escapeHtml(source) + '" alt="Attached image">'; });
@@ -529,7 +529,7 @@
     var article = document.createElement("article");
     article.className = "message assistant";
     article.dataset.typing = "true";
-    article.innerHTML = '<div class="message-avatar"><img src="../assets/neo-ai-logo.svg?v=20260910-ai-logo-v2" alt=""></div><div class="message-body"><div class="message-role">NEO AI</div><div class="message-content"><span class="typing"><i></i><i></i><i></i></span></div></div>';
+    article.innerHTML = '<div class="message-avatar"><img src="../assets/neo-ai-logo.svg?v=20260910-chatgpt-white-v1" alt=""></div><div class="message-body"><div class="message-role">NEO AI</div><div class="message-content"><span class="typing"><i></i><i></i><i></i></span></div></div>';
     messages.appendChild(article);
     conversation.scrollTop = conversation.scrollHeight;
     return article;
