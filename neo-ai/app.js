@@ -34,6 +34,7 @@
   var attachmentStrip = byId("attachment-strip");
   var shortcutsDialog = byId("shortcuts-dialog");
   var settingsDialog = byId("settings-dialog");
+  var chatContextMenu = byId("chat-context-menu");
 
   function id(prefix) {
     return prefix + "_" + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
@@ -161,6 +162,7 @@
   }
 
   function renderChatList() {
+    closeChatContextMenu();
     var query = chatSearch.value.trim().toLowerCase();
     var filtered = state.chats.filter(function (chat) { return !query || chat.title.toLowerCase().includes(query); });
     chatList.innerHTML = "";
@@ -174,12 +176,59 @@
       var row = document.createElement("div");
       row.className = "chat-row" + (chat.id === state.activeId ? " active" : "");
       row.dataset.chatId = chat.id;
-      row.innerHTML = '<button class="chat-open" type="button" title="' + escapeHtml(chat.title) + '"></button><button class="chat-more" type="button" aria-label="Chat options">•••</button>';
+      row.innerHTML = '<button class="chat-open" type="button" title="' + escapeHtml(chat.title) + '"></button><button class="chat-more" type="button" aria-label="Options for ' + escapeHtml(chat.title) + '" aria-haspopup="menu" aria-expanded="false"><svg aria-hidden="true"><use href="#i-more"></use></svg></button>';
       row.querySelector(".chat-open").textContent = chat.title;
       chatList.appendChild(row);
     });
     chatCount.textContent = String(state.chats.length);
     messageCount.textContent = String(state.chats.reduce(function (total, chat) { return total + chat.messages.length; }, 0));
+  }
+
+  function closeChatContextMenu() {
+    if (!chatContextMenu) return;
+    chatContextMenu.hidden = true;
+    chatContextMenu.dataset.chatId = "";
+    document.querySelectorAll(".chat-more[aria-expanded=true]").forEach(function (button) { button.setAttribute("aria-expanded", "false"); });
+  }
+
+  function toggleChatContextMenu(button, chatId) {
+    var isSameOpen = !chatContextMenu.hidden && chatContextMenu.dataset.chatId === chatId;
+    closeChatContextMenu();
+    if (isSameOpen) return;
+    chatContextMenu.dataset.chatId = chatId;
+    chatContextMenu.hidden = false;
+    button.setAttribute("aria-expanded", "true");
+    var buttonRect = button.getBoundingClientRect();
+    var menuRect = chatContextMenu.getBoundingClientRect();
+    var left = Math.max(8, Math.min(innerWidth - menuRect.width - 8, buttonRect.right - menuRect.width));
+    var top = buttonRect.bottom + 5;
+    if (top + menuRect.height > innerHeight - 8) top = Math.max(8, buttonRect.top - menuRect.height - 5);
+    chatContextMenu.style.left = Math.round(left) + "px";
+    chatContextMenu.style.top = Math.round(top) + "px";
+    var firstItem = chatContextMenu.querySelector("button");
+    if (firstItem) firstItem.focus();
+  }
+
+  function deleteChat(chat) {
+    if (!chat || !confirm('Delete "' + chat.title + '"? This cannot be undone.')) return;
+    if (state.activeId === chat.id && activeRequest) activeRequest.abort();
+    state.chats = state.chats.filter(function (item) { return item.id !== chat.id; });
+    if (state.activeId === chat.id) state.activeId = state.chats[0] && state.chats[0].id || "";
+    saveState();
+    renderAll();
+    showToast("Chat deleted");
+  }
+
+  function renameChat(chat) {
+    if (!chat) return;
+    var choice = prompt("Rename chat", chat.title);
+    if (choice === null) return;
+    choice = choice.trim();
+    if (!choice) { showToast("Chat name cannot be empty"); return; }
+    chat.title = titleFrom(choice);
+    chat.updated = Date.now();
+    saveState();
+    renderAll();
   }
 
   function messageElement(message, index) {
@@ -640,6 +689,16 @@
       }
     }
 
+    var chatMenuAction = event.target.closest("[data-chat-menu-action]");
+    if (chatMenuAction) {
+      var menuChat = state.chats.find(function (item) { return item.id === chatContextMenu.dataset.chatId; });
+      var menuAction = chatMenuAction.dataset.chatMenuAction;
+      closeChatContextMenu();
+      if (menuAction === "delete") deleteChat(menuChat);
+      else if (menuAction === "rename") renameChat(menuChat);
+      return;
+    }
+
     var promptNode = event.target.closest("[data-prompt]");
     if (promptNode) {
       promptBox.value = promptNode.dataset.prompt || "";
@@ -649,22 +708,15 @@
 
     var row = event.target.closest(".chat-row");
     if (row && event.target.closest(".chat-open")) {
+      closeChatContextMenu();
       state.activeId = row.dataset.chatId;
       saveState();
       renderAll();
       appShell.classList.remove("mobile-sidebar");
     }
     if (row && event.target.closest(".chat-more")) {
-      var chat = state.chats.find(function (item) { return item.id === row.dataset.chatId; });
-      if (!chat) return;
-      var choice = prompt("Type a new name, or leave it blank to delete this chat.", chat.title);
-      if (choice === null) return;
-      if (!choice.trim()) {
-        state.chats = state.chats.filter(function (item) { return item.id !== chat.id; });
-        if (state.activeId === chat.id) state.activeId = state.chats[0] && state.chats[0].id || "";
-      } else chat.title = titleFrom(choice);
-      saveState();
-      renderAll();
+      toggleChatContextMenu(event.target.closest(".chat-more"), row.dataset.chatId);
+      return;
     }
 
     var removeImage = event.target.closest("[data-remove-image]");
@@ -712,6 +764,7 @@
       toolsMenu.hidden = true;
       document.querySelector('[data-action="tools"]').setAttribute("aria-expanded", "false");
     }
+    if (!event.target.closest(".chat-context-menu") && !event.target.closest(".chat-more")) closeChatContextMenu();
   });
 
   chatSearch.addEventListener("input", renderChatList);
@@ -734,6 +787,7 @@
     else if (event.key === "Escape") {
       if (activeRequest) activeRequest.abort();
       toolsMenu.hidden = true;
+      closeChatContextMenu();
       appShell.classList.remove("mobile-sidebar");
       document.querySelectorAll("dialog[open]").forEach(function (dialog) { dialog.close(); });
     } else if (event.key === "?" && !/input|textarea|select/i.test(document.activeElement.tagName)) openDialog(shortcutsDialog);
@@ -750,7 +804,8 @@
     event.preventDefault();
     addFiles(event.dataTransfer.files);
   });
-  window.addEventListener("resize", function () { if (innerWidth > 700) appShell.classList.remove("mobile-sidebar"); });
+  window.addEventListener("resize", function () { closeChatContextMenu(); if (innerWidth > 700) appShell.classList.remove("mobile-sidebar"); });
+  chatList.addEventListener("scroll", closeChatContextMenu, { passive: true });
   document.addEventListener("visibilitychange", function () { if (document.hidden && activeRequest) activeRequest.abort(); });
 
   if (state.activeId && !activeChat()) state.activeId = "";

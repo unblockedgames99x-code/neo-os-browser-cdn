@@ -7,9 +7,9 @@
   <title>NEO AI</title>
   <link rel="icon" href="../assets/neo-ai-logo.svg?v=20260910-ai-logo-v2">
   <link rel="stylesheet" href="../neo-theme-system.css?v=20260910-ai-v1">
-  <link rel="stylesheet" href="app.css?v=20260910-ai-runtime-v5">
+  <link rel="stylesheet" href="app.css?v=20260910-ai-chat-menu-v1">
   <script defer src="../neo-app-theme.js?v=20260910-ai-v1"></script>
-  <script defer src="app.js?v=20260910-ai-runtime-v5"></script>
+  <script defer src="app.js?v=20260910-ai-chat-menu-v1"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -98,6 +98,10 @@
 
   <input id="image-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
   <div class="toast" id="toast" role="status" hidden></div>
+  <div class="chat-context-menu" id="chat-context-menu" role="menu" aria-label="Chat options" hidden>
+    <button type="button" role="menuitem" data-chat-menu-action="rename"><svg><use href="#i-pen"></use></svg><span>Rename</span></button>
+    <button class="danger" type="button" role="menuitem" data-chat-menu-action="delete"><svg><use href="#i-trash"></use></svg><span>Delete</span></button>
+  </div>
 
   <dialog id="shortcuts-dialog">
     <div class="dialog-head"><div><small>NEO AI</small><h2>Keyboard shortcuts</h2></div><button class="icon-button" type="button" data-action="close-dialog" aria-label="Close"><svg><use href="#i-close"></use></svg></button></div>
@@ -122,6 +126,7 @@
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
     <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
     <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
     <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="m12 19 0-14M6 11l6-6 6 6"/></symbol>
@@ -138,6 +143,7 @@
     <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></symbol>
     <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M10 13h.01M14 13h.01M18 13h.01M7 16h10"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></symbol>
   </svg>
 </body>
 </html>

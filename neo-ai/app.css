@@ -46,9 +46,16 @@ kbd { min-width: 24px; padding: 2px 6px; border: 1px solid var(--ai-line); borde
 .chat-row.active { background: var(--ai-accent-soft); }
 .chat-open { min-width: 0; height: 44px; padding: 0 8px 0 11px; border: 0; background: transparent; color: var(--ai-muted); text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .chat-row.active .chat-open, .chat-row:hover .chat-open { color: var(--ai-text); }
-.chat-more { width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; color: var(--ai-muted); cursor: pointer; opacity: 0; }
+.chat-more { width: 28px; height: 28px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--ai-muted); cursor: pointer; opacity: 0; line-height: 0; }
+.chat-more svg { display: block; width: 18px; height: 18px; }
 .chat-row:hover .chat-more, .chat-row.active .chat-more { opacity: 1; }
 .chat-more:hover { background: var(--ai-panel-2); color: var(--ai-text); }
+.chat-context-menu { position: fixed; z-index: 80; width: 156px; padding: 6px; border: 1px solid var(--ai-line); border-radius: 11px; background: var(--ai-panel); box-shadow: 0 18px 50px rgb(0 0 0 / .52); }
+.chat-context-menu button { width: 100%; min-height: 38px; display: flex; align-items: center; gap: 9px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--ai-text); cursor: pointer; text-align: left; font-size: 13px; }
+.chat-context-menu button:hover, .chat-context-menu button:focus-visible { background: var(--ai-accent-soft); }
+.chat-context-menu button svg { width: 16px; height: 16px; color: var(--ai-muted); }
+.chat-context-menu button.danger { color: #ff9da6; }
+.chat-context-menu button.danger svg { color: currentColor; }
 .sidebar-footer { display: grid; gap: 4px; border-top: 1px solid var(--ai-line); padding-top: 10px; }
 .activity { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 3px 4px 8px; }
 .activity div { display: grid; justify-items: center; gap: 2px; }
