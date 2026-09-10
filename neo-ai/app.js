@@ -206,7 +206,7 @@
     chatContextMenu.style.left = Math.round(left) + "px";
     chatContextMenu.style.top = Math.round(top) + "px";
     var firstItem = chatContextMenu.querySelector("button");
-    if (firstItem) firstItem.focus();
+    if (firstItem) firstItem.focus({ preventScroll: true });
   }
 
   function deleteChat(chat) {
