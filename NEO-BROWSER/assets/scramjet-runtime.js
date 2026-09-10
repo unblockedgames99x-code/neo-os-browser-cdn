@@ -5,6 +5,14 @@
   const serviceWorkerUrl = new URL("sw.js?v=20260828-controller-handoff-v3", pageBase);
   const serviceWorkerScope = pageBase.pathname;
   const proxyBase = new URL("~/", pageBase).pathname;
+  const bareMuxWorkerUrl = new URL(
+    "scramjet/baremux-worker.js?v=20260910-chromebook-stack-v1",
+    pageBase,
+  ).href;
+  const bareMuxTransportUrl = new URL(
+    "scramjet/libcurl.mjs?v=20260910-chromebook-stack-v1",
+    pageBase,
+  ).href;
   if (location.href === "about:srcdoc") {
     const NativeURL = globalThis.URL;
     globalThis.URL = class URL extends NativeURL {
@@ -38,6 +46,16 @@
   let lastVisibleUrl = "";
   let selectedRelay = "";
   let bareMuxConnection = null;
+
+  function withTimeout(promise, milliseconds, message) {
+    let timer = 0;
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = window.setTimeout(() => reject(new Error(message)), milliseconds);
+      }),
+    ]).finally(() => window.clearTimeout(timer));
+  }
 
   function supports(value) {
     if (!canRegisterServiceWorker) return false;
@@ -325,6 +343,41 @@
     };
   }
 
+  // Managed Chromebooks handle a shared networking worker more reliably than
+  // a tab-owned worker. BareMux also lets the service worker reuse the exact
+  // same Libcurl/WISP connection instead of rebuilding it for every request.
+  async function createBareMuxTransport(relay) {
+    if (
+      typeof SharedWorker !== "function" ||
+      !globalThis.BareMux?.BareMuxConnection ||
+      !globalThis.BareMux?.BareClient
+    ) return null;
+
+    const connection = bareMuxConnection || new globalThis.BareMux.BareMuxConnection(bareMuxWorkerUrl);
+    bareMuxConnection = connection;
+    const activeTransport = await withTimeout(
+      connection.getTransport(),
+      4000,
+      "The shared network service did not respond.",
+    ).catch(() => "");
+    if (activeTransport !== bareMuxTransportUrl) {
+      await withTimeout(
+        connection.setTransport(bareMuxTransportUrl, [{ wisp: relay }]),
+        12000,
+        "The shared network service took too long to start.",
+      );
+    }
+    const selectedTransport = await withTimeout(
+      connection.getTransport(),
+      4000,
+      "The shared network service could not be verified.",
+    );
+    if (selectedTransport !== bareMuxTransportUrl) {
+      throw new Error("The shared network service did not stay connected.");
+    }
+    return createWorkerTransport(new globalThis.BareMux.BareClient(bareMuxWorkerUrl));
+  }
+
   async function createOffMainThreadTransport(relay) {
     if (typeof Worker !== "function") return null;
     const workerUrl = new URL("scramjet/transport-worker.js", pageBase).href;
@@ -423,12 +476,20 @@
 
     let transport = null;
     try {
-      transport = await createOffMainThreadTransport(selected.url);
+      transport = await createBareMuxTransport(selected.url);
     } catch (error) {
-      globalThis.__neoWorkerTransportError = String(error?.stack || error?.message || error);
-      console.warn("[NEO] Worker transport unavailable; using the compatibility fallback.", error);
+      globalThis.__neoSharedTransportError = String(error?.stack || error?.message || error);
+      console.warn("[NEO] Shared transport unavailable; using the compatibility fallback.", error);
     }
-    if (!transport) throw new Error("The background network worker is unavailable.");
+    if (!transport) {
+      try {
+        transport = await createOffMainThreadTransport(selected.url);
+      } catch (error) {
+        globalThis.__neoWorkerTransportError = String(error?.stack || error?.message || error);
+        console.warn("[NEO] Compatibility transport unavailable.", error);
+      }
+    }
+    if (!transport) throw new Error("The background network service is unavailable.");
     selectedRelay = selected.url;
     try { localStorage.setItem(relayCacheKey, selected.url); } catch {}
     return transport;
