@@ -318,14 +318,88 @@
   }
 
   async function createOffMainThreadTransport(relay) {
-    if (typeof SharedWorker !== "function" || !globalThis.BareMux?.BareMuxConnection || !globalThis.BareMux?.BareClient) {
-      return null;
-    }
-    const workerUrl = new URL("scramjet/baremux-worker.js", pageBase).href;
+    if (typeof Worker !== "function") return null;
+    const workerUrl = new URL("scramjet/transport-worker.js", pageBase).href;
     const transportUrl = new URL("scramjet/libcurl.mjs", pageBase).href;
-    if (!bareMuxConnection) bareMuxConnection = new globalThis.BareMux.BareMuxConnection(workerUrl);
-    await bareMuxConnection.setTransport(transportUrl, [{ wisp: relay }]);
-    return createWorkerTransport(new globalThis.BareMux.BareClient(workerUrl));
+    const worker = new Worker(workerUrl, { type: "module", name: "neo-network" });
+    const pending = new Map();
+    const sockets = new Map();
+    let nextId = 0;
+
+    const call = (type, detail = {}, transfer = []) => new Promise((resolve, reject) => {
+      const id = ++nextId;
+      const timer = window.setTimeout(() => {
+        pending.delete(id);
+        reject(new Error("The background network worker timed out."));
+      }, 15000);
+      pending.set(id, {
+        resolve(value) { window.clearTimeout(timer); resolve(value); },
+        reject(error) { window.clearTimeout(timer); reject(error); },
+      });
+      worker.postMessage({ id, type, transportUrl, relay, ...detail }, transfer);
+    });
+    worker.addEventListener("message", (event) => {
+      const message = event.data || {};
+      if (message.event && message.socketId) {
+        const socket = sockets.get(message.socketId);
+        if (!socket) return;
+        if (message.event === "socket-open") socket.onopen(message.protocol || "", "");
+        if (message.event === "socket-message") socket.onmessage(message.data);
+        if (message.event === "socket-close") {
+          sockets.delete(message.socketId);
+          socket.onclose(message.code, message.reason || "");
+        }
+        if (message.event === "socket-error") socket.onerror(message.error || "");
+        return;
+      }
+      const request = pending.get(message.id);
+      if (!request) return;
+      pending.delete(message.id);
+      if (message.ok) request.resolve(message.value);
+      else request.reject(new Error(message.error || "The network worker failed."));
+    });
+    worker.addEventListener("error", (event) => {
+      const error = new Error(event.message || "The network worker stopped.");
+      pending.forEach((request) => request.reject(error));
+      pending.clear();
+    });
+    await call("init");
+
+    return {
+      ready: true,
+      async init() {},
+      async request(url, method, body, headers) {
+        let payload = null;
+        if (body instanceof ReadableStream) payload = await new Response(body).arrayBuffer();
+        else if (body instanceof ArrayBuffer) payload = body;
+        else if (ArrayBuffer.isView(body)) payload = body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength);
+        else if (body != null) payload = new TextEncoder().encode(String(body)).buffer;
+        const value = await call("fetch", {
+          url: String(url),
+          method,
+          body: payload,
+          headers: headersObject(headers),
+        }, payload ? [payload] : []);
+        return {
+          ...value,
+          headers: rawHeaderEntries(value.headers, new Headers()),
+        };
+      },
+      connect(url, protocols, requestHeaders, onopen, onmessage, onclose, onerror) {
+        const socketId = `socket-${++nextId}`;
+        sockets.set(socketId, { onopen, onmessage, onclose, onerror });
+        call("connect", {
+          socketId,
+          url: String(url),
+          protocols: protocols || [],
+          headers: headersObject(requestHeaders),
+        }).catch((error) => onerror(error.message));
+        return [
+          (data) => worker.postMessage({ type: "socket-send", socketId, data }),
+          (code, reason) => worker.postMessage({ type: "socket-close", socketId, code, reason }),
+        ];
+      },
+    };
   }
 
   async function selectTransport() {
@@ -343,13 +417,10 @@
     try {
       transport = await createOffMainThreadTransport(selected.url);
     } catch (error) {
+      globalThis.__neoWorkerTransportError = String(error?.stack || error?.message || error);
       console.warn("[NEO] Worker transport unavailable; using the compatibility fallback.", error);
     }
-    if (!transport) {
-      const transportModule = await import(new URL("curl/index.mjs", pageBase).href);
-      transport = new transportModule.default({ wisp: selected.url });
-      await initializeTransport(transport);
-    }
+    if (!transport) throw new Error("The background network worker is unavailable.");
     selectedRelay = selected.url;
     try { localStorage.setItem(relayCacheKey, selected.url); } catch {}
     return transport;
