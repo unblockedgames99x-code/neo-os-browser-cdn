@@ -40,6 +40,7 @@
     : path.includes('/neo-chat/') ? 'chat'
     : path.includes('/neo-cloud/') ? 'cloud'
     : path.includes('/neo-tv/') ? 'tv'
+    : path.includes('/neo-ai/') ? 'ai'
     : path.includes('/local-browser/') ? 'local-browser'
     : path.includes('/browser-newtab') ? 'browser-newtab'
     : path.includes('/neo-browser/') ? 'browser'
