@@ -5,6 +5,7 @@
 
   var STORAGE_KEY = "neo_ai_workspace_v1";
   var API_URL = "https://text.pollinations.ai/openai";
+  var FALLBACK_API_URL = "https://text.pollinations.ai/";
   var MODELS_URL = "https://gen.pollinations.ai/text/models";
   var SEARCH_URL = "https://api.duckduckgo.com/";
   var MAX_IMAGE_BYTES = 4 * 1024 * 1024;
@@ -273,7 +274,9 @@
   }
 
   function setBusy(busy) {
-    promptBox.disabled = busy;
+    composer.classList.toggle("is-busy", busy);
+    promptBox.disabled = false;
+    promptBox.setAttribute("aria-busy", String(busy));
     sendButton.hidden = busy;
     stopButton.hidden = !busy;
     sendButton.disabled = busy || (!promptBox.value.trim() && !pendingImages.length);
@@ -321,6 +324,37 @@
     return results;
   }
 
+  function fallbackPrompt(chat) {
+    var transcript = chat.messages.slice(-10).map(function (message) {
+      var speaker = message.role === "assistant" ? "NEO AI" : "User";
+      var imageNote = message.images && message.images.length ? " [The user attached " + message.images.length + " image(s).]" : "";
+      return speaker + ": " + String(message.content || "") + imageNote;
+    }).join("\n\n");
+    var prompt = systemPrompt() + "\n\nContinue this conversation and answer the final user message.\n\n" + transcript + "\n\nNEO AI:";
+    return prompt.length > 3200 ? prompt.slice(prompt.length - 3200) : prompt;
+  }
+
+  async function requestFallback(chat, signal) {
+    var selectedModel = String(state.settings.model || "openai");
+    var models = selectedModel === "openai" ? ["openai"] : [selectedModel, "openai"];
+    var prompt = fallbackPrompt(chat);
+    var lastError = null;
+    for (var index = 0; index < models.length; index += 1) {
+      try {
+        var url = FALLBACK_API_URL + encodeURIComponent(prompt) + "?model=" + encodeURIComponent(models[index]) + "&seed=-1";
+        var response = await fetch(url, { signal: signal, mode: "cors", cache: "no-store", credentials: "omit" });
+        if (!response.ok) throw new Error("Fallback request failed (" + response.status + ").");
+        var text = (await response.text()).trim();
+        if (text) return text;
+        throw new Error("The fallback returned an empty response.");
+      } catch (error) {
+        if (error.name === "AbortError") throw error;
+        lastError = error;
+      }
+    }
+    throw lastError || new Error("The AI service is unavailable.");
+  }
+
   function addTypingMessage() {
     var article = document.createElement("article");
     article.className = "message assistant";
@@ -359,46 +393,58 @@
           showToast("Web search could not load; answering without it");
         }
       }
-      var response = await fetch(API_URL, {
-        method: "POST",
-        mode: "cors",
-        signal: controller.signal,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: state.settings.model || "openai", messages: outboundMessages || apiMessages(chat), stream: true })
-      });
-      if (!response.ok) {
-        var problem = await response.text().catch(function () { return ""; });
-        throw new Error(response.status === 429 ? "The AI is busy. Try again in a moment." : "AI request failed (" + response.status + "). " + problem.slice(0, 160));
-      }
-      var isEventStream = /text\/event-stream/i.test(response.headers.get("content-type") || "");
-      var reader = isEventStream && response.body && response.body.getReader ? response.body.getReader() : null;
       var full = "";
-      if (reader) {
-        var decoder = new TextDecoder();
-        var buffer = "";
-        typing.querySelector(".message-content").innerHTML = "";
-        while (true) {
-          var chunk = await reader.read();
-          if (chunk.done) break;
-          buffer += decoder.decode(chunk.value, { stream: true });
-          var lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-          lines.forEach(function (line) {
-            if (!line.startsWith("data:")) return;
-            var raw = line.slice(5).trim();
-            if (!raw || raw === "[DONE]") return;
-            try {
-              var packet = JSON.parse(raw);
-              var delta = packet.choices && packet.choices[0] && packet.choices[0].delta && packet.choices[0].delta.content;
-              if (delta) full += delta;
-            } catch (_error) {}
-          });
-          typing.querySelector(".message-content").innerHTML = renderMarkdown(full || "Thinking…");
-          conversation.scrollTop = conversation.scrollHeight;
+      var response = null;
+      try {
+        response = await fetch(API_URL, {
+          method: "POST",
+          mode: "cors",
+          signal: controller.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model: state.settings.model || "openai", messages: outboundMessages || apiMessages(chat), stream: true })
+        });
+        if (!response.ok) {
+          var problem = await response.text().catch(function () { return ""; });
+          var primaryError = new Error("AI request failed (" + response.status + "). " + problem.slice(0, 160));
+          primaryError.status = response.status;
+          throw primaryError;
         }
-      } else {
-        var payload = await response.json();
-        full = payload.choices && payload.choices[0] && payload.choices[0].message && payload.choices[0].message.content || "";
+      } catch (primaryFailure) {
+        if (primaryFailure.name === "AbortError") throw primaryFailure;
+        response = null;
+        typing.querySelector(".message-content").textContent = "Connecting through backup…";
+        full = await requestFallback(chat, controller.signal);
+      }
+      if (response) {
+        var isEventStream = /text\/event-stream/i.test(response.headers.get("content-type") || "");
+        var reader = isEventStream && response.body && response.body.getReader ? response.body.getReader() : null;
+        if (reader) {
+          var decoder = new TextDecoder();
+          var buffer = "";
+          typing.querySelector(".message-content").innerHTML = "";
+          while (true) {
+            var chunk = await reader.read();
+            if (chunk.done) break;
+            buffer += decoder.decode(chunk.value, { stream: true });
+            var lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+            lines.forEach(function (line) {
+              if (!line.startsWith("data:")) return;
+              var raw = line.slice(5).trim();
+              if (!raw || raw === "[DONE]") return;
+              try {
+                var packet = JSON.parse(raw);
+                var delta = packet.choices && packet.choices[0] && packet.choices[0].delta && packet.choices[0].delta.content;
+                if (delta) full += delta;
+              } catch (_error) {}
+            });
+            typing.querySelector(".message-content").innerHTML = renderMarkdown(full || "Thinking…");
+            conversation.scrollTop = conversation.scrollHeight;
+          }
+        } else {
+          var payload = await response.json();
+          full = payload.choices && payload.choices[0] && payload.choices[0].message && payload.choices[0].message.content || "";
+        }
       }
       full = full.trim() || "I could not produce a response. Please try again.";
       var assistant = { id: id("msg"), role: "assistant", content: full, created: Date.now(), sources: webResults.map(function (item) { return { title: item.title, url: item.url }; }) };

@@ -14,6 +14,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--ai-bg); color: var(--ai-text); }
 button, input, textarea, select { font: inherit; color: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
@@ -59,7 +60,7 @@ kbd { min-width: 24px; padding: 2px 6px; border: 1px solid var(--ai-line); borde
 .footer-button:hover { background: var(--ai-accent-soft); color: var(--ai-text); }
 .footer-button kbd { margin-left: auto; }
 
-.workspace { min-width: 0; height: 100%; display: grid; grid-template-rows: 58px minmax(0, 1fr) auto; background: radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--ai-accent) 6%, transparent), transparent 32%), var(--ai-bg); }
+.workspace { min-width: 0; height: 100%; overflow: hidden; display: grid; grid-template-rows: 58px minmax(0, 1fr) auto; background: radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--ai-accent) 6%, transparent), transparent 32%), var(--ai-bg); }
 .topbar { display: flex; align-items: center; gap: 10px; padding: 8px 18px; border-bottom: 1px solid var(--ai-line); background: color-mix(in srgb, var(--ai-bg) 92%, transparent); backdrop-filter: blur(14px); z-index: 5; }
 .model-picker { position: relative; min-width: 0; display: flex; align-items: center; gap: 9px; height: 40px; padding: 0 34px 0 8px; border: 1px solid transparent; border-radius: 11px; cursor: pointer; }
 .model-picker:hover { border-color: var(--ai-line); background: var(--ai-panel); }
@@ -118,13 +119,13 @@ kbd { min-width: 24px; padding: 2px 6px; border: 1px solid var(--ai-line); borde
 .typing i:nth-child(2) { animation-delay: .15s; }.typing i:nth-child(3) { animation-delay: .3s; }
 @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: .35; } 30% { transform: translateY(-5px); opacity: 1; } }
 
-.composer-zone { position: relative; width: min(850px, calc(100% - 32px)); margin: 0 auto; padding: 0 0 11px; z-index: 6; }
+.composer-zone { position: relative; flex: 0 0 auto; width: min(850px, calc(100% - 32px)); min-height: 76px; margin: 0 auto; padding: 0 0 11px; z-index: 6; }
 .composer-zone::before { content: ""; position: absolute; z-index: -1; left: -70px; right: -70px; bottom: 0; height: 150px; background: linear-gradient(transparent, var(--ai-bg) 44%); pointer-events: none; }
 .attachment-strip { display: flex; gap: 8px; margin: 0 8px 8px; }
 .attachment { position: relative; width: 70px; height: 60px; border-radius: 11px; border: 1px solid var(--ai-line); overflow: hidden; background: var(--ai-panel); }
 .attachment img { width: 100%; height: 100%; object-fit: cover; }
 .attachment button { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border: 0; border-radius: 50%; background: rgb(0 0 0 / .72); color: #fff; cursor: pointer; }
-.composer { position: relative; min-height: 58px; display: flex; align-items: flex-end; gap: 7px; padding: 8px; border: 1px solid color-mix(in srgb, var(--ai-line) 92%, #fff 8%); border-radius: 20px; background: color-mix(in srgb, var(--ai-panel) 94%, transparent); box-shadow: 0 18px 46px rgb(0 0 0 / .35); backdrop-filter: blur(18px); }
+.composer { position: relative; width: 100%; min-height: 58px; display: flex; align-items: flex-end; gap: 7px; padding: 8px; border: 1px solid color-mix(in srgb, var(--ai-line) 92%, #fff 8%); border-radius: 20px; background: color-mix(in srgb, var(--ai-panel) 94%, transparent); box-shadow: 0 18px 46px rgb(0 0 0 / .35); backdrop-filter: blur(18px); }
 .composer:focus-within { border-color: color-mix(in srgb, var(--ai-accent) 56%, var(--ai-line)); }
 .composer-tool, .send-button { flex: 0 0 auto; width: 40px; height: 40px; border: 0; border-radius: 13px; display: grid; place-items: center; cursor: pointer; }
 .composer-tool { background: transparent; color: var(--ai-muted); }
