@@ -207,12 +207,12 @@
       throw new Error("This host uses the Chromebook compatibility transport.");
     }
     if (!("serviceWorker" in navigator)) throw new Error("This browser does not support service workers.");
-    if (location.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(location.hostname)) {
-      throw new Error("Secure browsing compatibility requires HTTPS.");
-    }
 
     const inheritedController = navigator.serviceWorker.controller;
     if (isExpectedController(inheritedController)) return inheritedController;
+    if (location.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(location.hostname)) {
+      throw new Error("Secure browsing compatibility requires HTTPS.");
+    }
 
     const registration = await navigator.serviceWorker.register(serviceWorkerUrl.href, {
       scope: serviceWorkerScope,
