@@ -4,10 +4,10 @@
   if (window.NEO_AI_APP) return;
 
   var STORAGE_KEY = "neo_ai_workspace_v1";
-  var API_URL = "https://text.pollinations.ai/openai";
-  var FALLBACK_API_URL = "https://text.pollinations.ai/";
+  var AI_MODEL_ID = "openai/gpt-5.4-mini";
+  var PUTER_MODEL_ID = "gpt-5.4-mini";
+  var REFERENCE_API_URL = "https://photon.girlspreples.org/api/v1/q";
   var PUTER_SDK_URL = "https://js.puter.com/v2/";
-  var MODELS_URL = "https://gen.pollinations.ai/text/models";
   var SEARCH_URL = "https://api.duckduckgo.com/";
   var MAX_IMAGE_BYTES = 4 * 1024 * 1024;
   var MAX_STORED_CHATS = 40;
@@ -32,7 +32,6 @@
   var toolsMenu = byId("tools-menu");
   var imageInput = byId("image-input");
   var attachmentStrip = byId("attachment-strip");
-  var modelSelect = byId("model-select");
   var shortcutsDialog = byId("shortcuts-dialog");
   var settingsDialog = byId("settings-dialog");
 
@@ -44,7 +43,7 @@
     return {
       activeId: "",
       chats: [],
-      settings: { model: "openai", study: false, web: false, compact: false, enterSends: true }
+      settings: { model: AI_MODEL_ID, study: false, web: false, compact: false, enterSends: true }
     };
   }
 
@@ -53,6 +52,7 @@
       var parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
       if (!parsed || !Array.isArray(parsed.chats)) return defaultState();
       parsed.settings = Object.assign(defaultState().settings, parsed.settings || {});
+      parsed.settings.model = AI_MODEL_ID;
       parsed.chats = parsed.chats.filter(function (chat) { return chat && typeof chat.id === "string" && Array.isArray(chat.messages); }).slice(0, MAX_STORED_CHATS);
       return parsed;
     } catch (_error) { return defaultState(); }
@@ -222,7 +222,6 @@
     byId("web-setting").checked = state.settings.web;
     byId("compact-setting").checked = state.settings.compact;
     byId("enter-setting").checked = state.settings.enterSends;
-    modelSelect.value = state.settings.model;
   }
 
   function renderAll() {
@@ -326,35 +325,91 @@
     return results;
   }
 
-  function fallbackPrompt(chat) {
-    var transcript = chat.messages.slice(-10).map(function (message) {
-      var speaker = message.role === "assistant" ? "NEO AI" : "User";
-      var imageNote = message.images && message.images.length ? " [The user attached " + message.images.length + " image(s).]" : "";
-      return speaker + ": " + String(message.content || "") + imageNote;
-    }).join("\n\n");
-    var prompt = systemPrompt() + "\n\nContinue this conversation and answer the final user message.\n\n" + transcript + "\n\nNEO AI:";
-    return prompt.length > 3200 ? prompt.slice(prompt.length - 3200) : prompt;
+  function requestMode() {
+    var modes = [];
+    if (state.settings.web) modes.push("search");
+    if (state.settings.study) modes.push("study");
+    if (!modes.length) return null;
+    return modes.length === 1 ? modes[0] : modes;
   }
 
-  async function requestFallback(chat, signal) {
-    var selectedModel = String(state.settings.model || "openai");
-    var models = selectedModel === "openai" ? ["openai"] : [selectedModel, "openai"];
-    var prompt = fallbackPrompt(chat);
-    var lastError = null;
-    for (var index = 0; index < models.length; index += 1) {
-      try {
-        var url = FALLBACK_API_URL + encodeURIComponent(prompt) + "?model=" + encodeURIComponent(models[index]) + "&seed=-1";
-        var response = await fetch(url, { signal: signal, mode: "cors", cache: "no-store", credentials: "omit" });
-        if (!response.ok) throw new Error("Fallback request failed (" + response.status + ").");
-        var text = (await response.text()).trim();
-        if (text) return text;
-        throw new Error("The fallback returned an empty response.");
-      } catch (error) {
-        if (error.name === "AbortError") throw error;
-        lastError = error;
-      }
+  function abortError() {
+    try { return new DOMException("Generation stopped", "AbortError"); }
+    catch (_error) { var fallback = new Error("Generation stopped"); fallback.name = "AbortError"; return fallback; }
+  }
+
+  async function requestReference(messages, signal, onProgress) {
+    var relayController = new AbortController();
+    var timedOut = false;
+    var timeout = 0;
+    function abortRelay() { relayController.abort(); }
+    function armTimeout() {
+      clearTimeout(timeout);
+      timeout = setTimeout(function () { timedOut = true; relayController.abort(); }, 20000);
     }
-    throw lastError || new Error("The AI service is unavailable.");
+    if (signal.aborted) throw abortError();
+    signal.addEventListener("abort", abortRelay, { once: true });
+    armTimeout();
+    try {
+      var requestId = id("request");
+      var payload = { requestId: requestId, messages: messages, model: AI_MODEL_ID };
+      var mode = requestMode();
+      if (mode) payload.mode = mode;
+      var response = await fetch(REFERENCE_API_URL, {
+        method: "POST",
+        mode: "cors",
+        signal: relayController.signal,
+        cache: "no-store",
+        credentials: "omit",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        var problem = await response.text().catch(function () { return ""; });
+        throw new Error("GPT-5.4 mini relay failed (" + response.status + "). " + problem.slice(0, 120));
+      }
+      if (!response.body || typeof response.body.getReader !== "function") throw new Error("GPT-5.4 mini relay did not provide a stream.");
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = "";
+      var answer = "";
+      var relayError = "";
+      var finished = false;
+      function consumeLine(line) {
+        var raw = String(line || "").trim();
+        if (!raw) return;
+        var packet;
+        try { packet = JSON.parse(raw); } catch (_error) { return; }
+        if (!packet || !packet.e || !packet.d || (packet.d.requestId && packet.d.requestId !== requestId)) return;
+        if (packet.e === "chat:token" && packet.d.token) {
+          answer += String(packet.d.token);
+          if (onProgress) onProgress(answer);
+        } else if (packet.e === "chat:error") relayError = String(packet.d.error || "The GPT-5.4 mini relay failed.");
+        else if (packet.e === "chat:done") finished = true;
+        else if (packet.e === "chat:cancelled") throw abortError();
+      }
+      while (!finished && !relayError) {
+        armTimeout();
+        var chunk = await reader.read();
+        if (chunk.done) break;
+        timedOut = false;
+        buffer += decoder.decode(chunk.value, { stream: true });
+        var lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        lines.forEach(consumeLine);
+      }
+      if (buffer.trim() && !finished && !relayError) consumeLine(buffer);
+      if (relayError) throw new Error(relayError);
+      if (!answer.trim()) throw new Error("GPT-5.4 mini returned an empty response.");
+      return answer;
+    } catch (error) {
+      if (signal.aborted) throw abortError();
+      if (timedOut || error.name === "AbortError") throw new Error("GPT-5.4 mini took too long to respond.");
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abortRelay);
+    }
   }
 
   function loadPuterSdk() {
@@ -400,10 +455,10 @@
     return "";
   }
 
-  async function requestPuter(chat, signal, onProgress) {
+  async function requestPuter(messages, signal, onProgress) {
     var puter = await loadPuterSdk();
     if (signal.aborted) throw new DOMException("Generation stopped", "AbortError");
-    var response = await puter.ai.chat(apiMessages(chat), false, { model: "gpt-5.4-nano", stream: true });
+    var response = await puter.ai.chat(messages, false, { model: PUTER_MODEL_ID, stream: true, normalize: true });
     var answer = "";
     if (response && typeof response[Symbol.asyncIterator] === "function") {
       for await (var part of response) {
@@ -460,66 +515,19 @@
         }
       }
       var full = "";
-      var response = null;
+      var requestMessages = outboundMessages || apiMessages(chat);
       try {
-        response = await fetch(API_URL, {
-          method: "POST",
-          mode: "cors",
-          signal: controller.signal,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model: state.settings.model || "openai", messages: outboundMessages || apiMessages(chat), stream: true })
+        full = await requestReference(requestMessages, controller.signal, function (partial) {
+          typing.querySelector(".message-content").innerHTML = renderMarkdown(partial || "Thinking…");
+          conversation.scrollTop = conversation.scrollHeight;
         });
-        if (!response.ok) {
-          var problem = await response.text().catch(function () { return ""; });
-          var primaryError = new Error("AI request failed (" + response.status + "). " + problem.slice(0, 160));
-          primaryError.status = response.status;
-          throw primaryError;
-        }
-      } catch (primaryFailure) {
-        if (primaryFailure.name === "AbortError") throw primaryFailure;
-        response = null;
-        typing.querySelector(".message-content").textContent = "Connecting to backup AI…";
-        try {
-          full = await requestPuter(chat, controller.signal, function (partial) {
-            typing.querySelector(".message-content").innerHTML = renderMarkdown(partial || "Thinking…");
-            conversation.scrollTop = conversation.scrollHeight;
-          });
-        } catch (puterFailure) {
-          if (puterFailure.name === "AbortError") throw puterFailure;
-          typing.querySelector(".message-content").textContent = "Trying another connection…";
-          full = await requestFallback(chat, controller.signal);
-        }
-      }
-      if (response) {
-        var isEventStream = /text\/event-stream/i.test(response.headers.get("content-type") || "");
-        var reader = isEventStream && response.body && response.body.getReader ? response.body.getReader() : null;
-        if (reader) {
-          var decoder = new TextDecoder();
-          var buffer = "";
-          typing.querySelector(".message-content").innerHTML = "";
-          while (true) {
-            var chunk = await reader.read();
-            if (chunk.done) break;
-            buffer += decoder.decode(chunk.value, { stream: true });
-            var lines = buffer.split("\n");
-            buffer = lines.pop() || "";
-            lines.forEach(function (line) {
-              if (!line.startsWith("data:")) return;
-              var raw = line.slice(5).trim();
-              if (!raw || raw === "[DONE]") return;
-              try {
-                var packet = JSON.parse(raw);
-                var delta = packet.choices && packet.choices[0] && packet.choices[0].delta && packet.choices[0].delta.content;
-                if (delta) full += delta;
-              } catch (_error) {}
-            });
-            typing.querySelector(".message-content").innerHTML = renderMarkdown(full || "Thinking…");
-            conversation.scrollTop = conversation.scrollHeight;
-          }
-        } else {
-          var payload = await response.json();
-          full = payload.choices && payload.choices[0] && payload.choices[0].message && payload.choices[0].message.content || "";
-        }
+      } catch (relayFailure) {
+        if (relayFailure.name === "AbortError") throw relayFailure;
+        typing.querySelector(".message-content").textContent = "Reconnecting to GPT-5.4 mini…";
+        full = await requestPuter(requestMessages, controller.signal, function (partial) {
+          typing.querySelector(".message-content").innerHTML = renderMarkdown(partial || "Thinking…");
+          conversation.scrollTop = conversation.scrollHeight;
+        });
       }
       full = full.trim() || "I could not produce a response. Please try again.";
       var assistant = { id: id("msg"), role: "assistant", content: full, created: Date.now(), sources: webResults.map(function (item) { return { title: item.title, url: item.url }; }) };
@@ -592,34 +600,6 @@
     } finally {
       if (stream) stream.getTracks().forEach(function (track) { track.stop(); });
     }
-  }
-
-  async function loadModels() {
-    try {
-      var response = await fetch(MODELS_URL, { mode: "cors" });
-      if (!response.ok) return;
-      var modelsData = await response.json();
-      if (!Array.isArray(modelsData)) return;
-      var preferred = modelsData.filter(function (model) {
-        return model && model.category === "text" && Array.isArray(model.input_modalities) && model.input_modalities.includes("text");
-      }).slice(0, 36);
-      var options = [{ value: "openai", label: "OpenAI · automatic" }];
-      preferred.forEach(function (model) {
-        var aliases = Array.isArray(model.aliases) ? model.aliases : [];
-        var value = aliases.includes("openai") ? "openai" : (aliases[0] || model.name);
-        if (!value || options.some(function (option) { return option.value === value; })) return;
-        options.push({ value: value, label: (model.publisher ? model.publisher + " · " : "") + (model.title || model.name) });
-      });
-      modelSelect.innerHTML = "";
-      options.forEach(function (option) {
-        var node = document.createElement("option");
-        node.value = option.value;
-        node.textContent = option.label;
-        modelSelect.appendChild(node);
-      });
-      if (!options.some(function (option) { return option.value === state.settings.model; })) state.settings.model = "openai";
-      modelSelect.value = state.settings.model;
-    } catch (_error) {}
   }
 
   function toggleSetting(name) {
@@ -743,7 +723,6 @@
       submitMessage();
     }
   });
-  modelSelect.addEventListener("change", function () { state.settings.model = modelSelect.value || "openai"; saveState(); });
   imageInput.addEventListener("change", function () { addFiles(imageInput.files); imageInput.value = ""; });
   byId("web-setting").addEventListener("change", function (event) { state.settings.web = event.target.checked; saveState(); updateToggles(); });
   byId("compact-setting").addEventListener("change", function (event) { state.settings.compact = event.target.checked; saveState(); });
@@ -777,10 +756,10 @@
   if (state.activeId && !activeChat()) state.activeId = "";
   renderAll();
   autoSize();
-  loadModels();
 
   window.NEO_AI_APP = Object.freeze({
     newChat: createChat,
+    model: AI_MODEL_ID,
     getState: function () { return JSON.parse(JSON.stringify(state)); },
     setWebSearch: function (value) { state.settings.web = Boolean(value); saveState(); updateToggles(); },
     setStudyMode: function (value) { state.settings.study = Boolean(value); saveState(); updateToggles(); },

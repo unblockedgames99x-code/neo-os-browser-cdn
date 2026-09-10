@@ -62,11 +62,11 @@ kbd { min-width: 24px; padding: 2px 6px; border: 1px solid var(--ai-line); borde
 
 .workspace { min-width: 0; height: 100%; overflow: hidden; display: grid; grid-template-rows: 58px minmax(0, 1fr) auto; background: radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--ai-accent) 6%, transparent), transparent 32%), var(--ai-bg); }
 .topbar { display: flex; align-items: center; gap: 10px; padding: 8px 18px; border-bottom: 1px solid var(--ai-line); background: color-mix(in srgb, var(--ai-bg) 92%, transparent); backdrop-filter: blur(14px); z-index: 5; }
-.model-picker { position: relative; min-width: 0; display: flex; align-items: center; gap: 9px; height: 40px; padding: 0 34px 0 8px; border: 1px solid transparent; border-radius: 11px; cursor: pointer; }
-.model-picker:hover { border-color: var(--ai-line); background: var(--ai-panel); }
-.model-picker img { width: 25px; height: 25px; border-radius: 7px; }
-.model-picker select { max-width: 250px; height: 100%; padding: 0; border: 0; outline: 0; appearance: none; background: transparent; font-size: 13px; font-weight: 700; cursor: pointer; }
-.model-picker > svg { position: absolute; right: 9px; width: 16px; pointer-events: none; color: var(--ai-muted); }
+.model-badge { min-width: 0; display: flex; align-items: center; gap: 9px; height: 40px; padding: 0 10px 0 8px; border: 1px solid transparent; border-radius: 11px; }
+.model-badge img { width: 25px; height: 25px; border-radius: 7px; }
+.model-badge > span { min-width: 0; display: grid; gap: 1px; line-height: 1.05; }
+.model-badge strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.model-badge small { color: var(--ai-muted); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
 .top-actions { margin-left: auto; display: flex; align-items: center; gap: 4px; }
 .top-action { height: 38px; display: inline-flex; align-items: center; gap: 7px; padding: 0 11px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--ai-muted); cursor: pointer; font-size: 13px; }
 .top-action:hover { border-color: var(--ai-line); color: var(--ai-text); }
@@ -181,8 +181,7 @@ html[data-neo-theme="frost"] .code-block { background: #f4f6f8; } html[data-neo-
   .sidebar-close, .sidebar-open { display: inline-grid; }
   .workspace { width: 100%; }
   .topbar { padding-inline: 9px; }
-  .model-picker { max-width: calc(100vw - 164px); }
-  .model-picker select { max-width: 150px; }
+  .model-badge { max-width: calc(100vw - 164px); }
   .welcome { width: calc(100% - 24px); padding-top: 34px; }
   .welcome > p { margin-bottom: 20px; }
   .prompt-grid { gap: 7px; }

@@ -7,9 +7,9 @@
   <title>NEO AI</title>
   <link rel="icon" href="../assets/neo-ai-logo.svg?v=20260910-ai-logo-v2">
   <link rel="stylesheet" href="../neo-theme-system.css?v=20260910-ai-v1">
-  <link rel="stylesheet" href="app.css?v=20260910-ai-runtime-v4">
+  <link rel="stylesheet" href="app.css?v=20260910-ai-runtime-v5">
   <script defer src="../neo-app-theme.js?v=20260910-ai-v1"></script>
-  <script defer src="app.js?v=20260910-ai-runtime-v4"></script>
+  <script defer src="app.js?v=20260910-ai-runtime-v5"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -46,13 +46,10 @@
         <button class="icon-button sidebar-open" type="button" data-action="open-sidebar" aria-label="Open sidebar">
           <svg><use href="#i-menu"></use></svg>
         </button>
-        <label class="model-picker" title="Choose a model">
+        <div class="model-badge" aria-label="AI model: OpenAI GPT-5.4 mini" title="OpenAI GPT-5.4 mini">
           <img src="../assets/neo-ai-logo.svg?v=20260910-ai-logo-v2" alt="">
-          <select id="model-select" aria-label="AI model">
-            <option value="openai">OpenAI · automatic</option>
-          </select>
-          <svg><use href="#i-chevron"></use></svg>
-        </label>
+          <span><strong>GPT-5.4 mini</strong><small>OpenAI</small></span>
+        </div>
         <div class="top-actions">
           <button class="top-action" type="button" data-action="study" aria-pressed="false"><svg><use href="#i-study"></use></svg><span>Study</span></button>
           <button class="top-action" type="button" data-action="screen"><svg><use href="#i-screen"></use></svg><span>Screen capture</span></button>
