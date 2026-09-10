@@ -3,6 +3,9 @@
   <title>NEO Browser</title>
   <script><![CDATA[
     var browserFrame = null;
+    var workerUrl = new URL('sw.js?v=20260828-controller-handoff-v3', location.href).href;
+    var workerScope = new URL('./', location.href).pathname;
+    var controllerReloadKey = 'neo:browser-wrapper-controller:v1';
 
     function escapeAttribute(value) {
       return String(value)
@@ -25,6 +28,58 @@
       return '<!doctype html><html><head>' + injection + '</head><body>' + html + '</body></html>';
     }
 
+    function expectedController() {
+      var controller = navigator.serviceWorker && navigator.serviceWorker.controller;
+      return controller && controller.scriptURL === workerUrl ? controller : null;
+    }
+
+    function waitForController(timeout) {
+      if (expectedController()) return Promise.resolve(expectedController());
+      return new Promise(function (resolve) {
+        var timer = window.setTimeout(finish, timeout);
+        function finish() {
+          window.clearTimeout(timer);
+          navigator.serviceWorker.removeEventListener('controllerchange', changed);
+          resolve(expectedController());
+        }
+        function changed() {
+          if (expectedController()) finish();
+        }
+        navigator.serviceWorker.addEventListener('controllerchange', changed);
+      });
+    }
+
+    function ensureBrowserScope() {
+      if (!('serviceWorker' in navigator)) return Promise.reject(new Error('Service workers are unavailable.'));
+      if (expectedController()) {
+        try { sessionStorage.removeItem(controllerReloadKey); } catch (error) {}
+        return Promise.resolve();
+      }
+      return navigator.serviceWorker.register(workerUrl, { scope: workerScope })
+        .then(function (registration) {
+          return navigator.serviceWorker.ready.then(function () {
+            if (registration.active) registration.active.postMessage({ type: 'neo:jet:claim' });
+            return waitForController(4000);
+          });
+        })
+        .then(function (controller) {
+          if (controller) {
+            try { sessionStorage.removeItem(controllerReloadKey); } catch (error) {}
+            return;
+          }
+          var reloaded = false;
+          try {
+            reloaded = sessionStorage.getItem(controllerReloadKey) === workerUrl;
+            if (!reloaded) sessionStorage.setItem(controllerReloadKey, workerUrl);
+          } catch (error) {}
+          if (!reloaded) {
+            location.reload();
+            return new Promise(function () {});
+          }
+          throw new Error('The Browser network worker could not control its CDN page.');
+        });
+    }
+
     window.addEventListener('message', function (event) {
       if (!browserFrame) return;
       if (event.source === browserFrame.contentWindow) {
@@ -38,10 +93,10 @@
 
     window.addEventListener('load', function () {
       var host = document.getElementById('host');
-      fetch(new URL('index.html?build=cdn-scope-v1', location.href).href, {
+      ensureBrowserScope().then(function () { return fetch(new URL('index.html?build=cdn-scope-v1', location.href).href, {
         cache: 'force-cache',
         credentials: 'omit'
-      })
+      }); })
         .then(function (response) {
           if (!response.ok) throw new Error('Browser response ' + response.status);
           return response.text();
