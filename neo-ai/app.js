@@ -112,7 +112,9 @@
       parsed.settings.cowork = Object.assign(defaultState().settings.cowork, parsed.settings.cowork || {});
       parsed.settings.media = Object.assign(defaultState().settings.media, parsed.settings.media || {});
       if (!AI_MODELS.some(function (model) { return model.id === parsed.settings.model; })) parsed.settings.model = DEFAULT_MODEL_ID;
-      parsed.settings.cowork.models = (Array.isArray(parsed.settings.cowork.models) ? parsed.settings.cowork.models : AUTO_COWORK_MODELS).filter(function (modelId) { return COWORK_MODEL_IDS.includes(modelId); }).slice(0, 5);
+      if (!["auto", "low", "medium", "high"].includes(parsed.settings.reasoning)) parsed.settings.reasoning = "auto";
+      if (!Array.isArray(parsed.settings.cowork.models)) parsed.settings.cowork.models = AUTO_COWORK_MODELS.slice();
+      parsed.settings.cowork.models = parsed.settings.cowork.models.filter(function (modelId, index, items) { return COWORK_MODEL_IDS.includes(modelId) && items.indexOf(modelId) === index; }).slice(0, 5);
       if (!parsed.settings.cowork.models.length) parsed.settings.cowork.models = AUTO_COWORK_MODELS.slice();
       parsed.chats = parsed.chats.filter(function (chat) { return chat && typeof chat.id === "string" && Array.isArray(chat.messages); }).slice(0, MAX_STORED_CHATS);
       return parsed;
@@ -120,16 +122,6 @@
   }
 
   var state = loadState();
-
-  function getModel(modelId) {
-    return AI_MODELS.find(function (model) { return model.id === modelId; }) || AI_MODELS[0];
-  }
-
-  function formatContext(value) {
-    if (!value) return "Generation";
-    if (value >= 1000000) return (Math.round(value / 100000) / 10) + "M context";
-    return Math.round(value / 1024) + "K context";
-  }
 
   function selectedCoworkModels() {
     var ids = state.settings.cowork.auto ? AUTO_COWORK_MODELS : state.settings.cowork.models;
