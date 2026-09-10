@@ -26,6 +26,7 @@
   let active = false;
   let lastVisibleUrl = "";
   let selectedRelay = "";
+  let bareMuxConnection = null;
 
   function supports(value) {
     if (!canRegisterServiceWorker) return false;
@@ -257,7 +258,71 @@
     throw new Error("The network transport did not initialize in time.");
   }
 
-  async function selectTransport(transportModule) {
+  function headersObject(headers) {
+    if (!headers) return {};
+    if (headers instanceof Headers) return Object.fromEntries(headers.entries());
+    if (Array.isArray(headers)) return Object.fromEntries(headers);
+    return headers;
+  }
+
+  function rawHeaderEntries(headers, fallback) {
+    if (Array.isArray(headers)) return headers;
+    if (headers && typeof headers[Symbol.iterator] === "function") return [...headers];
+    if (headers && typeof headers === "object") {
+      return Object.entries(headers).flatMap(([name, values]) => (
+        Array.isArray(values) ? values.map((value) => [name, String(value)]) : [[name, String(values)]]
+      ));
+    }
+    return [...fallback.entries()];
+  }
+
+  function createWorkerTransport(client) {
+    return {
+      ready: true,
+      async init() {},
+      async request(remote, method, body, headers, signal) {
+        const response = await client.fetch(remote.href, {
+          method,
+          headers: headersObject(headers),
+          body,
+          redirect: "manual",
+          signal,
+          ...(typeof ReadableStream === "function" && body instanceof ReadableStream ? { duplex: "half" } : {}),
+        });
+        return {
+          body: response.body,
+          headers: rawHeaderEntries(response.rawHeaders, response.headers),
+          status: response.status,
+          statusText: response.statusText,
+        };
+      },
+      connect(url, protocols, requestHeaders, onopen, onmessage, onclose, onerror) {
+        const socket = client.createWebSocket(url, protocols, undefined, headersObject(requestHeaders));
+        socket.binaryType = "arraybuffer";
+        socket.onopen = () => onopen("", "");
+        socket.onmessage = (event) => onmessage(event.data);
+        socket.onclose = (event) => onclose(event.code, event.reason);
+        socket.onerror = () => onerror("");
+        return [
+          (data) => socket.send(data),
+          (code, reason) => socket.close(code, reason),
+        ];
+      },
+    };
+  }
+
+  async function createOffMainThreadTransport(relay) {
+    if (typeof SharedWorker !== "function" || !globalThis.BareMux?.BareMuxConnection || !globalThis.BareMux?.BareClient) {
+      return null;
+    }
+    const workerUrl = new URL("scramjet/baremux-worker.js", pageBase).href;
+    const transportUrl = new URL("scramjet/libcurl.mjs", pageBase).href;
+    if (!bareMuxConnection) bareMuxConnection = new globalThis.BareMux.BareMuxConnection(workerUrl);
+    await bareMuxConnection.setTransport(transportUrl, [{ wisp: relay }]);
+    return createWorkerTransport(new globalThis.BareMux.BareClient(workerUrl));
+  }
+
+  async function selectTransport() {
     const preferred = normalizeRelay(relayHosts[0]);
     const cached = cachedRelay();
     let selected = await probeRelay(preferred, 1800);
@@ -268,8 +333,17 @@
     }
     if (!selected) throw new Error("No compatible relay is currently reachable.");
 
-    const transport = new transportModule.default({ wisp: selected.url });
-    await initializeTransport(transport);
+    let transport = null;
+    try {
+      transport = await createOffMainThreadTransport(selected.url);
+    } catch (error) {
+      console.warn("[NEO] Worker transport unavailable; using the compatibility fallback.", error);
+    }
+    if (!transport) {
+      const transportModule = await import(new URL("curl/index.mjs", pageBase).href);
+      transport = new transportModule.default({ wisp: selected.url });
+      await initializeTransport(transport);
+    }
     selectedRelay = selected.url;
     try { localStorage.setItem(relayCacheKey, selected.url); } catch {}
     return transport;
@@ -281,8 +355,7 @@
       if (!globalThis.$scramjetController?.Controller) throw new Error("The Jet runtime did not load.");
       await ensureServiceWorker();
 
-      const transportModule = await import(new URL("curl/index.mjs", pageBase).href);
-      const transport = await selectTransport(transportModule);
+      const transport = await selectTransport();
 
       controller = new globalThis.$scramjetController.Controller({
         serviceworker: navigator.serviceWorker.controller,
@@ -346,10 +419,20 @@
   }
 
   async function go(url, frameElement) {
+    const requestedUrl = String(url);
+    try {
+      const destination = new URL(requestedUrl);
+      if (/^(?:www\.|m\.)?youtube\.com$/i.test(destination.hostname)) {
+        destination.hostname = "m.youtube.com";
+        destination.searchParams.set("app", "m");
+        destination.searchParams.set("persist_app", "1");
+        url = destination.href;
+      }
+    } catch {}
     await initialize();
     const frame = attachFrame(frameElement);
     active = true;
-    lastVisibleUrl = String(url);
+    lastVisibleUrl = requestedUrl;
     frameElement.dataset.neoScramjet = "true";
     frameElement.removeAttribute("srcdoc");
     frameElement.style.opacity = "1";
@@ -375,21 +458,7 @@
     get active() { return active; },
   });
 
-  // Warm the transport as soon as the shell is interactive. The first search
-  // can then navigate immediately instead of paying setup cost on Enter.
-  const prewarm = () => initialize().catch((error) => {
-    window.dispatchEvent(new CustomEvent("neo:scramjet:error", { detail: { error } }));
-  });
-  const schedulePrewarm = () => {
-    if ("requestIdleCallback" in window) {
-      window.requestIdleCallback(prewarm, { timeout: 700 });
-    } else {
-      window.setTimeout(prewarm, 80);
-    }
-  };
-  if (document.readyState === "loading") {
-    window.addEventListener("DOMContentLoaded", schedulePrewarm, { once: true });
-  } else {
-    schedulePrewarm();
-  }
+  // initialize() is intentionally started by go(). Prewarming here used to
+  // download and compile the full proxy runtime even on an untouched new tab,
+  // which could block low-powered Chromebooks for several hundred milliseconds.
 })();

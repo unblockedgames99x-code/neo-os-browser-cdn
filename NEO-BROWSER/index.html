@@ -46,7 +46,6 @@
     <link rel="icon" type="image/png" sizes="64x64" href="assets/neo-logo-64.png" />
     <link rel="apple-touch-icon" sizes="192x192" href="assets/neo-logo-192.png" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="modulepreload" href="curl/index.mjs" />
     <link rel="stylesheet" href="assets/vendor/fontawesome/css/all.min.css" />
     <!-- ES module stub: satisfies ECMAScript 6 Modules feature detection -->
     <script type="module">window._esModulesSupported = true;</script>
@@ -61,10 +60,11 @@
     <link rel="stylesheet" href="../neo-liquid-scrollbars.css?v=20260907-scroll-containers-v2">
     <script src="assets/migrate.js" defer></script>
     <script src="assets/libcurl-compat.js?v=20260907-runtime-fallback-v2" defer></script>
+    <script src="scramjet/baremux.js?v=20260909-worker-transport-v1" defer></script>
     <script src="jet/jet.core.js" defer></script>
     <script src="jet/jet.api.js" defer></script>
-    <script src="assets/scramjet-runtime.js?v=20260907-lively-tabs-v1" defer></script>
-    <script src="assets/app.js?v=20260907-no-tour-v1" defer></script>
+    <script src="assets/scramjet-runtime.js?v=20260909-on-demand-v1" defer></script>
+    <script src="assets/app.js?v=20260909-lazy-network-v1" defer></script>
     <script src="assets/search-reliability.js?v=20260909-ddg-lite-v1" defer></script>
     <script src="assets/neo-minimal-browser.js?v=20260907-runtime-recovery-v1" defer></script>
     <script src="assets/neo.js?v=20260907-persistent-tabs-v2" defer></script>
