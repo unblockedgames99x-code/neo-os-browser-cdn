@@ -5,7 +5,10 @@
   const serviceWorkerUrl = new URL("sw.js?v=20260828-controller-handoff-v3", pageBase);
   const serviceWorkerScope = pageBase.pathname;
   const proxyBase = new URL("~/", pageBase).pathname;
-  const canRegisterServiceWorker = pageBase.origin === location.origin;
+  const initialServiceWorker = navigator.serviceWorker?.controller || null;
+  const canRegisterServiceWorker = pageBase.origin === location.origin || Boolean(
+    initialServiceWorker && new URL(initialServiceWorker.scriptURL).origin === pageBase.origin
+  );
   const relayCacheKey = "neo:jet:last-relay:lively-v1";
   const controllerReloadKey = "neo:jet:controller-reload:v3";
   const relayHosts = [
@@ -207,6 +210,9 @@
     if (location.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(location.hostname)) {
       throw new Error("Secure browsing compatibility requires HTTPS.");
     }
+
+    const inheritedController = navigator.serviceWorker.controller;
+    if (isExpectedController(inheritedController)) return inheritedController;
 
     const registration = await navigator.serviceWorker.register(serviceWorkerUrl.href, {
       scope: serviceWorkerScope,
