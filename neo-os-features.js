@@ -1481,7 +1481,7 @@
   }
 
   function appInstallerMarkup() {
-    return '<section class="feature-app app-installer" data-app-installer><header class="feature-content-heading"><div><span class="eyebrow">WEB APPS</span><h2>App Installer</h2><p>Give a website a name and icon. NEO will add it to Applications and your desktop.</p></div><span class="status-pill">LOCAL</span></header><div class="installer-layout"><form class="installer-form" data-installer-form><div class="installer-form-heading"><span class="installer-form-icon">' + icon("plus") + '</span><div><strong>Install a website</strong><small>Your installed apps stay on this device.</small></div></div><label><span>App name</span><input type="text" maxlength="48" autocomplete="off" placeholder="Example: School Portal" data-installer-name required /></label><label><span>Website URL</span><input type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://example.com" data-installer-url required /></label><label><span>Icon URL <em>optional</em></span><input type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://example.com/icon.png" data-installer-icon /></label><label><span>Open using</span><select data-installer-mode><option value="relay">NEO relay (recommended)</option><option value="direct">Direct iframe</option></select></label><p class="installer-help">Relay mode uses the same browser connection as NEO Browser. Direct iframe is available for sites that allow embedding.</p><div class="installer-submit-row"><button class="button primary" type="submit">Install &amp; open</button><output data-installer-status aria-live="polite"></output></div></form><section class="installed-sites"><div class="installed-sites-heading"><div><span class="eyebrow">INSTALLED</span><h3>Your website apps</h3></div><span data-custom-app-count></span></div><div class="installed-sites-list" data-custom-app-list></div><div class="feature-state installed-sites-empty" data-custom-app-empty hidden><span class="feature-empty-icon">' + icon("apps") + '</span><strong>No website apps yet</strong><p>Install one using the form.</p></div></section></div></section>';
+    return '<section class="feature-app app-installer" data-app-installer><header class="feature-content-heading"><div><span class="eyebrow">WEB APPS</span><h2>App Installer</h2><p>Give a website a name and icon. NEO will add it to Applications and your desktop.</p></div><span class="status-pill">LOCAL</span></header><div class="installer-layout"><form class="installer-form" data-installer-form><div class="installer-form-heading"><span class="installer-form-icon">' + icon("plus") + '</span><div><strong>Install a website</strong><small>Your installed apps stay on this device.</small></div></div><label><span>App name</span><input type="text" maxlength="48" autocomplete="off" placeholder="Example: School Portal" data-installer-name required /></label><label><span>Website URL</span><input type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://example.com" data-installer-url required /></label><label><span>Icon URL <em>optional</em></span><input type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://example.com/icon.png" data-installer-icon /></label><p class="installer-help">Installed websites and every link they open use the NEO web proxy.</p><div class="installer-submit-row"><button class="button primary" type="submit">Install &amp; open</button><output data-installer-status aria-live="polite"></output></div></form><section class="installed-sites"><div class="installed-sites-heading"><div><span class="eyebrow">INSTALLED</span><h3>Your website apps</h3></div><span data-custom-app-count></span></div><div class="installed-sites-list" data-custom-app-list></div><div class="feature-state installed-sites-empty" data-custom-app-empty hidden><span class="feature-empty-icon">' + icon("apps") + '</span><strong>No website apps yet</strong><p>Install one using the form.</p></div></section></div></section>';
   }
 
   function mountAppInstaller(body) {
@@ -1515,7 +1515,7 @@
         var url = document.createElement("small");
         url.textContent = app.sourceUrl;
         var mode = document.createElement("em");
-        mode.textContent = app.launchMode === "direct" ? "DIRECT IFRAME" : "NEO RELAY";
+        mode.textContent = "NEO WEB PROXY";
         copy.append(name, url, mode);
         var actions = document.createElement("span");
         actions.className = "installed-site-actions";
@@ -1545,10 +1545,9 @@
           title: root.querySelector("[data-installer-name]").value,
           url: root.querySelector("[data-installer-url]").value,
           icon: root.querySelector("[data-installer-icon]").value,
-          mode: root.querySelector("[data-installer-mode]").value
+          mode: "relay"
         });
         form.reset();
-        root.querySelector("[data-installer-mode]").value = "relay";
         setStatus(app.title + " installed and opened.", false);
         notify("App installed", app.title + " is ready on your desktop.", "apps");
         render();

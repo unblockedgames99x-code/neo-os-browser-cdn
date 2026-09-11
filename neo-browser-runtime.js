@@ -2106,6 +2106,13 @@
   window.NEO_BROWSER_ENGINE = {
     proxyOrigin: NEXTNODE_PROXY_ORIGIN,
     warm: getRuntime,
+    async proxyUrl(value) {
+      const target = normalizeDestination(value);
+      if (!externalDestination(target)) throw new TypeError("Only http and https pages can use the web proxy.");
+      const runtime = await getRuntime();
+      await ensureNavigationTransport(target);
+      return runtime.routeFor(target);
+    },
     async openQuery(options) {
       if (!options?.container) throw new Error("The web app has no page container.");
       const target = normalizeDestination(options.target || options.query);

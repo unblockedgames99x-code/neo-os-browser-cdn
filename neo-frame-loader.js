@@ -30,6 +30,20 @@
       .replace(/>/g, "&gt;");
   }
 
+  function deferExternalEmbeds(source, sourceUrl, baseUrl) {
+    var sourceOrigin = new URL(sourceUrl).origin;
+    return String(source || "").replace(/<(iframe|embed|object)\b[^>]*>/gi, function (tag, tagName) {
+      var attribute = String(tagName).toLowerCase() === "object" ? "data" : "src";
+      var pattern = new RegExp("\\b" + attribute + "\\s*=\\s*([\"'])([^\"']+)\\1", "i");
+      var match = tag.match(pattern);
+      if (!match) return tag;
+      var target;
+      try { target = new URL(match[2], baseUrl); } catch (_error) { return tag; }
+      if (!/^(?:https?:)$/i.test(target.protocol) || target.origin === sourceOrigin) return tag;
+      return tag.replace(match[0], attribute + '="about:blank" data-neo-proxy-src="' + escapeAttribute(target.href) + '"');
+    });
+  }
+
   function prepareDocument(source, sourceUrl) {
     var baseUrl = new URL("./", sourceUrl).href;
     var html = String(source || "");
@@ -38,12 +52,14 @@
     html = html.replace(/<meta\b[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/gi, "");
     html = html.replace(/<script\b(?=[^>]*\bsrc\s*=\s*["']\/ad-cleanup\.js(?:[?#][^"']*)?["'])[^>]*>\s*<\/script>/gi, "");
     var sourceBase = html.match(/<base\b[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>/i);
+    var documentBase = sourceBase ? new URL(sourceBase[1], baseUrl).href : baseUrl;
     if (sourceBase && !/^(?:https?:|data:|blob:)/i.test(sourceBase[1])) {
       html = html.replace(
         sourceBase[0],
-        '<base href="' + escapeAttribute(new URL(sourceBase[1], baseUrl).href) + '" target="_self">'
+        '<base href="' + escapeAttribute(documentBase) + '" target="_self">'
       );
     }
+    html = deferExternalEmbeds(html, sourceUrl, documentBase);
     var hasAssetBase = /<base\b[^>]*\bhref\s*=/i.test(html);
     var audioRuntime = !/\/music-(?:local|v2)\//i.test(sourceUrl)
       ? '<script src="' + escapeAttribute(resolveUrl("./neo-audio-spectrum-bridge.js?v=20260909-all-audio-v1")) + '"><\/script>'
@@ -60,9 +76,12 @@
     ) {
       networkRuntime = '<script src="' + escapeAttribute(resolveUrl("./neo-runner-network.js?v=20260831-fast-full-stream-v5")) + '"><\/script>';
     }
+    var linkProxyRuntime = /\/NEO-BROWSER\//i.test(sourceUrl)
+      ? ""
+      : '<script id="neo-link-proxy-runtime" src="' + escapeAttribute(resolveUrl("./neo-link-proxy.js?v=20260911-all-links-v1")) + '"><\/script>';
     var injection = (hasAssetBase ? "" : '<base href="' + escapeAttribute(baseUrl) + '" target="_self">') +
       '<meta name="neo-source-url" content="' + escapeAttribute(sourceUrl) + '">' +
-      '<meta name="neo-runner" content="nested">' + adShieldRuntime + audioRuntime + networkRuntime;
+      '<meta name="neo-runner" content="nested">' + linkProxyRuntime + adShieldRuntime + audioRuntime + networkRuntime;
     if (/<head(?:\s[^>]*)?>/i.test(html)) {
       return html.replace(/<head(?:\s[^>]*)?>/i, function (head) {
         return head + injection;

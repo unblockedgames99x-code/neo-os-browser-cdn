@@ -276,7 +276,8 @@
       f.setAttribute('allow','autoplay; fullscreen; picture-in-picture; clipboard-read; clipboard-write; encrypted-media; gamepad');
       f.setAttribute('allowfullscreen','');
       const policy='<meta http-equiv="Content-Security-Policy" content="default-src https: http: data: blob:; script-src https: http: data: blob: \'unsafe-inline\' \'unsafe-eval\'; style-src https: http: data: blob: \'unsafe-inline\'; img-src https: http: data: blob:; media-src https: http: data: blob:; font-src https: http: data: blob:; connect-src https: http: wss: ws: data: blob:; worker-src https: http: data: blob:; frame-src https: http: data: blob:; form-action https: http:;">';
-      const render=()=>{f.srcdoc=policy+input.value;};
+      const bridge='<meta name="neo-source-url" content="https://neo-preview.invalid/"><script src="'+new URL('./neo-link-proxy.js?v=20260911-all-links-v1',document.baseURI).href.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'"><\/script>';
+      const render=()=>{f.srcdoc=policy+bridge+input.value;};
       const reload=button('Reload',render,actions);
       reload.title='Reload the current editor contents';
       const maximize=button('Maximize',()=>{

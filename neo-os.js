@@ -501,7 +501,6 @@
   }
 
   function customAppRoute(url, mode) {
-    if (mode === "direct") return url;
     var browserRoute = localConfig && localConfig.browser ? localConfig.browser : "./NEO-BROWSER/index.html";
     try {
       var route = new URL(browserRoute, document.baseURI);
@@ -520,14 +519,14 @@
     if (!/^custom-app-[a-z0-9_-]+$/i.test(id) || !title) return null;
     var url;
     try { url = normalizeCustomAppUrl(record.url); } catch (error) { return null; }
-    var mode = record.mode === "direct" ? "direct" : "relay";
+    var mode = "relay";
     var icon = safeCustomAppIcon(record.icon) || "apps";
     var host = "Website";
     try { host = new URL(url).hostname.replace(/^www\./, "") || host; } catch (error) {}
     return {
       id: id,
       title: title,
-      subtitle: host + (mode === "direct" ? " · Direct embed" : " · NEO relay"),
+      subtitle: host + " · NEO web proxy",
       icon: icon,
       route: customAppRoute(url, mode),
       sourceUrl: url,
@@ -1296,7 +1295,7 @@
 
   function interfaceStyleScopeForApp(app) {
     if (!app) return "shell";
-    if (app.custom && app.launchMode === "relay") return "bridge";
+    if (app.custom) return "bridge";
     if (["browser", "stream", "chat", "discord", "youtube-app", "neo-cloud", "nowgg", "neo-ai"].indexOf(app.id) !== -1) return "bridge";
     if (["skins", "vscode", "terminal"].indexOf(app.id) !== -1) return "native";
     if (app.template || app.lazy || app.runtime) return "native";
@@ -2796,7 +2795,7 @@
         document.head.appendChild(style);
       }
       var script = document.createElement("script");
-      script.src = "./neo-os-features.js?v=20260910-app-installer-v2&hover=bridge-v1";
+      script.src = "./neo-os-features.js?v=20260911-proxy-only-v3&hover=bridge-v1";
       script.async = true;
       script.onload = function () {
         if (!window.NEO_FEATURES) {
@@ -2847,7 +2846,7 @@
       var existing = document.getElementById("neo-browse-runtime-script");
       var script = existing || document.createElement("script");
       script.id = "neo-browse-runtime-script";
-      script.src = "./neo-browser-runtime.js?v=20260910-nextnode-proxy-v1";
+      script.src = "./neo-browser-runtime.js?v=20260911-all-links-v2";
       script.async = true;
       script.onload = function () {
         if (!window.NEO_BROWSER_ENGINE) {
@@ -3135,7 +3134,7 @@
     function openTarget(targetHref, label) {
       var target;
       try { target = new URL(targetHref); } catch (error) { return; }
-      if (target.protocol !== "https:") return;
+      if (target.protocol !== "https:" && target.protocol !== "http:") return;
       currentQuery = label || target.hostname;
       currentTarget = target.href;
       input.value = currentQuery;
@@ -4525,7 +4524,7 @@
   }
 
   function mountFrame(app, body) {
-    var browserBacked = app.id === "browser" || Boolean(app.custom && app.launchMode === "relay");
+    var browserBacked = app.id === "browser" || Boolean(app.custom);
     if (browserBacked && location.protocol === "file:") {
       body.innerHTML = '<div class="feature-loader is-error" role="alert"><strong>Browser needs the NEO web runtime</strong><p>Tabs and website loading require the local secure context; they cannot run from a raw file.</p><a class="button primary" data-browser-runtime-link>Open working NEO OS</a></div>';
       var browserRuntimeLink = body.querySelector("[data-browser-runtime-link]");
@@ -4708,7 +4707,7 @@
         fallback.classList.add("is-visible");
       }, 9000);
       var frameLoad = window.NEOFrameLoader
-        ? window.NEOFrameLoader.load(frame, app.route)
+        ? window.NEOFrameLoader.load(frame, app.route, { forceFetch: !browserBacked })
         : Promise.resolve().then(function () { frame.src = app.route; });
       frameLoad.catch(function (error) {
         if (error && error.name === "AbortError") return;
@@ -4794,6 +4793,114 @@
       browser.dispatchEvent(new CustomEvent("neo-browser-open", { detail: { target: target, label: label || "Web page" } }));
     });
     return win;
+  }
+
+  function normalizedProxyTarget(value) {
+    try {
+      var url = new URL(String(value || ""), document.baseURI);
+      if (url.protocol !== "http:" && url.protocol !== "https:") return "";
+      url.username = "";
+      url.password = "";
+      return url.href;
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  function isShellOwnedUrl(value) {
+    var target;
+    try { target = new URL(value, document.baseURI); } catch (_error) { return false; }
+    var candidates = [document.baseURI, location.href];
+    if (localConfig) {
+      ["assetBase", "music", "browser", "gamesCatalog", "gamesCovers", "support", "unavailable"].forEach(function (key) {
+        if (localConfig[key]) candidates.push(localConfig[key]);
+      });
+    }
+    return candidates.some(function (candidate) {
+      try { return new URL(candidate, document.baseURI).origin === target.origin; } catch (_error) { return false; }
+    });
+  }
+
+  function proxyableExternalTarget(value) {
+    var target = normalizedProxyTarget(value);
+    return target && !isShellOwnedUrl(target) ? target : "";
+  }
+
+  function ownsFrameWindow(source) {
+    return Array.prototype.some.call(document.querySelectorAll("iframe"), function (frame) {
+      try { return frame.contentWindow === source; } catch (_error) { return false; }
+    });
+  }
+
+  function handleProxyBridgeMessage(event) {
+    var data = event.data;
+    if (!data || (data.type !== "neo-shell:proxy-open" && data.type !== "neo-shell:proxy-embed")) return;
+    if (!ownsFrameWindow(event.source)) return;
+    var target = normalizedProxyTarget(data.href);
+    if (!target) return;
+    if (data.type === "neo-shell:proxy-open") {
+      openBrowserTarget(target, data.label || "Web page");
+      return;
+    }
+    var reply = function (payload) {
+      try {
+        event.source.postMessage(Object.assign({
+          type: "neo-shell:proxy-embed-result",
+          id: String(data.id || "")
+        }, payload), "*");
+      } catch (_error) {}
+    };
+    loadBrowseRuntime().then(function (engine) {
+      if (!engine || typeof engine.proxyUrl !== "function") throw new Error("The web proxy is unavailable.");
+      return engine.proxyUrl(target);
+    }).then(function (route) {
+      reply({ ok: true, route: route });
+    }).catch(function () {
+      reply({ ok: false, route: "" });
+    });
+  }
+
+  function installProxyBridgeInFrame(frame) {
+    if (!frame || frame.closest(".neo-browser-runtime")) return;
+    var windowHost = frame.closest(".neo-window");
+    var app = windowHost && apps[windowHost.dataset.appId];
+    if (app && (app.id === "browser" || app.custom)) return;
+    try {
+      var frameDocument = frame.contentDocument;
+      if (!frameDocument || !frameDocument.documentElement || !frameDocument.head) return;
+      if (!frameDocument.querySelector('meta[name="neo-source-url"]')) {
+        var sourceMeta = frameDocument.createElement("meta");
+        sourceMeta.name = "neo-source-url";
+        sourceMeta.content = frame.dataset.route || frame.src || frameDocument.baseURI;
+        frameDocument.head.prepend(sourceMeta);
+      }
+      if (frameDocument.getElementById("neo-link-proxy-runtime")) return;
+      var script = frameDocument.createElement("script");
+      script.id = "neo-link-proxy-runtime";
+      script.src = new URL("./neo-link-proxy.js?v=20260911-all-links-v1", document.baseURI).href;
+      frameDocument.head.prepend(script);
+    } catch (_error) {
+      // Cross-origin frames are already handled by the NEO Browser proxy.
+    }
+  }
+
+  function watchProxyFrames() {
+    function wire(frame) {
+      if (!frame || frame.dataset.neoProxyBridgeWired === "true") return;
+      frame.dataset.neoProxyBridgeWired = "true";
+      frame.addEventListener("load", function () { installProxyBridgeInFrame(frame); });
+      installProxyBridgeInFrame(frame);
+    }
+    document.querySelectorAll("iframe").forEach(wire);
+    new MutationObserver(function (records) {
+      records.forEach(function (record) {
+        record.addedNodes.forEach(function (node) {
+          if (!node || node.nodeType !== 1) return;
+          if (node.matches && node.matches("iframe")) wire(node);
+          if (node.querySelectorAll) node.querySelectorAll("iframe").forEach(wire);
+        });
+      });
+    }).observe(document.documentElement, { childList: true, subtree: true });
   }
 
   function openBrowserPage(page, label) {
@@ -7434,6 +7541,18 @@
   }
 
   function bindGlobalEvents() {
+    window.addEventListener("message", handleProxyBridgeMessage);
+    watchProxyFrames();
+    document.addEventListener("click", function (event) {
+      if (event.defaultPrevented || event.button > 0) return;
+      var link = event.target && event.target.closest ? event.target.closest("a[href], area[href]") : null;
+      if (!link || link.hasAttribute("download") || link.closest(".neo-browser-runtime")) return;
+      var target = proxyableExternalTarget(link.href || link.getAttribute("href"));
+      if (!target) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      openBrowserTarget(target, link.textContent || link.getAttribute("aria-label") || "Web page");
+    }, true);
     window.addEventListener("neo-media-state", function (event) {
       var detail = event.detail || {};
       var source = "play:" + String(detail.source || "media");
