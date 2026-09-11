@@ -13,6 +13,18 @@
     "scramjet/libcurl.mjs?v=20260910-nextnode-proxy-v1",
     pageBase,
   ).href;
+  const bareMuxRuntimeUrl = new URL(
+    "scramjet/baremux.js?v=20260910-fast-browser-v2",
+    pageBase,
+  ).href;
+  const jetCoreUrl = new URL(
+    "jet/jet.core.js?v=20260910-fast-browser-v2",
+    pageBase,
+  ).href;
+  const jetApiUrl = new URL(
+    "jet/jet.api.js?v=20260910-fast-browser-v2",
+    pageBase,
+  ).href;
   if (location.href === "about:srcdoc") {
     const NativeURL = globalThis.URL;
     globalThis.URL = class URL extends NativeURL {
@@ -41,6 +53,7 @@
   ];
 
   let initializePromise = null;
+  let runtimePromise = null;
   let serviceWorkerPromise = null;
   let controller = null;
   let proxyFrame = null;
@@ -58,6 +71,47 @@
         timer = window.setTimeout(() => reject(new Error(message)), milliseconds);
       }),
     ]).finally(() => window.clearTimeout(timer));
+  }
+
+  function loadScript(url, ready) {
+    if (ready()) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const existing = Array.from(document.scripts).find((script) => script.dataset.neoRuntime === url);
+      const script = existing || document.createElement("script");
+      const finish = () => ready()
+        ? resolve()
+        : reject(new Error(`The browser engine did not start: ${new URL(url).pathname}`));
+      script.addEventListener("load", finish, { once: true });
+      script.addEventListener("error", () => {
+        script.remove();
+        reject(new Error(`The browser engine could not load: ${new URL(url).pathname}`));
+      }, { once: true });
+      if (!existing) {
+        script.src = url;
+        script.async = true;
+        script.dataset.neoRuntime = url;
+        document.head.appendChild(script);
+      }
+    });
+  }
+
+  function ensureProxyRuntime() {
+    if (globalThis.$scramjetController?.Controller && globalThis.BareMux?.BareClient) {
+      return Promise.resolve();
+    }
+    if (!runtimePromise) {
+      runtimePromise = Promise.all([
+        loadScript(bareMuxRuntimeUrl, () => Boolean(globalThis.BareMux?.BareClient)),
+        loadScript(jetCoreUrl, () => Boolean(globalThis.$scramjet)),
+      ]).then(() => loadScript(
+        jetApiUrl,
+        () => Boolean(globalThis.$scramjetController?.Controller),
+      )).catch((error) => {
+        runtimePromise = null;
+        throw error;
+      });
+    }
+    return runtimePromise;
   }
 
   function supports(value) {
@@ -390,18 +444,23 @@
     const sockets = new Map();
     let nextId = 0;
 
-    const call = (type, detail = {}, transfer = []) => new Promise((resolve, reject) => {
+    const call = (type, detail = {}, transfer = [], timeoutMs = 15000) => {
       const id = ++nextId;
-      const timer = window.setTimeout(() => {
-        pending.delete(id);
-        reject(new Error("The background network worker timed out."));
-      }, 15000);
-      pending.set(id, {
-        resolve(value) { window.clearTimeout(timer); resolve(value); },
-        reject(error) { window.clearTimeout(timer); reject(error); },
+      const promise = new Promise((resolve, reject) => {
+        const timer = window.setTimeout(() => {
+          pending.delete(id);
+          worker.postMessage({ type: "cancel", requestId: id });
+          reject(new Error("The background network worker timed out."));
+        }, timeoutMs);
+        pending.set(id, {
+          resolve(value) { window.clearTimeout(timer); resolve(value); },
+          reject(error) { window.clearTimeout(timer); reject(error); },
+        });
+        worker.postMessage({ id, type, transportUrl, relay, ...detail }, transfer);
       });
-      worker.postMessage({ id, type, transportUrl, relay, ...detail }, transfer);
-    });
+      promise.neoRequestId = id;
+      return promise;
+    };
     worker.addEventListener("message", (event) => {
       const message = event.data || {};
       if (message.event && message.socketId) {
@@ -432,18 +491,36 @@
     return {
       ready: true,
       async init() {},
-      async request(url, method, body, headers) {
+      async request(url, method, body, headers, signal) {
         let payload = null;
         if (body instanceof ReadableStream) payload = await new Response(body).arrayBuffer();
         else if (body instanceof ArrayBuffer) payload = body;
         else if (ArrayBuffer.isView(body)) payload = body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength);
         else if (body != null) payload = new TextEncoder().encode(String(body)).buffer;
-        const value = await call("fetch", {
+        const requestPromise = call("fetch", {
           url: String(url),
           method,
           body: payload,
           headers: headersObject(headers),
-        }, payload ? [payload] : []);
+        }, payload ? [payload] : [], 45000);
+        let abortRequest = null;
+        if (signal) {
+          abortRequest = () => worker.postMessage({
+            type: "cancel",
+            requestId: requestPromise.neoRequestId,
+          });
+          if (signal.aborted) {
+            abortRequest();
+            throw new DOMException("The request was cancelled.", "AbortError");
+          }
+          signal.addEventListener("abort", abortRequest, { once: true });
+        }
+        let value;
+        try {
+          value = await requestPromise;
+        } finally {
+          if (abortRequest) signal.removeEventListener("abort", abortRequest);
+        }
         return {
           ...value,
           headers: rawHeaderEntries(value.headers, new Headers()),
@@ -501,6 +578,7 @@
   async function initialize() {
     if (initializePromise) return initializePromise;
     initializePromise = (async () => {
+      await ensureProxyRuntime();
       if (!globalThis.$scramjetController?.Controller) throw new Error("The Jet runtime did not load.");
       await ensureServiceWorker();
 
@@ -553,6 +631,35 @@
     window.dispatchEvent(new CustomEvent("neo:scramjet:urlchange", { detail: { url } }));
   }
 
+  function installImageRecovery(frameWindow) {
+    let frameDocument;
+    try { frameDocument = frameWindow?.document; } catch { return; }
+    if (!frameDocument?.documentElement || frameDocument.__neoImageRecovery) return;
+    frameDocument.__neoImageRecovery = true;
+
+    const retry = (image) => {
+      const attempts = Number(image.dataset.neoImageRetries || 0);
+      const source = image.currentSrc || image.src || image.getAttribute("src") || "";
+      if (attempts >= 2 || !source || /^(?:data:|blob:|about:)/i.test(source)) return;
+      image.dataset.neoImageRetries = String(attempts + 1);
+      window.setTimeout(() => {
+        if (!image.isConnected) return;
+        try {
+          const retryUrl = new URL(source, frameDocument.baseURI);
+          retryUrl.searchParams.set("__neo_asset_retry", String(attempts + 1));
+          image.src = retryUrl.href;
+        } catch {}
+      }, 180 * (attempts + 1));
+    };
+
+    frameDocument.addEventListener("error", (event) => {
+      if (event.target?.tagName === "IMG") retry(event.target);
+    }, true);
+    frameDocument.querySelectorAll("img[src]").forEach((image) => {
+      if (image.complete && image.naturalWidth === 0) retry(image);
+    });
+  }
+
   function attachFrame(frameElement) {
     if (proxyFrame && attachedFrame === frameElement) return proxyFrame;
     proxyFrame = controller.createFrame(frameElement);
@@ -560,6 +667,7 @@
     frameElement.addEventListener("load", () => {
       if (!active || !isProxyUrl(frameElement.src)) return;
       try { globalThis.NEOAdShield?.install(frameElement.contentWindow); } catch {}
+      installImageRecovery(frameElement.contentWindow);
       emitUrl(originalUrl());
       let title = "";
       try { title = frameElement.contentDocument?.title || ""; } catch {}
@@ -594,9 +702,13 @@
     if (attachedFrame) delete attachedFrame.dataset.neoScramjet;
   }
 
-  window.setInterval(() => {
-    if (active) emitUrl(originalUrl());
-  }, 500);
+  let urlPollTimer = 0;
+  const pollVisibleUrl = () => {
+    if (active && !document.hidden) emitUrl(originalUrl());
+    urlPollTimer = window.setTimeout(pollVisibleUrl, document.hidden ? 5000 : 750);
+  };
+  urlPollTimer = window.setTimeout(pollVisibleUrl, 750);
+  window.addEventListener("pagehide", () => window.clearTimeout(urlPollTimer), { once: true });
 
   globalThis.NeoScramjet = Object.freeze({
     proxyOrigin: NEXTNODE_PROXY_ORIGIN,
@@ -608,6 +720,15 @@
     allowRelay: (value) => relayCandidates().includes(normalizeRelay(value)),
     get active() { return active; },
   });
+
+  const warmRuntimeFromIntent = (event) => {
+    if (!event.target?.closest?.("#url, #ntSearch, #newtab, #go, #ntSearchBtn")) return;
+    document.removeEventListener("pointerdown", warmRuntimeFromIntent, true);
+    document.removeEventListener("focusin", warmRuntimeFromIntent, true);
+    ensureProxyRuntime().catch(() => {});
+  };
+  document.addEventListener("pointerdown", warmRuntimeFromIntent, true);
+  document.addEventListener("focusin", warmRuntimeFromIntent, true);
 
   // initialize() is intentionally started by go(). Prewarming here used to
   // download and compile the full proxy runtime even on an untouched new tab,

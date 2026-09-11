@@ -2,6 +2,7 @@
 
 let transportPromise = null;
 const sockets = new Map();
+const requestControllers = new Map();
 
 function errorMessage(error) {
   return error && (error.stack || error.message) ? String(error.stack || error.message) : String(error);
@@ -41,6 +42,11 @@ async function getTransport(transportUrl, relay) {
 self.addEventListener("message", async (event) => {
   const message = event.data || {};
   const id = message.id;
+  if (message.type === "cancel") {
+    requestControllers.get(message.requestId)?.abort();
+    requestControllers.delete(message.requestId);
+    return;
+  }
   try {
     const transport = await getTransport(message.transportUrl, message.relay);
     if (message.type === "init") {
@@ -48,21 +54,34 @@ self.addEventListener("message", async (event) => {
       return;
     }
     if (message.type === "fetch") {
-      const response = await transport.request(
-        new URL(message.url),
-        message.method,
-        message.body || null,
-        message.headers || {},
-        null
-      );
-      const body = await readBody(response.body);
-      const value = {
-        body,
-        headers: response.rawHeaders || response.headers || [],
-        status: response.status,
-        statusText: response.statusText || "",
-      };
-      self.postMessage({ id, ok: true, value }, body ? [body] : []);
+      const controller = new AbortController();
+      requestControllers.set(id, controller);
+      try {
+        const response = await transport.request(
+          new URL(message.url),
+          message.method,
+          message.body || null,
+          message.headers || {},
+          controller.signal
+        );
+        const headers = response.rawHeaders || response.headers || [];
+        const value = {
+          body: response.body,
+          headers,
+          status: response.status,
+          statusText: response.statusText || "",
+        };
+        if (response.body instanceof ReadableStream) {
+          try {
+            self.postMessage({ id, ok: true, value }, [response.body]);
+            return;
+          } catch (_error) {}
+        }
+        const body = await readBody(response.body);
+        self.postMessage({ id, ok: true, value: { ...value, body } }, body ? [body] : []);
+      } finally {
+        requestControllers.delete(id);
+      }
       return;
     }
     if (message.type === "connect") {

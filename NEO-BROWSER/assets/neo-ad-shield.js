@@ -155,15 +155,6 @@
     try { (doc.head || doc.documentElement).appendChild(style); } catch (_error) {}
 
     var NativeMutationObserver = target.MutationObserver;
-    if (NativeMutationObserver && doc.documentElement) {
-      try {
-        new NativeMutationObserver(function (records) {
-          records.forEach(function (record) {
-            record.addedNodes.forEach(function (node) { clean(node); });
-          });
-        }).observe(doc.documentElement, { childList: true, subtree: true });
-      } catch (_error) {}
-    }
 
     var nativeFetch = target.fetch;
     if (typeof nativeFetch === "function") {
@@ -238,15 +229,41 @@
     }
 
     doc.querySelectorAll("iframe,frame").forEach(protectFrame);
+    var pendingNodes = new Set();
+    var cleanupScheduled = false;
+
+    function queueCleanup(node) {
+      if (!node || node.nodeType !== 1) return;
+      for (var existing of pendingNodes) {
+        if (existing.contains(node)) return;
+        if (node.contains(existing)) pendingNodes.delete(existing);
+      }
+      pendingNodes.add(node);
+      if (cleanupScheduled) return;
+      cleanupScheduled = true;
+      var flush = function () {
+        cleanupScheduled = false;
+        var batch = Array.from(pendingNodes);
+        pendingNodes.clear();
+        batch.forEach(function (root) {
+          if (!root.isConnected) return;
+          if (/^(?:IFRAME|FRAME)$/.test(root.tagName)) protectFrame(root);
+          if (root.querySelectorAll) root.querySelectorAll("iframe,frame").forEach(protectFrame);
+          clean(root);
+        });
+      };
+      if (typeof target.requestIdleCallback === "function") {
+        target.requestIdleCallback(flush, { timeout: 180 });
+      } else {
+        target.setTimeout(flush, 32);
+      }
+    }
+
     if (NativeMutationObserver && doc.documentElement) {
       try {
         new NativeMutationObserver(function (records) {
           records.forEach(function (record) {
-            record.addedNodes.forEach(function (node) {
-              if (!node || node.nodeType !== 1) return;
-              if (/^(?:IFRAME|FRAME)$/.test(node.tagName)) protectFrame(node);
-              if (node.querySelectorAll) node.querySelectorAll("iframe,frame").forEach(protectFrame);
-            });
+            record.addedNodes.forEach(queueCleanup);
           });
         }).observe(doc.documentElement, { childList: true, subtree: true });
       } catch (_error) {}
