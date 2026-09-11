@@ -556,6 +556,7 @@
     attachedFrame = frameElement;
     frameElement.addEventListener("load", () => {
       if (!active || !isProxyUrl(frameElement.src)) return;
+      try { globalThis.NEOAdShield?.install(frameElement.contentWindow); } catch {}
       emitUrl(originalUrl());
       let title = "";
       try { title = frameElement.contentDocument?.title || ""; } catch {}
