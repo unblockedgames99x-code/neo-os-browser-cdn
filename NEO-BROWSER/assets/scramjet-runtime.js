@@ -2,15 +2,15 @@
   "use strict";
 
   const pageBase = new URL("./", document.baseURI);
-  const serviceWorkerUrl = new URL("sw.js?v=20260828-controller-handoff-v3", pageBase);
+  const serviceWorkerUrl = new URL("sw.js?v=20260910-nextnode-proxy-v1", pageBase);
   const serviceWorkerScope = pageBase.pathname;
   const proxyBase = new URL("~/", pageBase).pathname;
   const bareMuxWorkerUrl = new URL(
-    "scramjet/baremux-worker.js?v=20260910-chromebook-stack-v1",
+    "scramjet/baremux-worker.js?v=20260910-nextnode-proxy-v1",
     pageBase,
   ).href;
   const bareMuxTransportUrl = new URL(
-    "scramjet/libcurl.mjs?v=20260910-chromebook-stack-v1",
+    "scramjet/libcurl.mjs?v=20260910-nextnode-proxy-v1",
     pageBase,
   ).href;
   if (location.href === "about:srcdoc") {
@@ -25,9 +25,12 @@
   const canRegisterServiceWorker = pageBase.origin === location.origin || Boolean(
     initialServiceWorker && new URL(initialServiceWorker.scriptURL).origin === pageBase.origin
   );
-  const relayCacheKey = "neo:jet:last-relay:lively-v1";
+  const NEXTNODE_PROXY_ORIGIN = "https://nextnode9124.b-cdn.net/";
+  const NEXTNODE_WISP_RELAY = "wss://nextnode9124.b-cdn.net/w/";
+  const relayCacheKey = "neo:jet:last-relay:nextnode-v1";
   const controllerReloadKey = "neo:jet:controller-reload:v3";
   const relayHosts = [
+    NEXTNODE_WISP_RELAY,
     "wss://support.pired.org/lively/",
     "wss://girlspreples.org/wi/",
     "cdn.northstreetumc.org",
@@ -596,6 +599,7 @@
   }, 500);
 
   globalThis.NeoScramjet = Object.freeze({
+    proxyOrigin: NEXTNODE_PROXY_ORIGIN,
     supports,
     isProxyUrl,
     go,
