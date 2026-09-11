@@ -3,7 +3,7 @@
   <title>NEO Browser</title>
   <script><![CDATA[
     var browserFrame = null;
-    var workerUrl = new URL('sw.js?v=20260828-controller-handoff-v3', location.href).href;
+    var workerUrl = new URL('sw.js?v=20260910-nextnode-proxy-v1', location.href).href;
     var workerScope = new URL('./', location.href).pathname;
     var controllerReloadKey = 'neo:browser-wrapper-controller:v1';
 
@@ -93,7 +93,7 @@
 
     window.addEventListener('load', function () {
       var host = document.getElementById('host');
-      ensureBrowserScope().then(function () { return fetch(new URL('index.html?build=cdn-scope-v1', location.href).href, {
+      ensureBrowserScope().then(function () { return fetch(new URL('index.html?build=nextnode-proxy-v1', location.href).href, {
         cache: 'force-cache',
         credentials: 'omit'
       }); })
