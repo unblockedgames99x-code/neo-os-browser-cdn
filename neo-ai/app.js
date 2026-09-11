@@ -42,6 +42,7 @@
   var AUTO_COWORK_MODELS = ["gpt-5-6-luna", "qwen3.8-max", "grok-4-3"];
   var REFERENCE_API_URL = "https://photon.girlspreples.org/api/v1/q";
   var ANONYMOUS_CHAT_URL = "https://text.pollinations.ai/openai";
+  var ANONYMOUS_TEXT_URL = "https://text.pollinations.ai/";
   var IMAGE_API_URL = "https://image.pollinations.ai/prompt/";
   var SEARCH_URL = "https://api.duckduckgo.com/";
   var MAX_IMAGE_BYTES = 4 * 1024 * 1024;
@@ -531,6 +532,50 @@
     catch (_error) { var fallback = new Error("Generation stopped"); fallback.name = "AbortError"; return fallback; }
   }
 
+  function retryableStatus(status) {
+    return status === 408 || status === 425 || status === 429 || status >= 500;
+  }
+
+  function retryPause(milliseconds, signal) {
+    return new Promise(function (resolve, reject) {
+      if (signal.aborted) { reject(abortError()); return; }
+      var timer = setTimeout(done, milliseconds);
+      function done() {
+        signal.removeEventListener("abort", cancelled);
+        resolve();
+      }
+      function cancelled() {
+        clearTimeout(timer);
+        signal.removeEventListener("abort", cancelled);
+        reject(abortError());
+      }
+      signal.addEventListener("abort", cancelled, { once: true });
+    });
+  }
+
+  async function fetchWithTimeout(url, options, signal, timeoutMilliseconds) {
+    if (signal.aborted) throw abortError();
+    var controller = new AbortController();
+    var timedOut = false;
+    var timeout = setTimeout(function () { timedOut = true; controller.abort(); }, timeoutMilliseconds);
+    function cancel() { controller.abort(); }
+    signal.addEventListener("abort", cancel, { once: true });
+    try {
+      return await fetch(url, Object.assign({}, options, { signal: controller.signal }));
+    } catch (error) {
+      if (signal.aborted) throw abortError();
+      if (timedOut) {
+        var timeoutError = new Error("The AI route took too long to respond.");
+        timeoutError.retryable = true;
+        throw timeoutError;
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", cancel);
+    }
+  }
+
   async function requestReference(messages, modelId, signal, onProgress) {
     var model = getModel(modelId);
     var relayController = new AbortController();
@@ -608,30 +653,97 @@
   }
 
   async function requestAnonymous(messages, signal, onProgress) {
-    if (signal.aborted) throw abortError();
-    var response = await fetch(ANONYMOUS_CHAT_URL, {
-      method: "POST",
-      mode: "cors",
-      signal: signal,
-      cache: "no-store",
-      credentials: "omit",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: ANONYMOUS_MODEL_ID,
-        messages: messages,
-        stream: false,
-        private: true
-      })
-    });
-    if (!response.ok) throw new Error("The backup AI could not connect (" + response.status + ").");
-    var data = await response.json();
-    var content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-    var answer = Array.isArray(content) ? content.map(function (part) {
-      return typeof part === "string" ? part : (part && (part.text || part.content)) || "";
-    }).join("") : String(content || "");
-    if (!answer.trim()) throw new Error("The backup AI returned an empty response.");
-    if (onProgress) onProgress(answer);
-    return answer;
+    var lastError = null;
+    for (var attempt = 0; attempt < 2; attempt += 1) {
+      if (signal.aborted) throw abortError();
+      try {
+        var response = await fetchWithTimeout(ANONYMOUS_CHAT_URL, {
+          method: "POST",
+          mode: "cors",
+          cache: "no-store",
+          credentials: "omit",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: ANONYMOUS_MODEL_ID,
+            messages: messages,
+            stream: false,
+            private: true
+          })
+        }, signal, 12000);
+        if (!response.ok) {
+          var routeError = new Error("The backup AI could not connect (" + response.status + ").");
+          routeError.status = response.status;
+          throw routeError;
+        }
+        var data = await response.json();
+        var content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+        var answer = Array.isArray(content) ? content.map(function (part) {
+          return typeof part === "string" ? part : (part && (part.text || part.content)) || "";
+        }).join("") : String(content || "");
+        if (!answer.trim()) throw new Error("The backup AI returned an empty response.");
+        if (onProgress) onProgress(answer);
+        return answer;
+      } catch (error) {
+        if (signal.aborted || error.name === "AbortError") throw abortError();
+        lastError = error;
+        var shouldRetry = error.retryable === true || !Number.isFinite(error.status) || retryableStatus(error.status);
+        if (!shouldRetry || attempt === 1) break;
+        await retryPause(650, signal);
+      }
+    }
+    throw lastError || new Error("The backup AI could not connect.");
+  }
+
+  function plainMessageText(content) {
+    if (typeof content === "string") return content;
+    if (!Array.isArray(content)) return String(content || "");
+    return content.map(function (part) {
+      if (typeof part === "string") return part;
+      if (part && part.type === "text") return String(part.text || "");
+      if (part && part.type === "image_url") return "[Image attached]";
+      return "";
+    }).filter(Boolean).join("\n");
+  }
+
+  function anonymousTextPrompt(messages) {
+    var transcript = messages.slice(-10).map(function (message) {
+      var role = message.role === "assistant" ? "Assistant" : message.role === "system" ? "System" : "User";
+      return role + ": " + plainMessageText(message.content);
+    }).join("\n\n");
+    var prompt = "Continue the conversation below as NEO AI. Follow the system instructions and answer the final user message directly.\n\n" + transcript + "\n\nAssistant:";
+    return prompt.length > 2200 ? prompt.slice(prompt.length - 2200) : prompt;
+  }
+
+  async function requestAnonymousText(messages, signal, onProgress) {
+    var prompt = anonymousTextPrompt(messages);
+    var lastError = null;
+    for (var attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        var url = ANONYMOUS_TEXT_URL + encodeURIComponent(prompt) + "?model=" + encodeURIComponent(ANONYMOUS_MODEL_ID) + "&private=true&seed=" + Date.now();
+        var response = await fetchWithTimeout(url, {
+          method: "GET",
+          mode: "cors",
+          cache: "no-store",
+          credentials: "omit"
+        }, signal, 15000);
+        if (!response.ok) {
+          var routeError = new Error("The recovery AI could not connect (" + response.status + ").");
+          routeError.status = response.status;
+          throw routeError;
+        }
+        var answer = String(await response.text() || "").trim();
+        if (!answer) throw new Error("The recovery AI returned an empty response.");
+        if (onProgress) onProgress(answer);
+        return answer;
+      } catch (error) {
+        if (signal.aborted || error.name === "AbortError") throw abortError();
+        lastError = error;
+        var shouldRetry = error.retryable === true || !Number.isFinite(error.status) || retryableStatus(error.status);
+        if (!shouldRetry || attempt === 1) break;
+        await retryPause(650, signal);
+      }
+    }
+    throw lastError || new Error("The recovery AI could not connect.");
   }
 
   async function requestModel(messages, modelId, signal, onProgress) {
@@ -639,7 +751,17 @@
       return await requestReference(messages, modelId, signal, onProgress);
     } catch (relayFailure) {
       if (relayFailure.name === "AbortError") throw relayFailure;
-      return requestAnonymous(messages, signal, onProgress);
+      try {
+        return await requestAnonymous(messages, signal, onProgress);
+      } catch (backupFailure) {
+        if (backupFailure.name === "AbortError") throw backupFailure;
+        try {
+          return await requestAnonymousText(messages, signal, onProgress);
+        } catch (recoveryFailure) {
+          if (recoveryFailure.name === "AbortError") throw recoveryFailure;
+          throw new Error("Every AI route is busy right now. Please try again in a moment.");
+        }
+      }
     }
   }
 
