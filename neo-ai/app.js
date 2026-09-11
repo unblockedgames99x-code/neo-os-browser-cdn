@@ -5,13 +5,13 @@
 
   var STORAGE_KEY = "neo_ai_workspace_v1";
   var DEFAULT_MODEL_ID = "gpt-5-6-luna";
-  var FALLBACK_MODEL_ID = "gpt-5.4-mini";
+  var ANONYMOUS_MODEL_ID = "openai-fast";
   var AI_MODELS = [
-    { id: "gpt-5-6-luna", puterId: "gpt-5.6-luna", name: "GPT 5.6 Luna", provider: "OpenAI", context: 1050000, reasoning: true, vision: true, type: "text" },
-    { id: "gemma-3-12b", puterId: "gemma-3-12b-it", name: "Gemma 3 12B", provider: "Google", context: 131072, vision: true, type: "text" },
+    { id: "gpt-5-6-luna", name: "GPT 5.6 Luna", provider: "OpenAI", context: 1050000, reasoning: true, vision: true, type: "text" },
+    { id: "gemma-3-12b", name: "Gemma 3 12B", provider: "Google", context: 131072, vision: true, type: "text" },
     { id: "llama-4-maverick", name: "Llama 4 Maverick", provider: "Meta", context: 1000000, reasoning: true, vision: true, type: "text" },
-    { id: "grok-4-3", puterId: "grok-4.3", name: "Grok 4.3", provider: "xAI", context: 1000000, reasoning: true, vision: true, type: "text" },
-    { id: "grok-4-6", puterId: "grok-4.6", name: "Grok 4.6", provider: "xAI", context: 256000, reasoning: true, vision: true, type: "text" },
+    { id: "grok-4-3", name: "Grok 4.3", provider: "xAI", context: 1000000, reasoning: true, vision: true, type: "text" },
+    { id: "grok-4-6", name: "Grok 4.6", provider: "xAI", context: 256000, reasoning: true, vision: true, type: "text" },
     { id: "grok-code-fast-1", name: "Grok Code Fast 1", provider: "xAI", context: 256000, reasoning: true, type: "text" },
     { id: "deepseek-v4-flash", name: "DeepSeek V4 Flash", provider: "DeepSeek", context: 1000000, reasoning: true, type: "text" },
     { id: "qwen3.8-max", name: "Qwen 3.8 Max", provider: "Qwen", context: 1000000, reasoning: true, vision: true, type: "text" },
@@ -20,34 +20,34 @@
     { id: "qwen3.6-plus", name: "Qwen 3.6 Plus", provider: "Qwen", context: 1000000, reasoning: true, type: "text" },
     { id: "qwen3.5-plus", name: "Qwen 3.5 Plus", provider: "Qwen", context: 1000000, reasoning: true, vision: true, type: "text" },
     { id: "qwen3.5-omni-plus", name: "Qwen 3.5 Omni Plus", provider: "Qwen", context: 262144, reasoning: true, vision: true, type: "text" },
-    { id: "qwen3-coder-480b", puterId: "qwen3-coder-480b-a35b-instruct", name: "Qwen3 Coder 480B", provider: "Qwen", context: 262144, reasoning: true, type: "text" },
+    { id: "qwen3-coder-480b", name: "Qwen3 Coder 480B", provider: "Qwen", context: 262144, reasoning: true, type: "text" },
     { id: "qwen-image-3.0-pro", name: "Qwen Image 3.0 Pro", provider: "Qwen", type: "image" },
     { id: "qwen-image-2.0-pro", name: "Qwen Image 2.0 Pro", provider: "Qwen", type: "image" },
     { id: "qwen-video", name: "Qwen Video", provider: "Qwen", type: "video" },
-    { id: "seedance-2.0", name: "Seedance 2.0", provider: "ByteDance", type: "video", puterId: "seedance-2-0" },
-    { id: "seedance-2.0-fast", name: "Seedance 2.0 Fast", provider: "ByteDance", type: "video", puterId: "seedance-2-0-mini" },
-    { id: "kimi-k2-6", puterId: "kimi-k2.6", name: "Kimi K2.6", provider: "Moonshot", context: 262144, reasoning: true, type: "text" },
-    { id: "kimi-k2-7-code", puterId: "kimi-k2.7-code", name: "Kimi K2.7 Code", provider: "Moonshot", context: 262144, reasoning: true, type: "text" },
+    { id: "seedance-2.0", name: "Seedance 2.0", provider: "ByteDance", type: "video" },
+    { id: "seedance-2.0-fast", name: "Seedance 2.0 Fast", provider: "ByteDance", type: "video" },
+    { id: "kimi-k2-6", name: "Kimi K2.6", provider: "Moonshot", context: 262144, reasoning: true, type: "text" },
+    { id: "kimi-k2-7-code", name: "Kimi K2.7 Code", provider: "Moonshot", context: 262144, reasoning: true, type: "text" },
     { id: "glm-5.3-flash", name: "GLM 5.3 Flash", provider: "Z.ai", context: 1000000, reasoning: true, vision: true, type: "text" },
-    { id: "nemotron-3.5-lightning", puterId: "nemotron-3.5-lightning", name: "Nemotron 3.5 Lightning", provider: "NVIDIA", context: 262144, reasoning: true, type: "text" },
+    { id: "nemotron-3.5-lightning", name: "Nemotron 3.5 Lightning", provider: "NVIDIA", context: 262144, reasoning: true, type: "text" },
     { id: "deepseek-v4-flash-0731", name: "DeepSeek V4 Flash 0731", provider: "DeepSeek", context: 1000000, reasoning: true, type: "text" },
-    { id: "gemma-4-31b", puterId: "gemma-4-31b-it", name: "Gemma 4 31B", provider: "Google", context: 262144, reasoning: true, vision: true, type: "text" },
+    { id: "gemma-4-31b", name: "Gemma 4 31B", provider: "Google", context: 262144, reasoning: true, vision: true, type: "text" },
     { id: "qwen3.6-27b", name: "Qwen3.6 27B", provider: "Qwen", context: 262144, reasoning: true, type: "text" },
-    { id: "muse-glimmer-30b", puterId: "muse-glimmer-30b", name: "Muse Glimmer 30B", provider: "Meta", context: 131072, type: "text" },
-    { id: "inkling-small", puterId: "inkling-small", name: "Inkling Small", provider: "Thinking Machines", context: 524288, reasoning: true, type: "text" },
+    { id: "muse-glimmer-30b", name: "Muse Glimmer 30B", provider: "Meta", context: 131072, type: "text" },
+    { id: "inkling-small", name: "Inkling Small", provider: "Thinking Machines", context: 524288, reasoning: true, type: "text" },
     { id: "glm-5.2", name: "GLM 5.2", provider: "Z.ai", context: 1000000, reasoning: true, type: "text" },
-    { id: "qwen3.8-2.4t", puterId: "qwen3.8-2.4t-a95b", name: "Qwen3.8 2.4T", provider: "Qwen", context: 1000000, reasoning: true, vision: true, type: "text" }
+    { id: "qwen3.8-2.4t", name: "Qwen3.8 2.4T", provider: "Qwen", context: 1000000, reasoning: true, vision: true, type: "text" }
   ];
   var COWORK_MODEL_IDS = ["gpt-5-6-luna", "grok-4-3", "llama-4-maverick", "qwen3.8-max", "qwen3.5-plus", "grok-code-fast-1", "deepseek-v4-flash", "qwen3.7-plus", "kimi-k2-6"];
   var AUTO_COWORK_MODELS = ["gpt-5-6-luna", "qwen3.8-max", "grok-4-3"];
   var REFERENCE_API_URL = "https://photon.girlspreples.org/api/v1/q";
-  var PUTER_SDK_URL = "https://js.puter.com/v2/";
+  var ANONYMOUS_CHAT_URL = "https://text.pollinations.ai/openai";
+  var IMAGE_API_URL = "https://image.pollinations.ai/prompt/";
   var SEARCH_URL = "https://api.duckduckgo.com/";
   var MAX_IMAGE_BYTES = 4 * 1024 * 1024;
   var MAX_TEXT_BYTES = 1024 * 1024;
   var MAX_STORED_CHATS = 40;
   var activeRequest = null;
-  var puterSdkPromise = null;
   var pendingImages = [];
   var pendingFiles = [];
   var modelFilter = "all";
@@ -607,76 +607,30 @@
     }
   }
 
-  function loadPuterSdk() {
-    if (window.puter && window.puter.ai && typeof window.puter.ai.chat === "function") return Promise.resolve(window.puter);
-    if (puterSdkPromise) return puterSdkPromise;
-    puterSdkPromise = new Promise(function (resolve, reject) {
-      var script = document.querySelector('script[data-neo-puter-sdk]');
-      var timeout = window.setTimeout(function () { reject(new Error("The backup AI took too long to load.")); }, 15000);
-      function finish() {
-        window.clearTimeout(timeout);
-        if (window.puter && window.puter.ai && typeof window.puter.ai.chat === "function") resolve(window.puter);
-        else reject(new Error("The backup AI did not initialize."));
-      }
-      if (!script) {
-        script = document.createElement("script");
-        script.src = PUTER_SDK_URL;
-        script.async = true;
-        script.dataset.neoPuterSdk = "true";
-        document.head.appendChild(script);
-      }
-      script.addEventListener("load", finish, { once: true });
-      script.addEventListener("error", function () {
-        window.clearTimeout(timeout);
-        reject(new Error("The backup AI could not load."));
-      }, { once: true });
-    }).catch(function (error) {
-      puterSdkPromise = null;
-      throw error;
+  async function requestAnonymous(messages, signal, onProgress) {
+    if (signal.aborted) throw abortError();
+    var response = await fetch(ANONYMOUS_CHAT_URL, {
+      method: "POST",
+      mode: "cors",
+      signal: signal,
+      cache: "no-store",
+      credentials: "omit",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: ANONYMOUS_MODEL_ID,
+        messages: messages,
+        stream: false,
+        private: true
+      })
     });
-    return puterSdkPromise;
-  }
-
-  function puterResponseText(response) {
-    if (typeof response === "string") return response;
-    if (response && typeof response.text === "string") return response.text;
-    var content = response && response.message && response.message.content;
-    if (typeof content === "string") return content;
-    if (Array.isArray(content)) {
-      return content.map(function (part) {
-        return typeof part === "string" ? part : (part && (part.text || part.content)) || "";
-      }).join("");
-    }
-    return "";
-  }
-
-  async function requestPuter(messages, modelId, signal, onProgress) {
-    var puter = await loadPuterSdk();
-    if (signal.aborted) throw new DOMException("Generation stopped", "AbortError");
-    var model = getModel(modelId);
-    var options = { model: model.puterId || model.id, stream: true, normalize: true };
-    if (model.reasoning && state.settings.reasoning !== "auto") options.reasoning_effort = state.settings.reasoning;
-    var response;
-    try {
-      response = await puter.ai.chat(messages, false, options);
-    } catch (modelError) {
-      if (model.id === DEFAULT_MODEL_ID) response = await puter.ai.chat(messages, false, { model: FALLBACK_MODEL_ID, stream: true, normalize: true });
-      else throw modelError;
-    }
-    var answer = "";
-    if (response && typeof response[Symbol.asyncIterator] === "function") {
-      for await (var part of response) {
-        if (signal.aborted) throw new DOMException("Generation stopped", "AbortError");
-        var chunk = puterResponseText(part);
-        if (!chunk) continue;
-        answer += chunk;
-        if (onProgress) onProgress(answer);
-      }
-    } else {
-      answer = puterResponseText(response);
-      if (onProgress && answer) onProgress(answer);
-    }
+    if (!response.ok) throw new Error("The backup AI could not connect (" + response.status + ").");
+    var data = await response.json();
+    var content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    var answer = Array.isArray(content) ? content.map(function (part) {
+      return typeof part === "string" ? part : (part && (part.text || part.content)) || "";
+    }).join("") : String(content || "");
     if (!answer.trim()) throw new Error("The backup AI returned an empty response.");
+    if (onProgress) onProgress(answer);
     return answer;
   }
 
@@ -685,7 +639,7 @@
       return await requestReference(messages, modelId, signal, onProgress);
     } catch (relayFailure) {
       if (relayFailure.name === "AbortError") throw relayFailure;
-      return requestPuter(messages, modelId, signal, onProgress);
+      return requestAnonymous(messages, signal, onProgress);
     }
   }
 
@@ -696,42 +650,14 @@
   }
 
   async function generateMedia(model, prompt, signal) {
-    var puter = await loadPuterSdk();
     if (signal.aborted) throw abortError();
-    var result;
-    var usedFallback = false;
-    if (model.type === "image") {
-      if (typeof puter.ai.txt2img !== "function") throw new Error("Image generation is unavailable in this browser.");
-      var ratioParts = state.settings.media.imageRatio.split(":").map(Number);
-      var imagePrompt = prompt + (state.settings.media.imageStyle === "auto" ? "" : ". Style: " + state.settings.media.imageStyle + ".");
-      try {
-        result = await puter.ai.txt2img(imagePrompt, { model: model.puterId || model.id, ratio: { w: ratioParts[0], h: ratioParts[1] } });
-      } catch (_modelError) {
-        usedFallback = true;
-        result = await puter.ai.txt2img(imagePrompt, { model: "gpt-image-1-mini", ratio: { w: ratioParts[0], h: ratioParts[1] } });
-      }
-    } else {
-      if (typeof puter.ai.txt2vid !== "function") throw new Error("Video generation is unavailable in this browser.");
-      var videoOptions = {
-        model: model.puterId || model.id,
-        seconds: Number(state.settings.media.videoDuration) || 5,
-        size: state.settings.media.videoResolution,
-        generate_audio: Boolean(state.settings.media.videoAudio)
-      };
-      if (state.settings.media.videoSeed !== "") videoOptions.seed = Number(state.settings.media.videoSeed);
-      if (pendingImages[0]) videoOptions.input_reference = pendingImages[0].dataUrl;
-      try {
-        result = await puter.ai.txt2vid(prompt, videoOptions);
-      } catch (_modelError) {
-        usedFallback = true;
-        videoOptions.model = model.provider === "ByteDance" ? "seedance-2-0-mini" : "veo-3.1-lite";
-        result = await puter.ai.txt2vid(prompt, videoOptions);
-      }
-    }
-    if (signal.aborted) throw abortError();
-    var source = mediaSource(result);
-    if (!safeUrl(source) && !/^(?:data:(?:image|video)\/|blob:)/i.test(source)) throw new Error("The generator returned no playable media.");
-    return { src: source, fallback: usedFallback };
+    if (model.type !== "image") throw new Error("Video generation is unavailable in prompt-free mode.");
+    var ratioParts = state.settings.media.imageRatio.split(":").map(Number);
+    var width = ratioParts[0] >= ratioParts[1] ? 1024 : Math.max(512, Math.round(1024 * ratioParts[0] / ratioParts[1]));
+    var height = ratioParts[1] >= ratioParts[0] ? 1024 : Math.max(512, Math.round(1024 * ratioParts[1] / ratioParts[0]));
+    var imagePrompt = prompt + (state.settings.media.imageStyle === "auto" ? "" : ". Style: " + state.settings.media.imageStyle + ".");
+    var source = IMAGE_API_URL + encodeURIComponent(imagePrompt) + "?width=" + width + "&height=" + height + "&nologo=true&private=true&seed=" + Date.now();
+    return { src: source, fallback: true };
   }
 
   async function runCowork(requestMessages, sourceMessage, controller, typing) {
@@ -825,19 +751,10 @@
         full = coworkResult.text;
         coworkModelIds = coworkResult.models;
       } else {
-        try {
-          full = await requestReference(requestMessages, selectedModel.id, controller.signal, function (partial) {
-            typing.querySelector(".message-content").innerHTML = renderMarkdown(partial || "Thinking…");
-            conversation.scrollTop = conversation.scrollHeight;
-          });
-        } catch (relayFailure) {
-          if (relayFailure.name === "AbortError") throw relayFailure;
-          typing.querySelector(".message-content").textContent = "Reconnecting to " + selectedModel.name + "…";
-          full = await requestPuter(requestMessages, selectedModel.id, controller.signal, function (partial) {
-            typing.querySelector(".message-content").innerHTML = renderMarkdown(partial || "Thinking…");
-            conversation.scrollTop = conversation.scrollHeight;
-          });
-        }
+        full = await requestModel(requestMessages, selectedModel.id, controller.signal, function (partial) {
+          typing.querySelector(".message-content").innerHTML = renderMarkdown(partial || "Thinking…");
+          conversation.scrollTop = conversation.scrollHeight;
+        });
       }
       full = full.trim() || "I could not produce a response. Please try again.";
       var assistant = { id: id("msg"), role: "assistant", model: selectedModel.id, coworkModels: coworkModelIds.length ? coworkModelIds : undefined, content: full, created: Date.now(), sources: webResults.map(function (item) { return { title: item.title, url: item.url }; }) };
