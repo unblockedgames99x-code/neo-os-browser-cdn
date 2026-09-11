@@ -23,7 +23,6 @@
   function ask(title, label, value, accept) { const d = modal(title), form = el('form'), input = el('input'); input.value = value || ''; input.required = true; input.setAttribute('aria-label',label); form.append(el('label','',label),input); button('Cancel',()=>d.close(),form); const submit = button('Create',null,form); submit.type = 'submit'; form.onsubmit = e => { e.preventDefault(); if (accept(input.value) !== false) d.close(); }; d.append(form); input.focus(); }
   window.NEO_EXTRA_APPS = Object.assign(window.NEO_EXTRA_APPS || {}, {
     vscode: {id:'vscode',title:'Code workspace',name:'Code workspace',subtitle:'Local editor · VS Code-inspired',icon:'code',core:true,launcher:true,category:'Productivity',width:1040,height:650},
-    personalize: {id:'personalize',title:'Personalization',name:'Personalization',subtitle:'Styles, themes, display, sound and wallpaper',icon:'settings',core:true,launcher:true,category:'System',width:820,height:640},
     skins: {id:'skins',title:'Widgets',name:'Widgets',subtitle:'Add and customize desktop widgets',icon:'widgets',core:true,launcher:true,category:'System',width:850,height:620}
   });
 
@@ -142,12 +141,53 @@
     window.addEventListener('neo-rainmeter-change',sync);sync();
   }
 
+  function cursorThemeEditor(parent) {
+    const shell=window.NEO_SHELL,panel=section(parent,'Cursor');
+    panel.classList.add('cursor-theme-section');
+    panel.append(el('p','desktop-note','Choose a pointer style for the NEO desktop and local apps. Text selection and window resizing keep their familiar cursor shapes.'));
+    const grid=el('div','desktop-grid cursor-theme-grid');
+    panel.append(grid);
+    const themes=[
+      {id:'system',label:'System',description:'Browser default'},
+      {id:'neo',label:'NEO',description:'Cyan glass',asset:'neo-arrow.svg'},
+      {id:'neon',label:'Neon',description:'Pink glow',asset:'neon-arrow.svg'},
+      {id:'pixel',label:'Pixel',description:'Retro block',asset:'pixel-arrow.svg'},
+      {id:'contrast',label:'Contrast',description:'Large and bright',asset:'contrast-arrow.svg'}
+    ];
+    const choices=new Map();
+    themes.forEach(theme=>{
+      const choice=button('',()=>shell.setSetting('cursorTheme',theme.id),grid);
+      choice.classList.add('cursor-theme-choice');
+      choice.dataset.cursorThemeChoice=theme.id;
+      choice.setAttribute('aria-label','Use '+theme.label+' cursor');
+      const preview=el('span','cursor-theme-preview is-'+theme.id);
+      preview.setAttribute('aria-hidden','true');
+      if(theme.asset){const image=el('img');image.alt='';image.src='./assets/cursors/'+theme.asset;preview.append(image);}
+      else preview.append(el('span','cursor-system-glyph','↖'));
+      const copy=el('span','cursor-theme-copy');
+      copy.append(el('strong','',theme.label),el('small','',theme.description));
+      choice.append(preview,copy);
+      choices.set(theme.id,choice);
+    });
+    function sync(){
+      if(!panel.isConnected){window.removeEventListener('neo-cursor-theme-change',sync);return;}
+      const selected=shell.getSetting('cursorTheme')||'system';
+      choices.forEach((choice,id)=>{
+        const active=id===selected;
+        choice.classList.toggle('is-selected',active);
+        choice.setAttribute('aria-pressed',String(active));
+      });
+    }
+    window.addEventListener('neo-cursor-theme-change',sync);sync();
+  }
+
   function personalizationControls(app,options) {
     options=options||{};
     interfaceStyleEditor(app);
     rainmeterSettings(app);
     const p = B.get(), themes = section(app,'Theme'), grid = el('div','desktop-grid theme-grid'); themes.append(grid);
     Object.keys(C.themes).forEach(name => { const colors=C.themes[name],label=C.themeLabels?.[name]||name,b=button('',()=>B.set({theme:name}),grid),palette=el('span','theme-palette-preview'),accents=el('span','theme-accent-preview'); b.classList.add('theme-choice'); b.dataset.themeChoice=name; b.setAttribute('aria-label','Use '+label+' theme'); b.setAttribute('aria-pressed',String(name===p.theme)); b.style.setProperty('--theme-preview-bg',colors[0]); b.style.setProperty('--theme-preview-surface',colors[1]); b.style.setProperty('--theme-preview-text',colors[2]); b.style.setProperty('--theme-preview-line',colors[4]); b.style.setProperty('--theme-preview-accent',colors[5]); [colors[0],colors[1],colors[4]].forEach(color=>{const swatch=el('i');swatch.style.background=color;palette.append(swatch);}); [colors[5],colors[3],colors[2]].forEach(color=>{const swatch=el('i');swatch.style.background=color;accents.append(swatch);}); b.append(el('span','theme-choice-label',label),palette,accents); });
+    cursorThemeEditor(app);
     tabAppearanceEditor(app);
     const sound = section(app,'Sound and display');
     const volume = slider(sound,'Master volume',0,100,p.volume,value=>B.set({volume:value}));
@@ -164,10 +204,6 @@
     window.addEventListener('neo-system-state',sync);
   }
 
-  function settings(body) {
-    const app = el('div','desktop-app'); body.append(app); app.append(el('h1','','Personalization'));
-    personalizationControls(app);
-  }
   function skinGallery(body) {
     const widgetInfo={
       clock:{label:'Clock',description:'Time and date at a glance',category:'Essentials',icon:'i-monitor',accent:'#72d8ff'},
@@ -227,7 +263,62 @@
     button('Import',()=>picker.click(),toolbar);picker.onchange=async()=>{for(const file of picker.files){const name=cleanName(file.name);if(!name||file.size>2*1024*1024){notify('Use text files smaller than 2 MB.');continue;}if(Object.hasOwn(workspace,name)){notify(name+' already exists; rename it before importing.');continue;}workspace[name]=await file.text();drafts[name]=workspace[name];if(saveFiles())open(name);}picker.value='';};
     function save(){if(!active)return;workspace[active]=input.value;drafts[active]=input.value;if(saveFiles()){dirty.delete(active);renderTabs();updateStatus('Saved on this device');}}
     button('Save',save,toolbar);button('Export',()=>active&&download(active,input.value),toolbar);
-    button('Preview HTML',()=>{ if(!active)return; const d=modal('Sandbox preview · no network or system access'), f=el('iframe','editor-preview');f.title='HTML preview';f.sandbox='allow-scripts';const policy='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data: blob:; media-src data: blob:; connect-src \'none\'; form-action \'none\'">';f.srcdoc=policy+input.value;d.append(f);button('Close',()=>d.close(),d); },toolbar);
+    function openHtmlPreview(){
+      if(!active)return;
+      const d=modal('HTML preview'),header=el('header','editor-preview-header'),titleGroup=el('div','editor-preview-title-group'),actions=el('div','editor-preview-actions'),f=el('iframe','editor-preview');
+      const heading=d.querySelector('h2'),network=el('span','editor-preview-network','Network enabled');
+      d.classList.add('editor-preview-dialog');
+      heading.textContent=active+' preview';
+      network.title='Web requests are allowed. Standard browser security and CORS rules still apply.';
+      titleGroup.append(heading,network);
+      f.title=active+' live HTML preview';
+      f.setAttribute('sandbox','allow-scripts allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-downloads allow-pointer-lock allow-presentation');
+      f.setAttribute('allow','autoplay; fullscreen; picture-in-picture; clipboard-read; clipboard-write; encrypted-media; gamepad');
+      f.setAttribute('allowfullscreen','');
+      const policy='<meta http-equiv="Content-Security-Policy" content="default-src https: http: data: blob:; script-src https: http: data: blob: \'unsafe-inline\' \'unsafe-eval\'; style-src https: http: data: blob: \'unsafe-inline\'; img-src https: http: data: blob:; media-src https: http: data: blob:; font-src https: http: data: blob:; connect-src https: http: wss: ws: data: blob:; worker-src https: http: data: blob:; frame-src https: http: data: blob:; form-action https: http:;">';
+      const render=()=>{f.srcdoc=policy+input.value;};
+      const reload=button('Reload',render,actions);
+      reload.title='Reload the current editor contents';
+      const maximize=button('Maximize',()=>{
+        const active=d.classList.toggle('is-maximized');
+        maximize.textContent=active?'Restore':'Maximize';
+        maximize.setAttribute('aria-pressed',String(active));
+      },actions);
+      maximize.setAttribute('aria-pressed','false');
+      let previewOwnsFullscreen=false;
+      const fullscreen=button('Full screen',()=>{
+        if(d.classList.contains('is-browser-fullscreen')){
+          d.classList.remove('is-browser-fullscreen');
+          if(previewOwnsFullscreen&&document.fullscreenElement)Promise.resolve(document.exitFullscreen()).catch(()=>notify('Full screen could not be closed.'));
+          else syncFullscreen();
+          return;
+        }
+        d.classList.add('is-browser-fullscreen');
+        if(document.fullscreenElement){syncFullscreen();return;}
+        if(!document.documentElement.requestFullscreen){d.classList.remove('is-browser-fullscreen');notify('Full screen is unavailable in this browser.');return;}
+        Promise.resolve(document.documentElement.requestFullscreen({navigationUI:'hide'})).then(()=>{previewOwnsFullscreen=true;syncFullscreen();}).catch(()=>{d.classList.remove('is-browser-fullscreen');syncFullscreen();notify('Full screen could not be opened.');});
+      },actions);
+      const closePreview=()=>{
+        const finish=()=>{if(d.open)d.close();};
+        d.classList.remove('is-browser-fullscreen');
+        if(previewOwnsFullscreen&&document.fullscreenElement)Promise.resolve(document.exitFullscreen()).then(finish,finish);
+        else finish();
+      };
+      button('Close',closePreview,actions);
+      const syncFullscreen=()=>{
+        if(!document.fullscreenElement&&previewOwnsFullscreen){previewOwnsFullscreen=false;d.classList.remove('is-browser-fullscreen');}
+        const active=d.classList.contains('is-browser-fullscreen');
+        fullscreen.textContent=active?'Exit full screen':'Full screen';
+        fullscreen.setAttribute('aria-pressed',String(active));
+      };
+      fullscreen.setAttribute('aria-pressed','false');
+      document.addEventListener('fullscreenchange',syncFullscreen);
+      d.addEventListener('close',()=>document.removeEventListener('fullscreenchange',syncFullscreen),{once:true});
+      header.append(titleGroup,actions);
+      d.replaceChildren(header,f);
+      render();
+    }
+    button('Preview HTML',openHtmlPreview,toolbar);
     function palette(){ const d=modal('Command palette'), q=el('input');q.placeholder='Search commands';q.setAttribute('aria-label','Search commands');d.append(q);const list=el('div','desktop-grid');d.append(list);const commands=[['Save file',save],['Export file',()=>download(active,input.value)],['Open terminal',()=>window.NEO_SHELL.openApp('terminal')],['Open settings',()=>window.NEO_SHELL.openApp('control')],['About this editor',()=>{notify('Local editor simulation inspired by VS Code. No Microsoft extensions, services or system shell.');}]];function draw(){list.replaceChildren();commands.filter(c=>c[0].toLowerCase().includes(q.value.toLowerCase())).forEach(c=>button(c[0],()=>{d.close();c[1]();},list));}q.oninput=draw;draw();q.focus(); }
     button('Commands',palette,toolbar);
     button('Delete file',()=>{if(!active)return;const d=modal('Delete '+active+'?');d.append(el('p','','This removes the file from this device workspace. Export it first if you need a copy.'));button('Cancel',()=>d.close(),d);button('Delete',()=>{delete workspace[active];delete drafts[active];opened=opened.filter(x=>x!==active);saveFiles();d.close();open(opened[0]||Object.keys(workspace)[0]||'');},d);},toolbar);
@@ -271,6 +362,6 @@
     // Existing closeWindow removes the app node. Flush editor drafts before removal.
     const layer=document.querySelector('#window-layer, .window-layer');if(layer)new MutationObserver(records=>records.forEach(r=>r.removedNodes.forEach(n=>{n.querySelectorAll?.('.window-body').forEach(b=>b._neoDesktopCleanup?.());}))).observe(layer,{childList:true});
   }
-  window.NEO_DESKTOP={mount(id,body){const handlers={personalize:settings,skins:skinGallery,vscode:editor,terminal};if(!handlers[id])return false;handlers[id](body);return true;},enhance(id,body){if(id==='control'){body.querySelectorAll('.desktop-settings-shortcuts').forEach(shortcut=>shortcut.remove());const control=body.querySelector('.control-center'),taskbar=control&&control.querySelector('.taskbar-settings');if(control&&taskbar&&!control.querySelector('.integrated-personalization-settings')){const integrated=el('section','settings-section integrated-personalization-settings desktop-app');control.insertBefore(integrated,taskbar);personalizationControls(integrated,{integrated:true});}}},init};
+  window.NEO_DESKTOP={mount(id,body){const handlers={skins:skinGallery,vscode:editor,terminal};if(!handlers[id])return false;handlers[id](body);return true;},enhance(id,body){if(id==='control'){body.querySelectorAll('.desktop-settings-shortcuts').forEach(shortcut=>shortcut.remove());const control=body.querySelector('.control-center'),taskbar=control&&control.querySelector('.taskbar-settings');if(control&&taskbar&&!control.querySelector('.integrated-personalization-settings')){const integrated=el('section','settings-section integrated-personalization-settings desktop-app');control.insertBefore(integrated,taskbar);personalizationControls(integrated,{integrated:true});}}},init};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else queueMicrotask(init);
 })();

@@ -13,8 +13,10 @@
     var failures = 0;
     var sleepAt = 0;
     var sleepTimer = 0;
+    var lastProgressBroadcast = 0;
+    var framePlaybackActive = false;
 
-    audio.preload = "auto";
+    audio.preload = "metadata";
     try {
       var volumeMigrationKey = "neo_stream_music_volume_max_v1";
       var shouldStartAtMaximum = localStorage.getItem(volumeMigrationKey) !== "1";
@@ -27,6 +29,7 @@
         localStorage.setItem("neo_stream_music_volume", "1");
         localStorage.setItem(volumeMigrationKey, "1");
       }
+      audio.muted = localStorage.getItem("neo_stream_music_muted") === "true";
     } catch (error) {}
 
     function currentTrack() {
@@ -83,7 +86,7 @@
           volume: playback.volume,
           muted: audio.muted,
           volumeControl: true,
-          transport: false,
+          transport: true,
           pauseWallpaper: false
         } : { source: sourceId, active: false }
       }));
@@ -109,14 +112,33 @@
       var track = queue[nextIndex];
       var source = sourceFor(track);
       if (!track || !source) return;
+      var sameTrack = nextIndex === index && audio.src === source && Boolean(audio.currentSrc || audio.src);
       index = nextIndex;
       wantsPlayback = autoplay !== false;
-      audio.pause();
-      audio.src = source;
-      audio.currentTime = 0;
-      audio.load();
-      if (wantsPlayback) audio.play().catch(broadcast);
+      if (!sameTrack) {
+        audio.pause();
+        audio.src = source;
+        audio.currentTime = 0;
+        audio.load();
+      }
+      if (wantsPlayback) requestPlayback();
       broadcast();
+    }
+
+    function requestPlayback() {
+      if (!wantsPlayback || !currentTrack() || !audio.paused) return;
+      audio.play().then(function () {
+        failures = 0;
+        broadcast();
+      }).catch(function (error) {
+        if (!error || error.name !== "NotAllowedError") failures += 1;
+        broadcast();
+      });
+    }
+
+    function unlockPlayback(event) {
+      if (event && event.type === "keydown" && (event.ctrlKey || event.metaKey || event.altKey)) return;
+      requestPlayback();
     }
 
     function next() {
@@ -157,7 +179,7 @@
           if (audio.paused) {
             wantsPlayback = true;
             failures = 0;
-            if (currentTrack()) audio.play().catch(broadcast);
+            requestPlayback();
           } else {
             wantsPlayback = false;
             audio.pause();
@@ -193,6 +215,11 @@
         case "volume":
           audio.volume = Math.max(0, Math.min(1, Number(command.v) || 0));
           try { localStorage.setItem("neo_stream_music_volume", String(audio.volume)); } catch (error) {}
+          broadcast();
+          break;
+        case "mute":
+          audio.muted = command.on === true;
+          try { localStorage.setItem("neo_stream_music_muted", String(audio.muted)); } catch (error) {}
           broadcast();
           break;
         case "shuffle": shuffle = command.on === true; broadcast(); break;
@@ -249,6 +276,9 @@
     function relayFrameState(frameState) {
       if (!frameState || typeof frameState !== "object") return;
       var active = frameState.active !== false && Boolean(String(frameState.title || "").trim());
+      var reportedVolume = Number(frameState.volume);
+      var hasVolume = Number.isFinite(reportedVolume);
+      framePlaybackActive = active;
       window.dispatchEvent(new CustomEvent("neo-media-state", {
         detail: active ? {
           source: sourceId,
@@ -261,13 +291,24 @@
           kind: frameState.kind === "video" ? "video" : "audio",
           position: Math.max(0, Number(frameState.position) || 0),
           duration: Math.max(0, Number(frameState.duration) || 0),
-          volume: Math.max(0, Math.min(1, Number(frameState.volume) || 0)),
+          volume: hasVolume ? Math.max(0, Math.min(1, reportedVolume)) : 1,
           muted: frameState.muted === true,
-          volumeControl: false,
-          transport: false,
+          volumeControl: hasVolume,
+          transport: true,
           pauseWallpaper: false
         } : { source: sourceId, appId: "stream", active: false }
       }));
+    }
+
+    function sendFrameControl(action, value) {
+      try {
+        var control = { action: action };
+        if (value !== undefined) control.value = value;
+        frame.contentWindow.postMessage({ neoMusicControl: control }, "*");
+        return true;
+      } catch (error) {
+        return false;
+      }
     }
 
     function onMessage(event) {
@@ -289,12 +330,34 @@
 
     function onVolume(event) {
       if (String(event.detail && event.detail.source || "") !== sourceId) return;
-      audio.volume = Math.max(0, Math.min(1, Number(event.detail.volume) || 0));
+      var volume = Math.max(0, Math.min(1, Number(event.detail.volume) || 0));
+      if (framePlaybackActive && sendFrameControl("volume", volume)) return;
+      audio.volume = volume;
       try { localStorage.setItem("neo_stream_music_volume", String(audio.volume)); } catch (error) {}
       broadcast();
     }
 
+    function onTransport(event) {
+      var detail = event.detail || {};
+      if (String(detail.source || "") !== sourceId) return;
+      var action = String(detail.action || "");
+      var frameAction = action === "prev" ? "previous" : action;
+      if (framePlaybackActive && sendFrameControl(frameAction)) return;
+      if (action === "previous" || action === "prev") handle({ type: "prev" });
+      else if (action === "next") handle({ type: "next" });
+      else if (action === "toggle") handle({ type: "toggle" });
+      else if (action === "pause") pause();
+      else if (action === "play" && currentTrack()) {
+        wantsPlayback = true;
+        failures = 0;
+        requestPlayback();
+        broadcast();
+      }
+    }
+
     function stop() {
+      if (framePlaybackActive) sendFrameControl("stop");
+      framePlaybackActive = false;
       window.clearTimeout(sleepTimer);
       sleepTimer = 0;
       sleepAt = 0;
@@ -311,6 +374,7 @@
     }
 
     function pause() {
+      if (framePlaybackActive && sendFrameControl("pause")) return true;
       wantsPlayback = false;
       if (audio.paused) {
         broadcast();
@@ -321,14 +385,38 @@
       return true;
     }
 
+    function setMuted(muted) {
+      if (framePlaybackActive && sendFrameControl("mute", Boolean(muted))) return true;
+      audio.muted = Boolean(muted);
+      broadcast();
+      return true;
+    }
+
     function destroy() {
       stop();
       window.removeEventListener("message", onMessage);
       window.removeEventListener("neo-media-volume-request", onVolume);
+      window.removeEventListener("neo-media-transport-request", onTransport);
+      window.removeEventListener("pointerdown", unlockPlayback, true);
+      window.removeEventListener("touchend", unlockPlayback, true);
+      window.removeEventListener("keydown", unlockPlayback, true);
     }
 
-    ["play", "pause", "playing", "loadedmetadata", "durationchange", "timeupdate", "volumechange", "ratechange"].forEach(function (name) {
-      audio.addEventListener(name, broadcast);
+    ["play", "pause", "playing", "loadedmetadata", "durationchange", "volumechange", "ratechange"].forEach(function (name) {
+      audio.addEventListener(name, function () {
+        if (name === "volumechange") {
+          try {
+            localStorage.setItem("neo_stream_music_volume", String(audio.volume));
+            localStorage.setItem("neo_stream_music_muted", String(audio.muted));
+          } catch (error) {}
+        }
+        broadcast();
+      });
+    });
+    audio.addEventListener("timeupdate", function () {
+      if (document.hidden || Date.now() - lastProgressBroadcast < 200) return;
+      lastProgressBroadcast = Date.now();
+      broadcast();
     });
     audio.addEventListener("ended", function () { if (!audio.loop) next(); });
     audio.addEventListener("error", function () {
@@ -339,13 +427,17 @@
     });
     window.addEventListener("message", onMessage);
     window.addEventListener("neo-media-volume-request", onVolume);
+    window.addEventListener("neo-media-transport-request", onTransport);
+    window.addEventListener("pointerdown", unlockPlayback, { capture: true, passive: true });
+    window.addEventListener("touchend", unlockPlayback, { capture: true, passive: true });
+    window.addEventListener("keydown", unlockPlayback, true);
     if ("mediaSession" in navigator) {
       try { navigator.mediaSession.setActionHandler("play", function () { if (currentTrack()) audio.play().catch(function () {}); }); } catch (error) {}
       try { navigator.mediaSession.setActionHandler("pause", function () { audio.pause(); }); } catch (error) {}
       try { navigator.mediaSession.setActionHandler("nexttrack", next); } catch (error) {}
       try { navigator.mediaSession.setActionHandler("previoustrack", previous); } catch (error) {}
     }
-    return { audio: audio, broadcast: broadcast, pause: pause, stop: stop, destroy: destroy };
+    return { audio: audio, broadcast: broadcast, pause: pause, stop: stop, setMuted: setMuted, destroy: destroy };
   }
 
   function createShell(app, body, iconMarkup) {
@@ -508,10 +600,13 @@
     var changed = false;
     win.querySelectorAll(".music-direct-session").forEach(function (session) {
       var playback = session._neoPlayback;
-      if (!playback || !playback.audio) return;
+      if (!playback) return;
       try {
-        playback.audio.muted = Boolean(muted);
-        if (typeof playback.broadcast === "function") playback.broadcast();
+        if (typeof playback.setMuted === "function") playback.setMuted(muted);
+        else if (playback.audio) {
+          playback.audio.muted = Boolean(muted);
+          if (typeof playback.broadcast === "function") playback.broadcast();
+        } else return;
         changed = true;
       } catch (error) {}
     });

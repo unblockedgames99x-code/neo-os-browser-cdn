@@ -40,6 +40,11 @@
   var audioUnlocked = false;
   var mediaPriorityPaused = false;
   var autoPerformancePaused = false;
+  var stabilityPaused = false;
+  var stabilityWatch = 0;
+  var stabilityRecovery = 0;
+  var stabilityExpected = 0;
+  var stabilityStallScore = 0;
   var reactiveCoverElement = null;
   var reactiveCoverRefresh = null;
   var initialized = false;
@@ -805,12 +810,76 @@
 
   function shouldPause() {
     var lowBattery = Boolean(runtimeSettings.batterySaver && battery && !battery.charging);
-    return performanceActive() || document.hidden || mediaPriorityPaused || autoPerformancePaused || runtimeSettings.wallpaperPaused || !runtimeSettings.motion || reducedMotion() || lowBattery;
+    return performanceActive() || document.hidden || mediaPriorityPaused || autoPerformancePaused || runtimeSettings.wallpaperPaused || stabilityPaused || !runtimeSettings.motion || reducedMotion() || lowBattery;
+  }
+
+  function stopStabilityWatch() {
+    if (stabilityWatch) window.clearTimeout(stabilityWatch);
+    if (stabilityRecovery) window.clearTimeout(stabilityRecovery);
+    stabilityWatch = 0;
+    stabilityRecovery = 0;
+    stabilityExpected = 0;
+    stabilityStallScore = 0;
+  }
+
+  function releaseStabilityPause() {
+    stabilityRecovery = 0;
+    if (!stabilityPaused) return;
+    stabilityPaused = false;
+    stabilityStallScore = 0;
+    root.dataset.wallpaperStability = "stable";
+    syncPlayback();
+    emit("stability-resume");
+  }
+
+  function startStabilityWatch() {
+    if (stabilityWatch) return;
+    stabilityExpected = performance.now() + 1000;
+    function check(now) {
+      stabilityWatch = 0;
+      var drift = Math.max(0, now - stabilityExpected);
+      stabilityExpected = now + 1000;
+      var animated = activeMedia && (activeMedia.tagName === "IFRAME" || activeMedia.tagName === "VIDEO" || activeMedia.tagName === "CANVAS");
+      if (!document.hidden && animated && !stabilityPaused && !autoPerformancePaused && !mediaPriorityPaused) {
+        if (drift >= 5000) stabilityStallScore = 0;
+        else if (drift >= 1000) stabilityStallScore += 2;
+        else if (drift >= 450) stabilityStallScore += 1;
+        else if (drift >= 180) stabilityStallScore += 1;
+        else stabilityStallScore = Math.max(0, stabilityStallScore - 1);
+        if (stabilityStallScore >= 2) {
+          stabilityPaused = true;
+          root.dataset.wallpaperStability = "recovering";
+          syncPlayback();
+          emit("stability-backoff");
+          if (stabilityRecovery) window.clearTimeout(stabilityRecovery);
+          stabilityRecovery = window.setTimeout(releaseStabilityPause, 2500);
+        }
+      } else if (!stabilityPaused) {
+        stabilityStallScore = 0;
+      }
+      stabilityWatch = window.setTimeout(function () { check(performance.now()); }, 1000);
+    }
+    stabilityWatch = window.setTimeout(function () { check(performance.now()); }, 1000);
   }
 
   function resumePlayback() {
+    var recoveredFromStabilityPause = false;
+    if (!document.hidden) {
+      if (stabilityRecovery) window.clearTimeout(stabilityRecovery);
+      stabilityRecovery = 0;
+      recoveredFromStabilityPause = stabilityPaused;
+      stabilityPaused = false;
+      stabilityStallScore = 0;
+      stabilityExpected = performance.now() + 1000;
+      root.dataset.wallpaperStability = "stable";
+    }
     syncPlayback();
     window.setTimeout(syncPlayback, 180);
+    if (!document.hidden) {
+      window.setTimeout(syncPlayback, 800);
+      window.setTimeout(syncPlayback, 2000);
+    }
+    if (recoveredFromStabilityPause) emit("stability-resume");
   }
 
   function clearAnimatedImageFreeze() {
@@ -2162,6 +2231,7 @@
       animationMode: root.dataset.wallpaperWebAnimation || "native",
       mediaPriorityPaused: mediaPriorityPaused,
       autoPerformancePaused: autoPerformancePaused,
+      stabilityPaused: stabilityPaused,
       muted: activeRecord && activeRecord.type === "youtube" ? (!audioUnlocked || runtimeSettings.wallpaperMuted !== false) : activeMedia && activeMedia.tagName === "VIDEO" ? activeMedia.muted : true,
       libraryCount: visibleLibrary().length
     };
@@ -2181,6 +2251,8 @@
         : getAvailableLibraries();
     }
     initialized = true;
+    root.dataset.wallpaperStability = "stable";
+    startStabilityWatch();
     window.addEventListener("message", handleWebMessage);
     window.addEventListener("neo-media-state", handleReactiveMediaState);
     window.addEventListener("neo-media-levels", handleReactiveMediaLevels);
@@ -2213,6 +2285,7 @@
   }
 
   function destroy() {
+    stopStabilityWatch();
     clearMedia("destroy");
     window.removeEventListener("neo-media-state", handleReactiveMediaState);
     window.removeEventListener("neo-media-levels", handleReactiveMediaLevels);

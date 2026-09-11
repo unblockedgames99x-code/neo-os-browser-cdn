@@ -1906,6 +1906,25 @@ html[data-interface-style="retro"] .neo-window[data-app-id="clock"] .neo-utility
   font-family: var(--retro-font) !important;
 }
 
+html[data-interface-style="retro"] .neo-window[data-app-id="app-installer"] .app-installer {
+  color: var(--retro-ink) !important;
+  background: var(--retro-panel-light) !important;
+  font-family: var(--retro-font) !important;
+}
+
+html[data-interface-style="retro"] .neo-window[data-app-id="app-installer"] :is(.installer-form,.installed-sites,.installed-site) {
+  color: var(--retro-ink) !important;
+  background: var(--retro-panel) !important;
+  border: 2px solid !important;
+  border-color: var(--retro-light-edge) var(--retro-dark-edge) var(--retro-dark-edge) var(--retro-light-edge) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-interface-style="retro"] .neo-window[data-app-id="app-installer"] :is(input,select,.button) {
+  border-radius: 0 !important;
+}
+
 html[data-interface-style="retro"] .neo-window:is([data-app-id="notes"],[data-app-id="paint"]) .neo-utility > header {
   color: var(--retro-ink) !important;
   background: var(--retro-panel) !important;
@@ -2063,15 +2082,15 @@ html[data-interface-style="retro"] .neo-window[data-app-id="zones"] :is(.library
 
 /* Desktop-platform apps are registered outside the primary app table. Keep
    their Retro treatment explicit so future registry changes cannot silently
-   leave Personalization, Widgets, Code Workspace, or Terminal in Modern UI. */
-html[data-interface-style="retro"] .neo-window:is([data-app-id="personalize"],[data-app-id="skins"],[data-app-id="vscode"],[data-app-id="terminal"]) .desktop-app {
+   leave Widgets, Code Workspace, or Terminal in Modern UI. */
+html[data-interface-style="retro"] .neo-window:is([data-app-id="skins"],[data-app-id="vscode"],[data-app-id="terminal"]) .desktop-app {
   color: var(--retro-ink) !important;
   background: var(--retro-panel-light) !important;
   font-family: var(--retro-font) !important;
   scrollbar-color: var(--retro-dark-edge) var(--retro-panel-light) !important;
 }
 
-html[data-interface-style="retro"] .neo-window[data-app-id="personalize"] :is(.desktop-section,.interface-style-choice,.tab-appearance-choice,.theme-choice,.tab-appearance-custom-preview),
+html[data-interface-style="retro"] .neo-window[data-app-id="control"] .integrated-personalization-settings :is(.desktop-section,.interface-style-choice,.tab-appearance-choice,.theme-choice,.cursor-theme-choice,.tab-appearance-custom-preview),
 html[data-interface-style="retro"] :is(.desktop-palette,.tab-appearance-dialog) {
   color: var(--retro-ink) !important;
   background: var(--retro-panel) !important;
@@ -2081,7 +2100,7 @@ html[data-interface-style="retro"] :is(.desktop-palette,.tab-appearance-dialog) 
   transform: none !important;
 }
 
-html[data-interface-style="retro"] .neo-window[data-app-id="personalize"] :is(.interface-style-choice,.tab-appearance-choice,.theme-choice)[aria-pressed="true"] {
+html[data-interface-style="retro"] .neo-window[data-app-id="control"] .integrated-personalization-settings :is(.interface-style-choice,.tab-appearance-choice,.theme-choice,.cursor-theme-choice)[aria-pressed="true"] {
   color: var(--retro-accent-ink) !important;
   background: var(--retro-accent) !important;
   border-color: var(--retro-accent) !important;
@@ -2089,7 +2108,7 @@ html[data-interface-style="retro"] .neo-window[data-app-id="personalize"] :is(.i
   outline-offset: -4px !important;
 }
 
-html[data-interface-style="retro"] .neo-window[data-app-id="personalize"] :is(.interface-style-choice,.tab-appearance-choice,.theme-choice)[aria-pressed="true"] :is(strong,small,.interface-style-copy) {
+html[data-interface-style="retro"] .neo-window[data-app-id="control"] .integrated-personalization-settings :is(.interface-style-choice,.tab-appearance-choice,.theme-choice,.cursor-theme-choice)[aria-pressed="true"] :is(strong,small,.interface-style-copy,.cursor-theme-copy) {
   color: inherit !important;
 }
 
@@ -2974,4 +2993,12 @@ html[data-interface-style="modern"] .desktop-context-menu button:is(:hover,:focu
 
 html[data-interface-style="modern"] :is(.desktop-context-menu,.context-submenu) button:disabled {
   color: rgba(243, 247, 248, .48) !important;
+}
+
+/* Optical alignment for every icon shown in the Ctrl app launcher. Keep the
+   icon frame slightly above its geometric center so artwork and text share the
+   same visual baseline in both tile and list layouts. */
+.app-launcher :is(.launcher-app-icon,.launcher-detail-icon,.launcher-category-icon) {
+  position: relative;
+  top: -2px;
 }

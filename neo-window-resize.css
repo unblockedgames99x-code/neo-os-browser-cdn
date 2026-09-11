@@ -522,6 +522,20 @@ html.is-resizing-window iframe {
   pointer-events: none !important;
 }
 
+.neo-window.is-resizing {
+  animation: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+  transition: none !important;
+  will-change: width, height;
+}
+
+.neo-window.is-resizing > .window-body {
+  contain: paint;
+  pointer-events: none !important;
+}
+
 @media (max-width: 720px) {
   .window-resize-handle { display: none; }
   .neo-snap-layouts { display: none; }

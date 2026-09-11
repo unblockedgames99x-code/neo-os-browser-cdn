@@ -229,9 +229,31 @@ html[data-neo-theme="glass"] {
 }
 
 .neo-window.is-dragging {
-  opacity: .96;
+  opacity: 1;
   transform: translate3d(0, 0, 0) scale(1);
-  box-shadow: 0 34px 96px rgba(0, 0, 0, .5), 0 0 0 2px color-mix(in srgb, var(--desktop-accent) 34%, transparent);
+  box-shadow: 0 22px 58px rgba(0, 0, 0, .46), 0 0 0 2px color-mix(in srgb, var(--desktop-accent) 34%, transparent);
+  animation: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  backface-visibility: hidden;
+  filter: none !important;
+  isolation: isolate;
+  transition: none !important;
+  will-change: transform;
+}
+
+.neo-window.is-dragging > .window-chrome {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.neo-window.is-dragging > .window-body {
+  contain: paint;
+  pointer-events: none !important;
+}
+
+.neo-window.is-dragging iframe {
+  pointer-events: none !important;
 }
 
 .neo-window.is-maximized { border-radius: 12px; }
@@ -407,9 +429,20 @@ html[data-neo-theme="glass"] {
 /* Keep the pill entirely outside a normal window. Maximized and true
    fullscreen windows collapse it to a single, unobtrusive exit control. */
 @media (min-width: 701px) {
+  html.neo-auto-hide-bars[data-window-bar-style="pill"] .neo-window:not(.is-maximized):not(.is-tab-fullscreen) {
+    grid-template-rows: var(--neo-window-chrome-height) minmax(0, 1fr) !important;
+  }
+
+  html.neo-auto-hide-bars[data-window-bar-style="pill"] .neo-window:not(.is-maximized):not(.is-tab-fullscreen) > .window-body {
+    grid-row: 2;
+  }
+
   html.neo-auto-hide-bars[data-window-bar-style="pill"] .neo-window:not(.is-maximized):not(.is-tab-fullscreen) > .window-chrome {
-    top: -6px;
-    transform: translate(-50%, -100%) !important;
+    position: relative !important;
+    top: auto;
+    left: auto;
+    margin: 5px 0;
+    transform: none !important;
   }
 
   html.neo-auto-hide-bars[data-window-bar-style="pill"] .neo-window:is(.is-maximized,.is-tab-fullscreen) > .window-chrome {

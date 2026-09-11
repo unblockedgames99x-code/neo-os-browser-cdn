@@ -16,7 +16,7 @@
     position: "middle-center",
     shadow: true
   };
-  var styles = ["poster", "classic", "retro", "botanical", "wheel"];
+  var styles = ["poster", "classic", "retro", "botanical", "wheel", "glyph"];
   var positions = [
     "top-left", "top-center", "top-right",
     "middle-left", "middle-center", "middle-right",
@@ -83,6 +83,7 @@
     '    <button class="rainmeter-style-option" type="button" data-rainmeter-style="retro" aria-pressed="false"><span class="rainmeter-style-preview is-retro" aria-hidden="true">SUN 07</span><span>Retro</span></button>',
     '    <button class="rainmeter-style-option" type="button" data-rainmeter-style="botanical" aria-pressed="false"><span class="rainmeter-style-preview is-botanical" aria-hidden="true">SAT</span><span>Botanical</span></button>',
     '    <button class="rainmeter-style-option" type="button" data-rainmeter-style="wheel" aria-pressed="false"><span class="rainmeter-style-preview is-wheel" aria-hidden="true">17:46</span><span>Wheel</span></button>',
+    '    <button class="rainmeter-style-option" type="button" data-rainmeter-style="glyph" aria-pressed="false"><span class="rainmeter-style-preview is-glyph" aria-hidden="true">SAT</span><span>Glyph</span></button>',
     '  </div>',
     '</div>',
     '<div class="rainmeter-editor-section">',

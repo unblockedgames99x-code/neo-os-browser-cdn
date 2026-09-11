@@ -107,10 +107,6 @@ html[data-auto-performance-active="true"] .now-playing-volume-flyout {
   box-shadow: none !important;
 }
 
-html[data-auto-performance-active="true"] .neo-taskbar-preview {
-  display: none !important;
-}
-
 html[data-performance-mode="performance"],
 html[data-performance-mode="ultimate"] {
   scroll-behavior: auto !important;
@@ -166,14 +162,8 @@ html[data-performance-mode="performance"] .window-chrome {
   background-color: #0b0d10 !important;
 }
 
-html[data-performance-mode="performance"] .neo-taskbar-preview,
-html[data-performance-mode="ultimate"] .neo-taskbar-preview,
-html[data-performance-mode="ultimate"] .neo-minimized-tray {
-  display: none !important;
-}
-
 html[data-performance-mode="ultimate"] {
-  --topbar-height: 0px;
+  --topbar-height: 36px;
   --wallpaper-blur: 0px !important;
   --neo-taskbar-blur: 0px !important;
 }
@@ -187,13 +177,12 @@ html[data-performance-mode="ultimate"] .wallpaper,
 html[data-performance-mode="ultimate"] #weather-canvas,
 html[data-performance-mode="ultimate"] .rainmeter-clock,
 html[data-performance-mode="ultimate"] .rainmeter-editor,
-html[data-performance-mode="ultimate"] .widget-layer,
-html[data-performance-mode="ultimate"] .neo-status-strip {
+html[data-performance-mode="ultimate"] .widget-layer {
   display: none !important;
 }
 
 html[data-performance-mode="ultimate"] .window-layer {
-  top: 0 !important;
+  top: var(--topbar-height) !important;
 }
 
 html[data-performance-mode="ultimate"] .taskbar,
@@ -218,6 +207,18 @@ html[data-performance-mode="ultimate"] .dock,
 html[data-performance-mode="ultimate"] .dock-button {
   visibility: visible !important;
   pointer-events: auto !important;
+}
+
+/* Keep pointer-driven movement on the compositor. Heavy wallpaper and audio
+   effects retain their last frame and resume as soon as the gesture ends. */
+html.is-window-interacting .wallpaper *,
+html.is-window-interacting .widget-layer *,
+html.is-window-interacting .rainmeter-clock * {
+  animation-play-state: paused !important;
+}
+
+html.is-window-interacting iframe {
+  pointer-events: none !important;
 }
 
 @media (max-width: 620px) {

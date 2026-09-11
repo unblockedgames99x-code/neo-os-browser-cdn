@@ -20,27 +20,13 @@
       category: "Media",
       aliases: ["neo music", "music", "stream", "songs", "albums", "artists", "radio", "playlists", "audio player"]
     },
-    cinehd: {
-      id: "cinehd",
-      title: "NEO TV",
-      subtitle: "Movies and television",
-      icon: "zstream",
-      route: "./neo-tv/index.html?v=20260908-movie-loader-v1",
-      keepAlive: true,
-      width: 1180,
-      height: 760,
-      launcher: true,
-      pinned: false,
-      category: "Media",
-      aliases: ["neo tv", "movies", "series", "television", "tv", "streaming"]
-    },
     discord: {
       id: "discord",
       title: "Discord",
       subtitle: "Messages, calls, and communities",
       icon: "discord",
       route: "./NEO-BROWSER/index.html?neo-app-mode=1&neo-app-target=https%3A%2F%2Fdiscord.com%2Fapp",
-      keepAlive: true,
+      keepAlive: false,
       width: 1180,
       height: 760,
       launcher: true,
@@ -51,10 +37,10 @@
     "youtube-app": {
       id: "youtube-app",
       title: "YouTube",
-      subtitle: "Videos, channels, and subscriptions",
+      subtitle: "Fast themed videos, search, and Shorts",
       icon: "youtube",
-      route: "./NEO-BROWSER/index.html?neo-app-mode=1&neo-app-target=https%3A%2F%2Fwww.youtube.com%2F",
-      keepAlive: true,
+      route: "./neo-youtube/index.html?v=20260911-youtube-popout-v1",
+      keepAlive: false,
       width: 1180,
       height: 760,
       launcher: true,
@@ -89,6 +75,34 @@
       category: "Games",
       aliases: ["neo cloud", "cloud gaming", "stream games", "remote play", "cloud games"]
     },
+    nowgg: {
+      id: "nowgg",
+      title: "nowgg.fun",
+      subtitle: "Cloud games through the NEO relay",
+      icon: "gamepad",
+      route: "./NEO-BROWSER/index.html?neo-app-mode=1&neo-custom-app=1&neo-app-target=https%3A%2F%2Fnowgg.fun%2F",
+      keepAlive: false,
+      width: 1180,
+      height: 760,
+      launcher: true,
+      pinned: false,
+      category: "Games",
+      aliases: ["nowgg", "now gg", "nowgg.fun", "cloud games", "android games"]
+    },
+    "neo-ai": {
+      id: "neo-ai",
+      title: "NEO AI",
+      subtitle: "Chat, images, web search, and study tools",
+      icon: "chatgpt",
+      route: "./neo-ai/index.html?v=20260910-ai-failover-v2",
+      keepAlive: true,
+      width: 1120,
+      height: 760,
+      launcher: true,
+      pinned: false,
+      category: "Productivity",
+      aliases: ["neo ai", "ai", "assistant", "chatgpt", "chat gpt", "study", "web search", "image ai"]
+    },
     notes: {
       id: "notes",
       title: "Notes",
@@ -102,6 +116,20 @@
       core: true,
       category: "Productivity",
       aliases: ["notes", "notepad", "text", "write"]
+    },
+    "app-installer": {
+      id: "app-installer",
+      title: "App Installer",
+      subtitle: "Install a site with its name and icon",
+      icon: "apps",
+      lazy: true,
+      width: 880,
+      height: 680,
+      launcher: true,
+      pinned: false,
+      core: true,
+      category: "System",
+      aliases: ["app installer", "install app", "add app", "web app", "url app", "pwa"]
     },
     calculator: {
       id: "calculator",
@@ -272,16 +300,6 @@
       localStorage.setItem(neoCloudMigrationKey, "1");
     }
 
-    var cineHdMigrationKey = "neo_os_cinehd_app_v1";
-    if (localStorage.getItem(cineHdMigrationKey) !== "1") {
-      var installedApps = JSON.parse(localStorage.getItem("neo_os_installed_apps_v1") || "null");
-      if (Array.isArray(installedApps) && installedApps.indexOf("cinehd") === -1) {
-        installedApps.push("cinehd");
-        localStorage.setItem("neo_os_installed_apps_v1", JSON.stringify(installedApps));
-      }
-      localStorage.setItem(cineHdMigrationKey, "1");
-    }
-
     var discordMigrationKey = "neo_os_discord_app_v1";
     if (localStorage.getItem(discordMigrationKey) !== "1") {
       var discordApps = JSON.parse(localStorage.getItem("neo_os_installed_apps_v1") || "null");
@@ -290,6 +308,53 @@
         localStorage.setItem("neo_os_installed_apps_v1", JSON.stringify(discordApps));
       }
       localStorage.setItem(discordMigrationKey, "1");
+    }
+
+    var removeAnimeAppKey = "neo_os_remove_anime_app_v1";
+    if (localStorage.getItem(removeAnimeAppKey) !== "1") {
+      ["neo_os_pinned_apps_v1", "neo_os_installed_apps_v1"].forEach(function (key) {
+        var savedApps = JSON.parse(localStorage.getItem(key) || "null");
+        if (Array.isArray(savedApps)) localStorage.setItem(key, JSON.stringify(savedApps.filter(function (id) { return id !== "anime"; })));
+      });
+      localStorage.setItem(removeAnimeAppKey, "1");
+    }
+
+    var removeMangaAppKey = "neo_os_remove_manga_app_v1";
+    if (localStorage.getItem(removeMangaAppKey) !== "1") {
+      ["neo_os_pinned_apps_v1", "neo_os_installed_apps_v1"].forEach(function (key) {
+        var savedApps = JSON.parse(localStorage.getItem(key) || "null");
+        if (Array.isArray(savedApps)) localStorage.setItem(key, JSON.stringify(savedApps.filter(function (id) { return id !== "manga"; })));
+      });
+      localStorage.setItem(removeMangaAppKey, "1");
+    }
+
+    var nowggMigrationKey = "neo_os_nowgg_app_v2";
+    if (localStorage.getItem(nowggMigrationKey) !== "1") {
+      var remoteApps = JSON.parse(localStorage.getItem("neo_os_installed_apps_v1") || "null");
+      if (Array.isArray(remoteApps) && remoteApps.indexOf("nowgg") === -1) {
+        remoteApps.push("nowgg");
+        localStorage.setItem("neo_os_installed_apps_v1", JSON.stringify(remoteApps));
+      }
+      localStorage.setItem(nowggMigrationKey, "1");
+    }
+
+    var removePcRemoteKey = "neo_os_remove_pc_remote_v1";
+    if (localStorage.getItem(removePcRemoteKey) !== "1") {
+      ["neo_os_pinned_apps_v1", "neo_os_installed_apps_v1"].forEach(function (key) {
+        var savedApps = JSON.parse(localStorage.getItem(key) || "null");
+        if (Array.isArray(savedApps)) localStorage.setItem(key, JSON.stringify(savedApps.filter(function (id) { return id !== "pc-remote"; })));
+      });
+      localStorage.setItem(removePcRemoteKey, "1");
+    }
+
+    var neoAiMigrationKey = "neo_os_add_neo_ai_v1";
+    if (localStorage.getItem(neoAiMigrationKey) !== "1") {
+      var aiApps = JSON.parse(localStorage.getItem("neo_os_installed_apps_v1") || "null");
+      if (Array.isArray(aiApps) && aiApps.indexOf("neo-ai") === -1) {
+        aiApps.push("neo-ai");
+        localStorage.setItem("neo_os_installed_apps_v1", JSON.stringify(aiApps));
+      }
+      localStorage.setItem(neoAiMigrationKey, "1");
     }
 
     var retiredOptionalAppsKey = "neo_os_remove_duplicate_and_retired_apps_v3";

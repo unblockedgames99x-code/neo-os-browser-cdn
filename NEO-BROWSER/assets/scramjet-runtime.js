@@ -2,7 +2,7 @@
   "use strict";
 
   const pageBase = new URL("./", document.baseURI);
-  const serviceWorkerUrl = new URL("sw.js?v=20260910-nextnode-proxy-v1", pageBase);
+  const serviceWorkerUrl = new URL("sw.js?v=20260911-google-sites-v1", pageBase);
   const serviceWorkerScope = pageBase.pathname;
   const proxyBase = new URL("~/", pageBase).pathname;
   const bareMuxWorkerUrl = new URL(
@@ -676,8 +676,46 @@
     return proxyFrame;
   }
 
+  function localCompatibilityPage(value) {
+    try {
+      const target = new URL(value);
+      const googleSitesPage = target.hostname === 'sites.google.com' &&
+        /^\/view\/staticquasar\/gm3z\/snow-rider\/?$/i.test(target.pathname);
+      const gadgetSource = target.searchParams.get('url') || '';
+      const retiredGoogleGadget = target.hostname === 'images-opensocial.googleusercontent.com' &&
+        /\/gadgets\/ifr$/i.test(target.pathname) &&
+        /\/mind4ur\/debugactions@[^/]+\/sr3d2\.xml(?:[?#]|$)/i.test(gadgetSource);
+      if (!googleSitesPage && !retiredGoogleGadget) return '';
+      return new URL('compat/staticquasar-snow-rider.html?v=20260911-google-sites-v1', pageBase).href;
+    } catch {
+      return '';
+    }
+  }
+
+  function openLocalCompatibilityPage(requestedUrl, localUrl, frameElement) {
+    active = true;
+    lastVisibleUrl = requestedUrl;
+    proxyFrame = null;
+    attachedFrame = frameElement;
+    frameElement.dataset.neoScramjet = 'true';
+    frameElement.removeAttribute('srcdoc');
+    frameElement.style.opacity = '1';
+    frameElement.addEventListener('load', () => {
+      if (!active || attachedFrame !== frameElement) return;
+      let title = 'Snow Rider 3D';
+      try { title = frameElement.contentDocument?.title || title; } catch {}
+      window.dispatchEvent(new CustomEvent('neo:scramjet:ready', { detail: { title } }));
+    }, { once: true });
+    frameElement.src = localUrl;
+  }
+
   async function go(url, frameElement) {
     const requestedUrl = String(url);
+    const localPage = localCompatibilityPage(requestedUrl);
+    if (localPage) {
+      openLocalCompatibilityPage(requestedUrl, localPage, frameElement);
+      return;
+    }
     try {
       const destination = new URL(requestedUrl);
       if (/^(?:www\.|m\.)?youtube\.com$/i.test(destination.hostname)) {

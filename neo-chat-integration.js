@@ -15,7 +15,7 @@
   }
 
   function appearanceState() {
-    var theme = root.dataset.neoTheme || "graphite";
+    var theme = root.dataset.neoTheme || "oled";
     var style = root.dataset.interfaceStyle || root.dataset.neoInterfaceStyle || "modern";
     return { theme: titleCase(theme), style: titleCase(style) };
   }

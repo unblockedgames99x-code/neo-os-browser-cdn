@@ -15,6 +15,13 @@
   }
 
   function previewsEnabled() {
+    // The taskbar preview is a core window-management affordance, so it stays
+    // available in every performance mode. Heavier live snapshots are gated
+    // separately below.
+    return true;
+  }
+
+  function previewSnapshotsEnabled() {
     return performanceMode() === "normal";
   }
 
@@ -121,7 +128,7 @@
     preview.querySelector("[data-taskbar-preview-open]").setAttribute("aria-label", (minimized ? "Restore " : "Switch to ") + appName(app));
     preview.querySelector("[data-taskbar-preview-close]").setAttribute("aria-label", "Close " + appName(app));
 
-    if (!previewsEnabled()) {
+    if (!previewSnapshotsEnabled()) {
       viewport.appendChild(fallbackPreview(button, app, stateText));
       return;
     }
@@ -151,7 +158,7 @@
 
   function renderMinimizedViewport(viewport, win, button, app) {
     viewport.textContent = "";
-    if (!previewsEnabled() || win.querySelectorAll("*").length > 500) {
+    if (!previewSnapshotsEnabled() || win.querySelectorAll("*").length > 500) {
       viewport.appendChild(fallbackPreview(button, app, "Minimized"));
       return;
     }
@@ -260,7 +267,7 @@
 
   function refreshMinimizedTray() {
     if (!minimizedTray || !api) return;
-    if (fullscreenActive() || performanceMode() === "ultimate") {
+    if (fullscreenActive()) {
       minimizedTray.hidden = true;
       return;
     }

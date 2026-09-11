@@ -29,7 +29,7 @@
         if (value > peak) peak = value;
       }
       var rms = Math.sqrt(total / Math.max(1, end - start));
-      result[band] = Math.min(1, Math.pow(Math.max(rms, peak * .72), .72));
+      result[band] = Math.min(.92, Math.pow(Math.max(rms, peak * .58), .92) * .88);
     }
     return result;
   }

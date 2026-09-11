@@ -40,7 +40,9 @@
     : path.includes('/neo-chat/') ? 'chat'
     : path.includes('/neo-cloud/') ? 'cloud'
     : path.includes('/neo-tv/') ? 'tv'
+    : path.includes('/neo-games/') ? 'games'
     : path.includes('/neo-ai/') ? 'ai'
+    : path.includes('/neo-youtube/') ? 'youtube'
     : path.includes('/local-browser/') ? 'local-browser'
     : path.includes('/browser-newtab') ? 'browser-newtab'
     : path.includes('/neo-browser/') ? 'browser'
@@ -82,6 +84,8 @@
       ['bg','surface','text','muted','line','accent'].forEach(key => {
         if (palette[key]) root.style.setProperty('--desktop-' + key, palette[key]);
       });
+      const themeColor = document.querySelector('meta[name="theme-color"]');
+      if (themeColor && palette.bg) themeColor.setAttribute('content', palette.bg);
     }
     window.dispatchEvent(new CustomEvent('neo-theme-change', {detail: next}));
     document.querySelectorAll('iframe').forEach(sendFramePreferences);

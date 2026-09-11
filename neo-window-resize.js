@@ -313,7 +313,9 @@
     };
     handle.setPointerCapture(event.pointerId);
     win.classList.add("is-resizing");
-    document.documentElement.classList.add("is-resizing-window");
+    document.documentElement.classList.add("is-resizing-window", "is-window-interacting");
+    window.dispatchEvent(new CustomEvent("neo-window-interaction", { detail: { active: true, source: "window-resize" } }));
+    window.dispatchEvent(new CustomEvent("neo-media-priority", { detail: { active: true, source: "window-resize", pauseWallpaper: true } }));
     event.preventDefault();
     event.stopImmediatePropagation();
   }
@@ -342,7 +344,6 @@
     active.win.style.top = Math.round(next.top - active.bounds.top) + "px";
     active.win.style.width = Math.round(next.width) + "px";
     active.win.style.height = Math.round(next.height) + "px";
-    updateAccessibleSize(active.handle, active.win);
   }
 
   function moveResize(event) {
@@ -351,8 +352,10 @@
     var start = active.rect;
     var bounds = active.bounds;
     var minimum = active.minimum;
-    var dx = event.clientX - active.x;
-    var dy = event.clientY - active.y;
+    var samples = typeof event.getCoalescedEvents === "function" ? event.getCoalescedEvents() : [];
+    var pointer = samples.length ? samples[samples.length - 1] : event;
+    var dx = pointer.clientX - active.x;
+    var dy = pointer.clientY - active.y;
     var left = start.left;
     var top = start.top;
     var width = start.width;
@@ -380,8 +383,11 @@
     paintResize();
     if (active.handle.hasPointerCapture(active.pointerId)) active.handle.releasePointerCapture(active.pointerId);
     active.win.classList.remove("is-resizing");
+    updateAccessibleSize(active.handle, active.win);
     active.win.dispatchEvent(new CustomEvent("neo-window-resized"));
-    document.documentElement.classList.remove("is-resizing-window");
+    document.documentElement.classList.remove("is-resizing-window", "is-window-interacting");
+    window.dispatchEvent(new CustomEvent("neo-window-interaction", { detail: { active: false, source: "window-resize" } }));
+    window.dispatchEvent(new CustomEvent("neo-media-priority", { detail: { active: false, source: "window-resize", pauseWallpaper: true } }));
     active = null;
   }
 

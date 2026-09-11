@@ -340,6 +340,27 @@
   color: inherit !important;
 }
 
+/* Keep the ChatGPT mark in its standard white, unboxed form. */
+.app-icon-chatgpt {
+  overflow: visible !important;
+  color: #fff !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.app-icon-chatgpt .app-image-icon {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
 .app-icon-widgets {
   overflow: hidden;
   color: transparent !important;

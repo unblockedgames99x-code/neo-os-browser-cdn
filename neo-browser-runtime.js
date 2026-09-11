@@ -1,17 +1,18 @@
 (() => {
   "use strict";
 
-  const ENGINE_VERSION = "neo-browse-v68";
+  const ENGINE_VERSION = "neo-browse-v69";
   const OS_SCOPE = "/neo-os/";
-  const ROUTE_PREFIX = "/neo-os/browse-v68/";
+  const ROUTE_PREFIX = "/neo-os/browse-v69/";
   const RUNTIME_ROOT = "/neo-os/browser-runtime";
   const NEW_TAB_DESTINATION = "neo://newtab";
-  const NEW_TAB_PAGE = "/neo-os/browser-newtab.html?v=neo-browse-v68";
+  const NEW_TAB_PAGE = "/neo-os/browser-newtab.html?v=neo-browse-v69";
   const WORKER_URL = `/neo-os/browser-sw.js?engine=${ENGINE_VERSION}`;
   const BAREMUX_WORKER_URL = `${RUNTIME_ROOT}/baremux/worker.js?engine=${ENGINE_VERSION}`;
   const PRIMARY_TRANSPORT_URL = `${RUNTIME_ROOT}/epoxy/index.mjs?engine=${ENGINE_VERSION}`;
   const FALLBACK_TRANSPORT_URL = `${RUNTIME_ROOT}/libcurl/index.mjs?engine=${ENGINE_VERSION}`;
-  const PREFERRED_WISP_RELAY = "wss://support.pired.org/lively/";
+  const NEXTNODE_PROXY_ORIGIN = "https://nextnode9124.b-cdn.net/";
+  const PREFERRED_WISP_RELAY = "wss://nextnode9124.b-cdn.net/w/";
   const WISP_RELAYS = [
     PREFERRED_WISP_RELAY,
     "wss://cdn.northstreetumc.org/adblock/",
@@ -19,7 +20,7 @@
     "wss://girlspreples.org/wi/",
     "wss://mages.io/wisp/",
   ];
-  const WISP_RELAY_CACHE_KEY = `neo-wisp-relay:${ENGINE_VERSION}:lively-v1`;
+  const WISP_RELAY_CACHE_KEY = `neo-wisp-relay:${ENGINE_VERSION}:nextnode-v1`;
   let runtimePromise = null;
   let stylesPromise = null;
   let transportConnection = null;
@@ -41,10 +42,12 @@
     ]).finally(() => window.clearTimeout(timeoutId));
   }
 
-  function probeWispRelay(relay) {
+  function probeWispRelay(relay, timeoutMilliseconds = 3600) {
     return new Promise((resolve, reject) => {
       let socket;
       let settled = false;
+      let openedStream = false;
+      const streamId = crypto.getRandomValues(new Uint32Array(1))[0] || 1;
       const finish = (error) => {
         if (settled) return;
         settled = true;
@@ -55,16 +58,74 @@
       };
       const timeoutId = window.setTimeout(
         () => finish(new Error("The relay did not respond.")),
-        2200,
+        timeoutMilliseconds,
       );
       try {
         socket = new WebSocket(relay);
-        socket.addEventListener("open", () => finish(), { once: true });
-        socket.addEventListener("error", () => finish(new Error("The relay could not be reached.")), { once: true });
-        socket.addEventListener("close", () => finish(new Error("The relay closed before connecting.")), { once: true });
+        socket.binaryType = "arraybuffer";
+        socket.addEventListener("message", async (event) => {
+          let data = event.data;
+          try {
+            if (data instanceof Blob) data = await data.arrayBuffer();
+            if (!(data instanceof ArrayBuffer) || data.byteLength < 5) return;
+            const view = new DataView(data);
+            const packetType = view.getUint8(0);
+            const packetStream = view.getUint32(1, true);
+
+            if (!openedStream) {
+              if (packetType === 5 && packetStream === 0) {
+                socket.send(new Uint8Array([5, 0, 0, 0, 0, 2, 1]));
+                return;
+              }
+              if (packetType !== 3 || packetStream !== 0) return;
+
+              openedStream = true;
+              const host = new TextEncoder().encode("127.0.0.1");
+              const packet = new ArrayBuffer(8 + host.length);
+              const request = new DataView(packet);
+              request.setUint8(0, 1);
+              request.setUint32(1, streamId, true);
+              request.setUint8(5, 1);
+              request.setUint16(6, 1, true);
+              new Uint8Array(packet).set(host, 8);
+              socket.send(packet);
+              return;
+            }
+
+            if (packetStream === streamId) finish();
+          } catch (error) {
+            finish(error);
+          }
+        });
+        socket.addEventListener("error", () => finish(new Error("The relay could not carry traffic.")), { once: true });
+        socket.addEventListener("close", () => finish(new Error("The relay closed before responding.")), { once: true });
       } catch (error) {
         finish(error);
       }
+    });
+  }
+
+  function firstResponsiveWispRelay(candidates, timeoutMilliseconds) {
+    return new Promise((resolve, reject) => {
+      if (!candidates.length) {
+        reject(new Error("No web relay is available."));
+        return;
+      }
+      let remaining = candidates.length;
+      let lastError = null;
+      let settled = false;
+      candidates.forEach((relay) => {
+        probeWispRelay(relay, timeoutMilliseconds).then(() => {
+          if (settled) return;
+          settled = true;
+          resolve(relay);
+        }).catch((error) => {
+          if (settled) return;
+          lastError = error;
+          remaining -= 1;
+          if (!remaining) reject(lastError || new Error("No web relay is available."));
+        });
+      });
     });
   }
 
@@ -73,20 +134,25 @@
     wispRelayPromise = (async () => {
       let cached = "";
       try { cached = window.sessionStorage.getItem(WISP_RELAY_CACHE_KEY) || ""; } catch (error) {}
-      const candidates = [PREFERRED_WISP_RELAY]
-        .concat(cached && cached !== PREFERRED_WISP_RELAY && WISP_RELAYS.includes(cached) ? [cached] : [])
-        .concat(WISP_RELAYS.filter((relay) => relay !== PREFERRED_WISP_RELAY && relay !== cached));
-      let lastError = null;
-      for (const relay of candidates) {
+      let selectedRelay = "";
+      try {
+        await probeWispRelay(PREFERRED_WISP_RELAY, 1800);
+        selectedRelay = PREFERRED_WISP_RELAY;
+      } catch (preferredError) {}
+      if (!selectedRelay && cached && cached !== PREFERRED_WISP_RELAY && WISP_RELAYS.includes(cached)) {
         try {
-          await probeWispRelay(relay);
-          try { window.sessionStorage.setItem(WISP_RELAY_CACHE_KEY, relay); } catch (error) {}
-          return relay;
-        } catch (error) {
-          lastError = error;
-        }
+          await probeWispRelay(cached, 1400);
+          selectedRelay = cached;
+        } catch (cachedError) {}
       }
-      throw lastError || new Error("No web relay is available.");
+      if (!selectedRelay) {
+        const remaining = WISP_RELAYS.filter(
+          (relay) => relay !== PREFERRED_WISP_RELAY && relay !== cached,
+        );
+        selectedRelay = await firstResponsiveWispRelay(remaining, 3800);
+      }
+      try { window.sessionStorage.setItem(WISP_RELAY_CACHE_KEY, selectedRelay); } catch (error) {}
+      return selectedRelay;
     })().catch((error) => {
       wispRelayPromise = null;
       throw error;
@@ -773,13 +839,15 @@
     let musicSleepAt = 0;
     let musicSleepTimer = 0;
     let musicRadio = true;
+    let lastMusicProgressBroadcast = 0;
 
-    musicAudio.preload = "auto";
+    musicAudio.preload = "metadata";
     try {
       const savedMusicVolume = Number(localStorage.getItem("neo_music_volume"));
       if (Number.isFinite(savedMusicVolume) && savedMusicVolume >= 0 && savedMusicVolume <= 1) {
         musicAudio.volume = savedMusicVolume;
       }
+      musicAudio.muted = localStorage.getItem("neo_music_muted") === "true";
     } catch (error) {}
 
     function currentMusicTrack() {
@@ -862,14 +930,33 @@
       const track = musicList[index];
       const source = musicSourceFor(track);
       if (!track || !source) return;
+      const sameTrack = index === musicIndex && musicAudio.src === source && Boolean(musicAudio.currentSrc || musicAudio.src);
       musicIndex = index;
       musicWantsPlayback = autoplay;
-      musicAudio.pause();
-      musicAudio.src = source;
-      musicAudio.currentTime = 0;
-      musicAudio.load();
-      if (autoplay) musicAudio.play().catch(() => broadcastMusicState());
+      if (!sameTrack) {
+        musicAudio.pause();
+        musicAudio.src = source;
+        musicAudio.currentTime = 0;
+        musicAudio.load();
+      }
+      if (autoplay) requestMusicPlayback();
       broadcastMusicState();
+    }
+
+    function requestMusicPlayback() {
+      if (!musicWantsPlayback || !currentMusicTrack() || !musicAudio.paused) return;
+      musicAudio.play().then(() => {
+        musicFailureCount = 0;
+        broadcastMusicState();
+      }).catch((error) => {
+        if (!error || error.name !== "NotAllowedError") musicFailureCount += 1;
+        broadcastMusicState();
+      });
+    }
+
+    function unlockMusicPlayback(event) {
+      if (event?.type === "keydown" && (event.ctrlKey || event.metaKey || event.altKey)) return;
+      requestMusicPlayback();
     }
 
     function nextMusicTrack() {
@@ -920,7 +1007,7 @@
           if (musicAudio.paused) {
             musicWantsPlayback = true;
             musicFailureCount = 0;
-            if (currentMusicTrack()) musicAudio.play().catch(() => broadcastMusicState());
+            requestMusicPlayback();
           } else {
             musicWantsPlayback = false;
             musicAudio.pause();
@@ -965,6 +1052,11 @@
         case "volume":
           musicAudio.volume = Math.max(0, Math.min(1, Number(command.v) || 0));
           try { localStorage.setItem("neo_music_volume", String(musicAudio.volume)); } catch (error) {}
+          broadcastMusicState();
+          break;
+        case "mute":
+          musicAudio.muted = command.on === true;
+          try { localStorage.setItem("neo_music_muted", String(musicAudio.muted)); } catch (error) {}
           broadcastMusicState();
           break;
         case "shuffle":
@@ -1042,8 +1134,21 @@
       }
     }
 
-    ["play", "pause", "playing", "loadedmetadata", "durationchange", "timeupdate", "volumechange", "ratechange"].forEach((eventName) => {
-      musicAudio.addEventListener(eventName, broadcastMusicState);
+    ["play", "pause", "playing", "loadedmetadata", "durationchange", "volumechange", "ratechange"].forEach((eventName) => {
+      musicAudio.addEventListener(eventName, () => {
+        if (eventName === "volumechange") {
+          try {
+            localStorage.setItem("neo_music_volume", String(musicAudio.volume));
+            localStorage.setItem("neo_music_muted", String(musicAudio.muted));
+          } catch (error) {}
+        }
+        broadcastMusicState();
+      });
+    });
+    musicAudio.addEventListener("timeupdate", () => {
+      if (document.hidden || Date.now() - lastMusicProgressBroadcast < 200) return;
+      lastMusicProgressBroadcast = Date.now();
+      broadcastMusicState();
     });
     musicAudio.addEventListener("ended", () => {
       if (!musicAudio.loop) nextMusicTrack();
@@ -1058,6 +1163,9 @@
         broadcastMusicState();
       }
     });
+    window.addEventListener("pointerdown", unlockMusicPlayback, { capture: true, passive: true });
+    window.addEventListener("touchend", unlockMusicPlayback, { capture: true, passive: true });
+    window.addEventListener("keydown", unlockMusicPlayback, true);
 
     if ("mediaSession" in navigator) {
       const actions = {
@@ -1996,6 +2104,7 @@
   }
 
   window.NEO_BROWSER_ENGINE = {
+    proxyOrigin: NEXTNODE_PROXY_ORIGIN,
     warm: getRuntime,
     async openQuery(options) {
       if (!options?.container) throw new Error("The web app has no page container.");

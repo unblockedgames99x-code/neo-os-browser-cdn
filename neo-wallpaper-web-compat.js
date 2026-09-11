@@ -24,6 +24,12 @@
   var nativeRequestAnimationFrame = window.requestAnimationFrame.bind(window);
   var nativeCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
   var nativeSetInterval = window.setInterval.bind(window);
+  var nativeSetTimeout = window.setTimeout.bind(window);
+  var pendingFrames = new Map();
+  var projectFrame = 0;
+  var nextFrameId = 1;
+  var lastProjectFrame = 0;
+  var projectFrameInterval = 1000 / 30;
   var projectFrames = 0;
   var projectIntervals = 0;
   var previousFrames = 0;
@@ -31,17 +37,61 @@
   var previousAnimationTime = 0;
   var previousMediaTime = 0;
 
-  window.requestAnimationFrame = function (callback) {
-    return nativeRequestAnimationFrame(function (now) {
-      projectFrames += 1;
-      return callback(now);
+  function playbackPaused() {
+    return paused || document.hidden;
+  }
+
+  function scheduleProjectFrame() {
+    if (projectFrame || playbackPaused() || pendingFrames.size === 0) return;
+    projectFrame = nativeRequestAnimationFrame(runProjectFrame);
+  }
+
+  function runProjectFrame(now) {
+    projectFrame = 0;
+    if (playbackPaused()) return;
+    if (lastProjectFrame && now - lastProjectFrame < projectFrameInterval - 1) {
+      scheduleProjectFrame();
+      return;
+    }
+    lastProjectFrame = now;
+    var callbacks = Array.from(pendingFrames.entries());
+    callbacks.forEach(function (entry) { pendingFrames.delete(entry[0]); });
+    projectFrames += callbacks.length;
+    callbacks.forEach(function (entry) {
+      try {
+        entry[1](now);
+      } catch (error) {
+        nativeSetTimeout(function () { throw error; }, 0);
+      }
     });
+    scheduleProjectFrame();
+  }
+
+  function suspendProjectFrames() {
+    if (!projectFrame) return;
+    nativeCancelAnimationFrame(projectFrame);
+    projectFrame = 0;
+  }
+
+  window.requestAnimationFrame = function (callback) {
+    if (typeof callback !== "function") return nativeRequestAnimationFrame(callback);
+    var id = nextFrameId;
+    nextFrameId += 1;
+    pendingFrames.set(id, callback);
+    scheduleProjectFrame();
+    return id;
+  };
+
+  window.cancelAnimationFrame = function (id) {
+    if (pendingFrames.delete(id)) return;
+    nativeCancelAnimationFrame(id);
   };
 
   window.setInterval = function (handler, delay) {
     var args = Array.prototype.slice.call(arguments, 2);
     if (typeof handler !== "function") return nativeSetInterval.apply(window, arguments);
     return nativeSetInterval(function () {
+      if (playbackPaused()) return;
       projectIntervals += 1;
       return handler.apply(window, args);
     }, delay);
@@ -167,6 +217,19 @@
     });
   }
 
+  function setPlaybackPaused(nextPaused) {
+    paused = Boolean(nextPaused);
+    setDocumentPlayback(paused);
+    if (playbackPaused()) {
+      suspendProjectFrames();
+      stopAudioLoop();
+    } else {
+      lastProjectFrame = 0;
+      scheduleProjectFrame();
+      startAudioLoop();
+    }
+  }
+
   function animationTime() {
     if (typeof document.getAnimations !== "function") return 0;
     return document.getAnimations().reduce(function (total, animation) {
@@ -207,19 +270,23 @@
 
   window.addEventListener("message", function (event) {
     if (event.source !== window.parent || !event.data || event.data.type !== "neo-wallpaper-playback") return;
-    paused = Boolean(event.data.paused);
-    setDocumentPlayback(paused);
+    setPlaybackPaused(event.data.paused);
     mediaListeners.playback.forEach(function (listener) {
       invokeSafely(listener, paused ? window.wallpaperMediaIntegration.PLAYBACK_PAUSED : window.wallpaperMediaIntegration.PLAYBACK_PLAYING);
     });
-    if (paused) stopAudioLoop();
-    else startAudioLoop();
     reportHealth();
   });
 
   document.addEventListener("visibilitychange", function () {
-    if (document.hidden) stopAudioLoop();
-    else if (!paused) startAudioLoop();
+    if (document.hidden) {
+      suspendProjectFrames();
+      stopAudioLoop();
+    } else if (!paused) {
+      lastProjectFrame = 0;
+      scheduleProjectFrame();
+      startAudioLoop();
+    }
+    setDocumentPlayback(playbackPaused());
   });
 
   if (!pageReady) {
@@ -250,12 +317,19 @@
     audioListeners: audioListeners,
     mediaListeners: mediaListeners,
     resume: function () {
-      paused = false;
-      startAudioLoop();
+      setPlaybackPaused(false);
     },
     pause: function () {
-      paused = true;
-      stopAudioLoop();
+      setPlaybackPaused(true);
+    },
+    getState: function () {
+      return {
+        paused: playbackPaused(),
+        pendingFrames: pendingFrames.size,
+        frameRateLimit: Math.round(1000 / projectFrameInterval),
+        frames: projectFrames,
+        intervals: projectIntervals
+      };
     }
   };
 })();

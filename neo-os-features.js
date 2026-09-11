@@ -430,12 +430,22 @@
     });
     var widgets = menu.querySelector('[data-widget-action="show"]');
     var lock = menu.querySelector('[data-widget-action="lock"]');
+    var bottomVisualizer = menu.querySelector('[data-widget-action="bottom-visualizer"]');
+    var bottomVisualizerLabel = menu.querySelector("[data-bottom-visualizer-label]");
     if (widgets) widgets.setAttribute("aria-checked", !api || !api.getSetting || api.getSetting("widgets") ? "true" : "false");
     if (lock) lock.setAttribute("aria-checked", !api || !api.getSetting || api.getSetting("widgetLock") ? "true" : "false");
+    var bottomVisualizerEnabled = Boolean(window.NEO_BOTTOM_VISUALIZER && window.NEO_BOTTOM_VISUALIZER.isEnabled());
+    if (bottomVisualizer) bottomVisualizer.setAttribute("aria-checked", bottomVisualizerEnabled ? "true" : "false");
+    if (bottomVisualizerLabel) bottomVisualizerLabel.textContent = bottomVisualizerEnabled ? "Remove bottom music visualizer" : "Add bottom music visualizer";
     var fullscreen = menu.querySelector("[data-fullscreen-label]");
     if (fullscreen) fullscreen.textContent = document.fullscreenElement || document.webkitFullscreenElement ? "Exit fullscreen" : "Enter fullscreen";
     var recording = menu.querySelector("[data-recording-label]");
     if (recording) recording.textContent = desktopRecorder && desktopRecorder.state !== "inactive" ? "Stop Recording" : "Start Recording";
+    var iconToggle = menu.querySelector('[data-desktop-action="toggle-icons"]');
+    var iconToggleLabel = menu.querySelector("[data-desktop-icons-label]");
+    var iconsHidden = Boolean(api && api.getDesktopShortcutsHidden && api.getDesktopShortcutsHidden());
+    if (iconToggle) iconToggle.setAttribute("aria-pressed", iconsHidden ? "true" : "false");
+    if (iconToggleLabel) iconToggleLabel.textContent = iconsHidden ? "Show all icons" : "Hide all icons";
     sortDesktopShortcuts(sort);
   }
 
@@ -602,6 +612,9 @@
     else if (action === "customize") api.openApp("control");
     else if (action === "background") api.openWallpaperSource("installed");
     else if (action === "terminal") api.openApp("terminal");
+    else if (action === "toggle-icons" && api.setDesktopShortcutsHidden && api.getDesktopShortcutsHidden) {
+      api.setDesktopShortcutsHidden(!api.getDesktopShortcutsHidden());
+    }
     else if (action === "fullscreen") toggleDesktopFullscreen();
     else if (action === "refresh" && api.refresh) api.refresh();
   }
@@ -624,6 +637,7 @@
   function runWidgetAction(button) {
     var action = button.dataset.widgetAction;
     if (action === "manage") api.openApp("skins");
+    else if (action === "bottom-visualizer" && window.NEO_BOTTOM_VISUALIZER) window.NEO_BOTTOM_VISUALIZER.toggle();
     else if (action === "reset") api.resetLayout();
     else if (action === "show") api.setSetting("widgets", !api.getSetting("widgets"));
     else if (action === "lock") api.setSetting("widgetLock", !api.getSetting("widgetLock"));
@@ -1437,7 +1451,7 @@
         var card = document.createElement("article");
         card.className = "managed-app";
         card.dataset.managedApp = app.id;
-        card.innerHTML = '<span class="managed-app-icon app-icon-shape app-icon-' + app.icon + '">' + icon(app.icon) + '</span><span class="managed-app-copy"><strong></strong><small></small><em></em></span><div class="managed-app-actions"><label class="pin-toggle"><input type="checkbox" data-app-pin /><span></span><small>Taskbar</small></label><button class="button primary" type="button" data-app-run>Run</button></div>';
+        card.innerHTML = '<span class="managed-app-icon app-icon-shape">' + icon(app.icon) + '</span><span class="managed-app-copy"><strong></strong><small></small><em></em></span><div class="managed-app-actions"><label class="pin-toggle"><input type="checkbox" data-app-pin /><span></span><small>Taskbar</small></label><button class="button primary" type="button" data-app-run>Run</button></div>';
         card.querySelector(".managed-app-copy strong").textContent = app.title;
         card.querySelector(".managed-app-copy small").textContent = app.subtitle;
         card.querySelector(".managed-app-copy em").textContent = app.category;
@@ -1464,6 +1478,101 @@
     });
     root.querySelector("[data-app-search]").addEventListener("input", function (event) { state.query = event.target.value.trim(); render(); });
     render();
+  }
+
+  function appInstallerMarkup() {
+    return '<section class="feature-app app-installer" data-app-installer><header class="feature-content-heading"><div><span class="eyebrow">WEB APPS</span><h2>App Installer</h2><p>Give a website a name and icon. NEO will add it to Applications and your desktop.</p></div><span class="status-pill">LOCAL</span></header><div class="installer-layout"><form class="installer-form" data-installer-form><div class="installer-form-heading"><span class="installer-form-icon">' + icon("plus") + '</span><div><strong>Install a website</strong><small>Your installed apps stay on this device.</small></div></div><label><span>App name</span><input type="text" maxlength="48" autocomplete="off" placeholder="Example: School Portal" data-installer-name required /></label><label><span>Website URL</span><input type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://example.com" data-installer-url required /></label><label><span>Icon URL <em>optional</em></span><input type="text" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://example.com/icon.png" data-installer-icon /></label><label><span>Open using</span><select data-installer-mode><option value="relay">NEO relay (recommended)</option><option value="direct">Direct iframe</option></select></label><p class="installer-help">Relay mode uses the same browser connection as NEO Browser. Direct iframe is available for sites that allow embedding.</p><div class="installer-submit-row"><button class="button primary" type="submit">Install &amp; open</button><output data-installer-status aria-live="polite"></output></div></form><section class="installed-sites"><div class="installed-sites-heading"><div><span class="eyebrow">INSTALLED</span><h3>Your website apps</h3></div><span data-custom-app-count></span></div><div class="installed-sites-list" data-custom-app-list></div><div class="feature-state installed-sites-empty" data-custom-app-empty hidden><span class="feature-empty-icon">' + icon("apps") + '</span><strong>No website apps yet</strong><p>Install one using the form.</p></div></section></div></section>';
+  }
+
+  function mountAppInstaller(body) {
+    body.innerHTML = appInstallerMarkup();
+    var root = body.querySelector("[data-app-installer]");
+    var form = root.querySelector("[data-installer-form]");
+    var status = root.querySelector("[data-installer-status]");
+
+    function setStatus(message, error) {
+      status.textContent = message || "";
+      status.classList.toggle("is-error", Boolean(error));
+    }
+
+    function render() {
+      var customApps = typeof api.getCustomApps === "function" ? api.getCustomApps() : [];
+      var list = root.querySelector("[data-custom-app-list]");
+      list.replaceChildren();
+      root.querySelector("[data-custom-app-empty]").hidden = customApps.length > 0;
+      root.querySelector("[data-custom-app-count]").textContent = customApps.length + (customApps.length === 1 ? " app" : " apps");
+      customApps.forEach(function (app) {
+        var card = document.createElement("article");
+        card.className = "installed-site";
+        card.dataset.customAppId = app.id;
+        var artwork = document.createElement("span");
+        artwork.className = "installed-site-icon app-icon-shape";
+        artwork.innerHTML = icon(app.icon);
+        var copy = document.createElement("span");
+        copy.className = "installed-site-copy";
+        var name = document.createElement("strong");
+        name.textContent = app.title;
+        var url = document.createElement("small");
+        url.textContent = app.sourceUrl;
+        var mode = document.createElement("em");
+        mode.textContent = app.launchMode === "direct" ? "DIRECT IFRAME" : "NEO RELAY";
+        copy.append(name, url, mode);
+        var actions = document.createElement("span");
+        actions.className = "installed-site-actions";
+        var open = document.createElement("button");
+        open.type = "button";
+        open.className = "button primary";
+        open.dataset.customAppOpen = "";
+        open.textContent = "Open";
+        open.setAttribute("aria-label", "Open " + app.title);
+        var remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "button danger";
+        remove.dataset.customAppRemove = "";
+        remove.textContent = "Remove";
+        remove.setAttribute("aria-label", "Remove " + app.title);
+        actions.append(open, remove);
+        card.append(artwork, copy, actions);
+        list.appendChild(card);
+      });
+    }
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      setStatus("Installing…", false);
+      try {
+        var app = api.installCustomApp({
+          title: root.querySelector("[data-installer-name]").value,
+          url: root.querySelector("[data-installer-url]").value,
+          icon: root.querySelector("[data-installer-icon]").value,
+          mode: root.querySelector("[data-installer-mode]").value
+        });
+        form.reset();
+        root.querySelector("[data-installer-mode]").value = "relay";
+        setStatus(app.title + " installed and opened.", false);
+        notify("App installed", app.title + " is ready on your desktop.", "apps");
+        render();
+        window.requestAnimationFrame(function () { api.openApp(app.id); });
+      } catch (error) {
+        setStatus(error && error.message ? error.message : "This app could not be installed.", true);
+      }
+    });
+
+    root.addEventListener("click", function (event) {
+      var card = event.target.closest("[data-custom-app-id]");
+      if (!card) return;
+      if (event.target.closest("[data-custom-app-open]")) api.openApp(card.dataset.customAppId);
+      if (event.target.closest("[data-custom-app-remove]")) {
+        var name = card.querySelector("strong").textContent;
+        if (api.removeCustomApp(card.dataset.customAppId)) {
+          setStatus(name + " removed.", false);
+          notify("App removed", name + " was removed from NEO.", "apps");
+          render();
+        }
+      }
+    });
+    render();
+    requestAnimationFrame(function () { root.querySelector("[data-installer-name]").focus({ preventScroll: true }); });
   }
 
   function terminalMarkup() {
@@ -1832,6 +1941,7 @@
     if (id === "music") mountMusic(body);
     else if (id === "media") mountMedia(body);
     else if (id === "apps") mountApps(body);
+    else if (id === "app-installer") mountAppInstaller(body);
     else if (id === "terminal") mountTerminal(body);
     else if (id === "notes") mountNotes(body);
     else if (id === "calculator") mountCalculator(body);

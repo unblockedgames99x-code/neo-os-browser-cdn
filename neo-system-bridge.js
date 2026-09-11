@@ -2,7 +2,7 @@
   'use strict';
   if (window.NEO_SYSTEM_BRIDGE) return;
   const config=window.NEO_DESKTOP_CONFIG;if(!config)return;
-  const defaults={theme:'graphite',volume:70,muted:false,brightness:100,volumeBar:false,reducedMotion:false};
+  const defaults={theme:'oled',volume:70,muted:false,brightness:100,volumeBar:false,reducedMotion:false};
   const legacyThemes={dark:'graphite',light:'frost',retro:'ember','high-contrast':'contrast'};
   const messageTargetOrigin=location.origin==='null'?'*':location.origin;
   const trustedMessageOrigin=origin=>location.origin==='null'?origin==='null':origin===location.origin;
@@ -23,7 +23,7 @@
   function sendPreferences(target){if(!target)return;try{target.postMessage({type:'neo-system-preferences',state:{...state},palette:palette()},messageTargetOrigin);}catch(_) {}}
   function syncFrames(){document.querySelectorAll('iframe').forEach(frame=>sendPreferences(frame.contentWindow));}
   function apply(){
-    state.theme=legacyThemes[state.theme]||state.theme;if(!config.themes[state.theme])state.theme='graphite';state.volume=clamp(state.volume,0,100);state.brightness=clamp(state.brightness,45,100);
+    state.theme=legacyThemes[state.theme]||state.theme;if(!config.themes[state.theme])state.theme='oled';state.volume=clamp(state.volume,0,100);state.brightness=clamp(state.brightness,45,100);
     const root=document.documentElement,colors=config.themes[state.theme];root.dataset.neoTheme=state.theme;root.dataset.desktopMotion=state.reducedMotion?'reduced':'normal';
     ['bg','surface','text','muted','line','accent'].forEach((key,i)=>root.style.setProperty('--desktop-'+key,colors[i]));
     root.style.colorScheme=state.theme==='frost'?'light':'dark';
