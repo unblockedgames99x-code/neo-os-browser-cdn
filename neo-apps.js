@@ -39,7 +39,7 @@
       title: "YouTube",
       subtitle: "Fast themed videos, search, and Shorts",
       icon: "youtube",
-      route: "./neo-youtube/index.html?v=20260911-youtube-clean-header-v3",
+      route: "./neo-youtube/index.html?v=20260911-youtube-clean-sidebar-v4",
       keepAlive: false,
       width: 1180,
       height: 760,
