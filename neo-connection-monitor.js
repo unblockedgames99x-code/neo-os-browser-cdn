@@ -91,6 +91,9 @@
       return { name: name, ready: false, latency: 0 };
     }).then(function (result) {
       window.clearTimeout(timeout);
+      // This probe only needs headers. Release an unread or streaming body
+      // after recording the result instead of leaving its connection open.
+      controller.abort();
       return result;
     });
   }
