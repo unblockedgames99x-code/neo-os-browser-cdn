@@ -67,6 +67,11 @@
   }
 
   function limits(win) {
+    if (win.classList.contains("is-youtube-popout")) {
+      return win.dataset.youtubePopoutMode === "shorts"
+        ? { width: 220, height: 391 }
+        : { width: 220, height: 124 };
+    }
     var style = getComputedStyle(win);
     return {
       width: Math.min(layer.clientWidth, Math.max(280, parseFloat(style.minWidth) || 320)),
@@ -372,6 +377,23 @@
       height = start.bottom - top;
     }
 
+    if (active.win.classList.contains("is-youtube-popout")) {
+      var ratio = active.win.dataset.youtubePopoutMode === "shorts" ? 9 / 16 : 16 / 9;
+      var horizontal = direction.includes("e") || direction.includes("w");
+      var vertical = direction.includes("n") || direction.includes("s");
+      var useWidth = horizontal && (!vertical || Math.abs(dx / start.width) >= Math.abs(dy / start.height));
+      var requestedWidth = useWidth ? width : height * ratio;
+      var maximumWidth = Math.min(
+        direction.includes("w") ? start.right - bounds.left : bounds.right - start.left,
+        (direction.includes("n") ? start.bottom - bounds.top : bounds.bottom - start.top) * ratio
+      );
+      var minimumWidth = Math.max(minimum.width, minimum.height * ratio);
+      width = clamp(requestedWidth, minimumWidth, maximumWidth);
+      height = width / ratio;
+      left = direction.includes("w") ? start.right - width : start.left;
+      top = direction.includes("n") ? start.bottom - height : start.top;
+    }
+
     active.next = { left: left, top: top, width: width, height: height };
     if (!resizeFrame) resizeFrame = requestAnimationFrame(paintResize);
   }
@@ -405,6 +427,11 @@
     var minimum = limits(win);
     var width = rect.width + (event.key === "ArrowRight" ? step : event.key === "ArrowLeft" ? -step : 0);
     var height = rect.height + (event.key === "ArrowDown" ? step : event.key === "ArrowUp" ? -step : 0);
+    if (win.classList.contains("is-youtube-popout")) {
+      var ratio = win.dataset.youtubePopoutMode === "shorts" ? 9 / 16 : 16 / 9;
+      if (horizontal) height = width / ratio;
+      else width = height * ratio;
+    }
     win.style.width = Math.round(clamp(width, minimum.width, bounds.right - rect.left)) + "px";
     win.style.height = Math.round(clamp(height, minimum.height, bounds.bottom - rect.top)) + "px";
     updateAccessibleSize(handle, win);

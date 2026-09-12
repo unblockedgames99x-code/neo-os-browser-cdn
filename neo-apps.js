@@ -39,7 +39,7 @@
       title: "YouTube",
       subtitle: "Fast themed videos, search, and Shorts",
       icon: "youtube",
-      route: "./neo-youtube/index.html?build=20260912-playback-recovery-v2",
+      route: "./neo-youtube/index.html?build=20260912-video-only-popout-v1",
       keepAlive: false,
       width: 1180,
       height: 760,

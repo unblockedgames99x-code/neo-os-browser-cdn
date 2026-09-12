@@ -429,20 +429,28 @@ html[data-neo-theme="glass"] {
 /* Keep the pill entirely outside a normal window. Maximized and true
    fullscreen windows collapse it to a single, unobtrusive exit control. */
 @media (min-width: 701px) {
-  html.neo-auto-hide-bars[data-window-bar-style="pill"] .neo-window:not(.is-maximized):not(.is-tab-fullscreen) {
+  html.neo-auto-hide-bars[data-window-bar-style="pill"] .neo-window:not(.is-maximized):not(.is-tab-fullscreen):not(.is-youtube-popout) {
     grid-template-rows: var(--neo-window-chrome-height) minmax(0, 1fr) !important;
   }
 
-  html.neo-auto-hide-bars[data-window-bar-style="pill"] .neo-window:not(.is-maximized):not(.is-tab-fullscreen) > .window-body {
+  html.neo-auto-hide-bars[data-window-bar-style="pill"] .neo-window:not(.is-maximized):not(.is-tab-fullscreen):not(.is-youtube-popout) > .window-body {
     grid-row: 2;
   }
 
-  html.neo-auto-hide-bars[data-window-bar-style="pill"] .neo-window:not(.is-maximized):not(.is-tab-fullscreen) > .window-chrome {
+  html.neo-auto-hide-bars[data-window-bar-style="pill"] .neo-window:not(.is-maximized):not(.is-tab-fullscreen):not(.is-youtube-popout) > .window-chrome {
     position: relative !important;
     top: auto;
     left: auto;
     margin: 5px 0;
     transform: none !important;
+  }
+
+  html.neo-auto-hide-bars[data-window-bar-style="pill"] .neo-window.is-youtube-popout {
+    grid-template-rows: minmax(0, 1fr) !important;
+  }
+
+  html.neo-auto-hide-bars[data-window-bar-style="pill"] .neo-window.is-youtube-popout > .window-body {
+    grid-row: 1 !important;
   }
 
   html.neo-auto-hide-bars[data-window-bar-style="pill"] .neo-window:is(.is-maximized,.is-tab-fullscreen) > .window-chrome {
@@ -529,6 +537,10 @@ html.neo-auto-hide-bars[data-window-bar-style="ultra"] .neo-window.is-chrome-rev
 html.neo-auto-hide-bars[data-window-bar-style="ultra"] .neo-window.is-dragging,
 html.neo-auto-hide-bars[data-window-bar-style="ultra"] .neo-window:has(> .window-chrome:focus-within) {
   grid-template-rows: 32px minmax(0, 1fr) !important;
+}
+
+html.neo-auto-hide-bars[data-window-bar-style="ultra"] .neo-window[data-app-id="youtube-app"].is-youtube-popout {
+  grid-template-rows: minmax(0, 1fr) !important;
 }
 
 html.neo-auto-hide-bars[data-window-bar-style="ultra"] .neo-window.is-maximized {
