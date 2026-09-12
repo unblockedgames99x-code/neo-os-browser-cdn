@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-boot="pending" data-neo-app="shell" data-interface-style="modern" data-wallpaper="we-steam-1403160205" data-performance-mode="normal" data-auto-performance-active="false" data-taskbar-position="left" data-taskbar-style="current" data-taskbar-surface="glass" data-taskbar-outline="true" data-taskbar-running-apps="true" data-window-bar-style="current">
+<html lang="en" data-boot="pending" data-neo-app="shell" data-interface-style="modern" data-wallpaper="we-steam-1403160205" data-performance-mode="normal" data-auto-performance-active="false" data-taskbar-position="left" data-taskbar-style="current" data-taskbar-surface="glass" data-taskbar-outline="true" data-taskbar-running-apps="true" data-window-bar-style="ultra">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http://127.0.0.1:3092 http://localhost:3092; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: http://127.0.0.1:3092 http://localhost:3092 https://pipedapi.ducks.party https://api.piped.private.coffee https://lol.samidy.workers.dev https://lunchbreak.dyercountylawncare.workers.dev https://neo-stratus-api-w6nw.onrender.com wss://nextnode9124.b-cdn.net wss://support.pired.org wss://girlspreples.com wss://northstreetumc.org wss://pcesc.com wss://kcchallengevbc.com wss://slcbmooc.org wss://wisp.mercurywork.shop; frame-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
@@ -18,16 +18,21 @@
       (function () {
         var mode = "normal";
         var interfaceStyle = "modern";
+        var windowBarStyle = "ultra";
         try {
           var saved = JSON.parse(localStorage.getItem("neo_os_settings_v1") || "{}");
           mode = saved.performanceMode;
           interfaceStyle = saved.interfaceStyle === "retro" ? "retro" : "modern";
+          if (Number(saved.designVersion) >= 20 && (saved.windowBarStyle === "current" || saved.windowBarStyle === "pill" || saved.windowBarStyle === "ultra")) {
+            windowBarStyle = saved.windowBarStyle;
+          }
           if (mode !== "normal" && mode !== "performance" && mode !== "ultimate") {
             mode = saved.performance === "low" ? "performance" : "normal";
           }
         } catch (error) {}
         document.documentElement.dataset.performanceMode = mode;
         document.documentElement.dataset.interfaceStyle = interfaceStyle;
+        document.documentElement.dataset.windowBarStyle = windowBarStyle;
       })();
     </script>
     <script>
@@ -112,7 +117,7 @@
     <link rel="stylesheet" href="./neo-range.css?v=20260906-range-fill-v1" />
     <link rel="stylesheet" href="./neo-skin-interactions.css?v=20260907-live-weather-v1" />
     <link rel="stylesheet" href="./neo-theme-system.css?v=20260912-acrylic-theme-v1" />
-    <link rel="stylesheet" href="./neo-production-polish.css?v=20260907-window-island-v3&amp;taskbar=surfaces-v1&amp;motion=window-drag-v3&amp;themes=expanded-v1&amp;window=detached-v2&amp;launcher=motion-v1" />
+    <link rel="stylesheet" href="./neo-production-polish.css?v=20260912-ultra-window-bar-v1&amp;taskbar=surfaces-v1&amp;motion=window-drag-v3&amp;themes=expanded-v1&amp;window=detached-v2&amp;launcher=motion-v1" />
     <link rel="stylesheet" href="./neo-liquid-scrollbars.css?v=20260907-scroll-containers-v2" />
     <link rel="stylesheet" href="./neo-interface-styles.css?v=20260912-calculator-fit-v1&amp;taskbar=spacing-alignment-v2&amp;chat=exact-imessage-logo-v2&amp;preview=retro-v1&amp;menus=contrast-v1&amp;launcher-icon=centered-v1&amp;settings=combined-v1" />
     <link rel="stylesheet" href="./neo-dock-interactions.css?v=20260909-desktop-shortcuts-v2" />
@@ -1163,7 +1168,8 @@
           <div class="taskbar-option-group window-bar-option-group">
             <div class="taskbar-option-title"><strong>Application top bar</strong><small>Choose the frame used by every app</small></div>
             <div class="taskbar-option-picker window-bar-style-picker" role="group" aria-label="Application top bar style">
-              <button type="button" data-window-bar-style-option="current" aria-pressed="true"><span class="window-bar-style-preview is-current" aria-hidden="true"></span><span><strong>Current</strong><small>Full-width controls</small></span></button>
+              <button type="button" data-window-bar-style-option="ultra" aria-pressed="true"><span class="window-bar-style-preview is-ultra" aria-hidden="true"></span><span><strong>Ultra thin</strong><small>32px full-width bar · Default</small></span></button>
+              <button type="button" data-window-bar-style-option="current" aria-pressed="false"><span class="window-bar-style-preview is-current" aria-hidden="true"></span><span><strong>Standard</strong><small>Full-width controls</small></span></button>
               <button type="button" data-window-bar-style-option="pill" aria-pressed="false"><span class="window-bar-style-preview is-pill" aria-hidden="true"></span><span><strong>Floating pill</strong><small>App icon and controls only</small></span></button>
             </div>
           </div>
@@ -1403,14 +1409,14 @@
     <script src="./neo-chat-experience.js" defer></script>
     <script src="./neo-desktop-platform.js?v=20260907-widget-logo-v3&amp;tab=custom-url-v1&amp;themes=expanded-v1&amp;styles=launcher-picture-alignment-v12&amp;rainmeter=controls-v1&amp;editor=proxy-links-v2&amp;cursor=custom-v1&amp;settings=combined-v1" defer></script>
     <script src="./neo-leave-guard.js?v=20260907-anti-close-v1" defer></script>
-    <script src="./neo-os.js?v=20260912-media-popout-v1&amp;taskbar=all-apps-v1&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=motion-v1&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;styles=launcher-picture-alignment-v12&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;artwork=stable-cover-v2&amp;rainmeter=thin-weekday-v1&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;cursor=custom-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;proxy=resource-v1" defer></script>
+    <script src="./neo-os.js?v=20260912-media-popout-v1&amp;taskbar=all-apps-v1&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=motion-v1&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;styles=launcher-picture-alignment-v12&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;artwork=stable-cover-v2&amp;rainmeter=thin-weekday-v1&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;cursor=custom-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;window-bar=maximized-ultra-v1&amp;proxy=resource-v1" defer></script>
     <script src="./neo-command-palette.js?v=20260912-command-palette-v1" defer></script>
     <script src="./neo-taskbar-quick-settings.js?v=20260910-quick-settings-v1" defer></script>
     <script src="./neo-backup.js?v=20260830-backup-v1" defer></script>
     <script src="./neo-window-resize.js?v=20260901-mobile-compat-v1" defer></script>
     <script src="./neo-taskbar-menu.js?v=20260901-clean-desktop-v1" defer></script>
     <script src="./neo-rainmeter.js?v=20260910-thin-weekday-v1" defer></script>
-    <script src="./neo-topbar-autohide.js?v=20260907-window-pill-v1" defer></script>
+    <script src="./neo-topbar-autohide.js?v=20260912-ultra-window-bar-v1" defer></script>
     <script src="./neo-mobile.js?v=20260909-desktop-shortcuts-v1" defer></script>
   </body>
 </html>

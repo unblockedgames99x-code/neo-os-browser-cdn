@@ -117,7 +117,8 @@
   }
 
   function normalizeWindowBarStyle(value) {
-    return String(value || "").toLowerCase() === "pill" ? "pill" : "current";
+    value = String(value || "").toLowerCase();
+    return value === "current" || value === "pill" ? value : "ultra";
   }
 
   function normalizeInterfaceStyle(value) {
@@ -156,7 +157,7 @@
   }
 
   var defaultSettings = {
-    designVersion: 19,
+    designVersion: 20,
     wallpaper: "we-steam-1403160205",
     wallpaperFavorites: [],
     wallpaperRecent: [],
@@ -182,7 +183,7 @@
     taskbarOutline: true,
     taskbarRunningApps: true,
     taskbarAppDragging: true,
-    windowBarStyle: "current",
+    windowBarStyle: "ultra",
     interfaceStyle: "modern",
     cursorTheme: "system",
     tabAppearance: "neo",
@@ -237,6 +238,9 @@
   if (savedDesignVersion < 19) {
     savedSettings.taskbarRunningApps = true;
   }
+  if (savedDesignVersion < 20) {
+    savedSettings.windowBarStyle = "ultra";
+  }
   savedSettings.performanceMode = normalizePerformanceMode(savedSettings.performanceMode);
   savedSettings.taskbarPosition = normalizeTaskbarPosition(savedSettings.taskbarPosition);
   savedSettings.taskbarStyle = normalizeTaskbarStyle(savedSettings.taskbarStyle);
@@ -264,7 +268,7 @@
   delete savedSettings.taskbarMaterial;
   delete savedSettings.taskbarOpacity;
   delete savedSettings.taskbarBlur;
-  savedSettings.designVersion = 19;
+  savedSettings.designVersion = 20;
   var settings = Object.assign({}, defaultSettings, savedSettings);
   var appliedTabAppearanceSignature = "";
   // Keep imported wallpapers and the local reactive scene. Remote workshop defaults
@@ -2875,7 +2879,7 @@
 
   function createWindow(app) {
     var win = document.createElement("section");
-    win.className = "neo-window";
+    win.className = "neo-window" + (isSmallScreen() ? "" : " is-maximized");
     win.dataset.appId = app.id;
     win.dataset.interfaceStyleScope = interfaceStyleScopeForApp(app);
     win.setAttribute("role", "region");
@@ -2907,7 +2911,6 @@
         '<span class="window-controls">' +
           '<button class="window-control minimize" type="button" data-window-action="minimize" aria-label="Minimize">' + iconMarkup("minimize") + "</button>" +
           '<button class="window-control maximize" type="button" data-window-action="maximize" aria-label="Maximize">' + iconMarkup("maximize") + "</button>" +
-          '<button class="window-control fullscreen" type="button" data-window-action="fullscreen" aria-label="Enter app fullscreen" aria-pressed="false">' + iconMarkup("fullscreen") + "</button>" +
           '<button class="window-control close" type="button" data-window-action="close" aria-label="Close">' + iconMarkup("close") + "</button>" +
         "</span>" +
       "</header>" +
@@ -2932,7 +2935,6 @@
     else if (app.route) mountFrame(app, body);
     windowLayer.appendChild(win);
     if (window.NEO_DESKTOP) window.NEO_DESKTOP.enhance(app.id, body);
-    if (savedWindow.maximized && !isSmallScreen()) win.classList.add("is-maximized");
     syncMaximizeButton(win);
     openWindows.set(app.id, win);
     syncAutoPerformanceMode();
@@ -5329,7 +5331,7 @@
     if (!button) return;
     var maximized = win.classList.contains("is-maximized");
     button.setAttribute("aria-label", maximized ? "Restore window" : "Maximize");
-    button.title = maximized ? "Exit fullscreen" : "Maximize";
+    button.title = maximized ? "Restore window" : "Maximize";
   }
 
   function toggleMaximize(win) {
@@ -5511,7 +5513,7 @@
     renderDesktopShortcuts();
     syncDesktopShortcutVisibility();
     openWindows.forEach(function (win) {
-      win.classList.remove("is-maximized");
+      if (!isSmallScreen()) win.classList.add("is-maximized");
       syncMaximizeButton(win);
       win.style.left = "8%";
       win.style.top = "9%";
@@ -8025,7 +8027,15 @@
         var nextWindowBarStyle = normalizeWindowBarStyle(windowBarStyle.getAttribute("data-window-bar-style-option"));
         if (nextWindowBarStyle !== settings.windowBarStyle) {
           setSetting("windowBarStyle", nextWindowBarStyle);
-          showToast("Application bar changed", nextWindowBarStyle === "pill" ? "App controls now use the centered liquid-glass bar." : "App controls now use the full-width bar.", "settings");
+          showToast(
+            "Application bar changed",
+            nextWindowBarStyle === "pill"
+              ? "App controls now use the centered liquid-glass bar."
+              : nextWindowBarStyle === "ultra"
+                ? "Apps now use the ultra-thin 32px top bar."
+                : "App controls now use the standard full-width bar.",
+            "settings"
+          );
         }
         return;
       }

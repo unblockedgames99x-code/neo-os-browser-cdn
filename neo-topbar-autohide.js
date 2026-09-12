@@ -14,7 +14,8 @@
   var hideDelay = 260;
 
   function windowEdgeSize() {
-    return root.dataset.windowBarStyle === "pill" ? 38 : 11;
+    if (root.dataset.windowBarStyle === "pill") return 38;
+    return root.dataset.windowBarStyle === "ultra" ? 32 : 11;
   }
 
   function asElement(target) {
