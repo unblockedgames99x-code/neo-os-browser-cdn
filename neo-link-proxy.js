@@ -32,6 +32,15 @@
     return url;
   }
 
+  function isTrustedDirectEmbed(element, value) {
+    if (!element || element.dataset.neoTrustedEmbed !== "youtube") return false;
+    var url = webUrl(value);
+    return Boolean(url &&
+      url.protocol === "https:" &&
+      url.hostname === "www.youtube-nocookie.com" &&
+      /^\/embed\/[A-Za-z0-9_-]{11}$/.test(url.pathname));
+  }
+
   function postOpen(url, label) {
     window.parent.postMessage({
       type: "neo-shell:proxy-open",
@@ -45,6 +54,7 @@
   }
 
   function requestEmbed(element, value, attribute) {
+    if (isTrustedDirectEmbed(element, value)) return false;
     var url = isExternal(value);
     if (!url || !element) return false;
     if (!element.isConnected) {
