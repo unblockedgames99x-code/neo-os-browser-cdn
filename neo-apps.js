@@ -51,9 +51,9 @@
     games: {
       id: "games",
       title: "Games",
-      subtitle: "1,372 optimized games from the Nextnode catalogue",
+      subtitle: "4,292 games from the Greatest Greatest master list",
       icon: "xbox-games",
-      route: "./neo-games/index.html?build=20260912-nextnode-catalog-v1",
+      route: "./neo-games/index.html?build=20260912-master-list-v1",
       keepAlive: false,
       width: 1180,
       height: 760,
@@ -66,9 +66,9 @@
     movies: {
       id: "movies",
       title: "Movies",
-      subtitle: "Profiles, open films, uploads, and public discovery",
+      subtitle: "Profiles, full movie library, series, and My List",
       icon: "movies",
-      route: "./neo-tv/index.html?build=20260912-movies-v1",
+      route: "./neo-tv/index.html?build=20260912-vidfast-v1",
       keepAlive: true,
       width: 1180,
       height: 760,

@@ -660,7 +660,7 @@
       discord: "./assets/discord-official.png?v=20260828-user-artwork-v2",
       youtube: "./assets/youtube-official.webp?v=20260828-user-artwork-v1",
       chatgpt: "./assets/neo-ai-logo.svg?v=20260910-chatgpt-white-v1",
-      "xbox-games": "./assets/xbox-games.svg?v=20260912-games-v1",
+      "xbox-games": "./assets/xbox-games.svg?v=20260912-official-shape-v2",
       movies: "./assets/movies-icon.webp?v=20260912-user-artwork-v1"
     };
     if (imageIcons[name]) return '<img class="app-image-icon" src="' + imageIcons[name] + '" width="24" height="24" alt="">';
