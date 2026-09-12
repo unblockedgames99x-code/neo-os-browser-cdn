@@ -1405,7 +1405,7 @@ html[data-interface-style="retro"] .neo-window[data-app-id="chat"] :is(.messages
 /* The calculator is a native utility rather than a .native-app, so give its
    complete surface the same raised/recessed treatment as the Retro shell. */
 html[data-interface-style="retro"] .neo-window[data-app-id="calculator"] > .window-body {
-  overflow: auto !important;
+  overflow: hidden !important;
   background: var(--retro-panel-light) !important;
   scrollbar-color: var(--retro-dark-edge) var(--retro-panel-light) !important;
 }
