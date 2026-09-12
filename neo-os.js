@@ -7242,29 +7242,18 @@
     }, 240);
   }
 
-  function waitForBootVideo(video, minimumDelay) {
-    var minimum = new Promise(function (resolve) { window.setTimeout(resolve, minimumDelay); });
-    if (!video || video.readyState >= 2) return minimum;
-    var videoReady = new Promise(function (resolve) {
-      var settled = false;
-      function done() {
-        if (settled) return;
-        settled = true;
-        video.removeEventListener("loadeddata", done);
-        video.removeEventListener("error", done);
-        resolve();
-      }
-      video.addEventListener("loadeddata", done, { once: true });
-      video.addEventListener("error", done, { once: true });
-    });
-    var videoGuard = new Promise(function (resolve) { window.setTimeout(resolve, 1800); });
-    return Promise.all([minimum, Promise.race([videoReady, videoGuard])]);
+  function waitForBootVideo() {
+    // The animation is feedback, not a dependency of the desktop. Shell scripts
+    // are deferred behind styles and initialization has finished at this point.
+    // Yield a paint without holding an otherwise ready desktop for 1.4 seconds
+    // (or waiting for a decorative video that may be offline).
+    return new Promise(function (resolve) { requestAnimationFrame(resolve); });
   }
 
   function performBoot() {
     var video = document.querySelector("[data-universal-loading-video]");
     playBootVideo(video, true);
-    waitForBootVideo(video, 1400).then(function () {
+    waitForBootVideo().then(function () {
       requestAnimationFrame(function () {
         root.dataset.boot = "complete";
         try { sessionStorage.setItem(BOOT_SESSION_KEY, "1"); } catch (error) {}
@@ -7301,7 +7290,7 @@
     }
 
     function waitForUniversalLoader() {
-      return waitForBootVideo(universalLoaderVideo, 1400);
+      return waitForBootVideo();
     }
 
     function finish(mode) {

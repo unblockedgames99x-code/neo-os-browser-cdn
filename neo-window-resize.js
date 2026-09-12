@@ -506,18 +506,34 @@
   document.addEventListener("keydown", handleTabFullscreenShortcut, true);
   document.addEventListener("click", leaveSnapForWindowAction, true);
   document.addEventListener("click", handleFullscreenButton);
-  window.addEventListener("resize", syncSnapTaskbar);
-  window.addEventListener("neo-taskbar-layout-change", function () {
-    requestAnimationFrame(syncSnapTaskbar);
-  });
+  var windowSyncFrame = 0;
+  function scheduleWindowSync() {
+    if (windowSyncFrame) return;
+    windowSyncFrame = requestAnimationFrame(function () {
+      windowSyncFrame = 0;
+      syncTabFullscreen();
+      syncSnapTaskbar();
+    });
+  }
+  window.addEventListener("resize", scheduleWindowSync);
+  window.addEventListener("neo-taskbar-layout-change", scheduleWindowSync);
   document.addEventListener("pointerdown", function (event) {
     if (openSnapPanel && !event.target.closest(".neo-snap-layouts, [data-window-action='fullscreen']")) hideSnapLayouts();
   }, true);
 
   scan(layer);
   new MutationObserver(function (records) {
-    records.forEach(function (record) { record.addedNodes.forEach(scan); });
-    syncTabFullscreen();
-    syncSnapTaskbar();
+    var changed = false;
+    records.forEach(function (record) {
+      // App content, media progress, and widget updates do not change window
+      // geometry. Only window roots and the layer's children affect this state.
+      if (record.type === "attributes") {
+        if (record.target.parentElement === layer && record.target.classList.contains("neo-window")) changed = true;
+      } else if (record.target === layer) {
+        record.addedNodes.forEach(scan);
+        changed = true;
+      }
+    });
+    if (changed) scheduleWindowSync();
   }).observe(layer, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
 })();

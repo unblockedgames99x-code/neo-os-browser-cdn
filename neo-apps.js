@@ -39,7 +39,7 @@
       title: "YouTube",
       subtitle: "Fast themed videos, search, and Shorts",
       icon: "youtube",
-      route: "./neo-youtube/index.html?v=20260911-youtube-seamless-popout-v5",
+      route: "./neo-youtube/index.html?v=20260911-youtube-fast-catalogue-v6",
       keepAlive: false,
       width: 1180,
       height: 760,

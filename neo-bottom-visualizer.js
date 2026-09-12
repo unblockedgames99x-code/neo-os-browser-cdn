@@ -24,6 +24,10 @@
   var lastFrame = 0;
   var phase = 0;
   var framesDrawn = 0;
+  var canvasWidth = 0;
+  var canvasHeight = 0;
+  var barGradient = null;
+  var reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
   try { enabled = localStorage.getItem(STORAGE_KEY) === "true"; } catch (_error) {}
 
@@ -112,7 +116,12 @@
 
   function resize() {
     resizeFrame = 0;
+    if (!enabled) return;
+    if (frame) cancelAnimationFrame(frame);
+    frame = 0;
     var bounds = canvas.getBoundingClientRect();
+    canvasWidth = bounds.width;
+    canvasHeight = bounds.height;
     var pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
     var width = Math.max(1, Math.round(bounds.width * pixelRatio));
     var height = Math.max(1, Math.round(bounds.height * pixelRatio));
@@ -121,6 +130,11 @@
       canvas.height = height;
     }
     context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    var rgb = accentRgb();
+    barGradient = context.createLinearGradient(0, canvasHeight - 8, 0, 0);
+    barGradient.addColorStop(0, "rgba(" + rgb.join(",") + ",.48)");
+    barGradient.addColorStop(.68, "rgba(" + rgb.join(",") + ",.88)");
+    barGradient.addColorStop(1, "rgba(255,255,255,.94)");
     draw(performance.now(), true);
   }
 
@@ -133,12 +147,11 @@
     }
     lastFrame = now;
     framesDrawn += 1;
-    var bounds = canvas.getBoundingClientRect();
-    var width = bounds.width;
-    var height = bounds.height;
+    var width = canvasWidth;
+    var height = canvasHeight;
     context.clearRect(0, 0, width, height);
 
-    var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    var reduced = reducedMotion.matches ||
       root.dataset.desktopMotion === "reduced" || root.dataset.performanceMode === "ultimate";
     var moving = false;
     var maxLevel = 0;
@@ -156,16 +169,11 @@
       if (levels[index] > .002 || peaks[index] > .002) moving = true;
     }
 
-    var rgb = accentRgb();
     var gap = Math.max(2, Math.min(6, width / 210));
     var barWidth = Math.max(2, (width - gap * (BAND_COUNT - 1)) / BAND_COUNT);
     var baseline = height - 8;
     var usable = Math.max(12, height - 18);
-    var gradient = context.createLinearGradient(0, baseline, 0, 0);
-    gradient.addColorStop(0, "rgba(" + rgb.join(",") + ",.48)");
-    gradient.addColorStop(.68, "rgba(" + rgb.join(",") + ",.88)");
-    gradient.addColorStop(1, "rgba(255,255,255,.94)");
-    context.fillStyle = gradient;
+    context.fillStyle = barGradient;
 
     for (var bar = 0; bar < BAND_COUNT; bar += 1) {
       var barHeight = Math.max(3, levels[bar] * usable);
@@ -239,10 +247,16 @@
 
   window.addEventListener("neo-system-state", refreshSources);
 
-  window.addEventListener("resize", function () {
+  function scheduleResize() {
     if (!enabled || resizeFrame) return;
     resizeFrame = requestAnimationFrame(resize);
-  }, { passive: true });
+  }
+  window.addEventListener("resize", scheduleResize, { passive: true });
+  // Refresh measurements only when geometry or theme changes, never per bar frame.
+  if (typeof ResizeObserver === "function") new ResizeObserver(scheduleResize).observe(canvas);
+  new MutationObserver(scheduleResize).observe(root, { attributes: true,
+    attributeFilter: ["class", "style", "data-neo-theme", "data-theme", "data-desktop-motion", "data-performance-mode", "data-taskbar-position"] });
+  reducedMotion.addEventListener("change", scheduleResize);
 
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) {

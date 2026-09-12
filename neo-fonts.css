@@ -56,7 +56,7 @@
 
 @font-face {
   font-family: "NEO Accent";
-  src: url("./assets/fonts/quicksand.otf") format("opentype");
+  src: url("./assets/fonts/quicksand.woff2") format("woff2");
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
