@@ -623,6 +623,25 @@
     return publicAppRecord(app);
   }
 
+  function addCustomAppToTaskbarAndHomeScreen(input) {
+    input = input && typeof input === "object" ? input : {};
+    var url = normalizeCustomAppUrl(input.url);
+    var app = Object.keys(apps).map(function (id) { return apps[id]; }).find(function (candidate) {
+      return candidate && candidate.custom && candidate.sourceUrl === url;
+    });
+    if (!app) {
+      var installed = installCustomApp({ title: input.title, url: url, icon: input.icon, mode: "relay" });
+      app = apps[installed.id];
+    } else if (!app.installed) {
+      setAppInstalled(app.id, true);
+    }
+    hiddenDesktopShortcutIds.delete(app.id);
+    writeJson(DESKTOP_SHORTCUT_HIDDEN_KEY, Array.from(hiddenDesktopShortcutIds));
+    setAppPinned(app.id, true);
+    renderDesktopShortcuts();
+    return publicAppRecord(app);
+  }
+
   function removeCustomApp(id) {
     var app = apps[id];
     if (!app || !app.custom) return false;
@@ -5098,7 +5117,27 @@
 
   function handleProxyBridgeMessage(event) {
     var data = event.data;
-    if (!data || (data.type !== "neo-shell:proxy-open" && data.type !== "neo-shell:proxy-embed" && data.type !== "neo-shell:proxy-resource")) return;
+    if (!data || typeof data !== "object") return;
+    if (data.type === "neo-shell:add-game-shortcut") {
+      if (!ownsFrameWindow(event.source)) return;
+      var shortcutReply = function (payload) {
+        try {
+          event.source.postMessage(Object.assign({
+            type: "neo-shell:add-game-shortcut-result",
+            id: String(data.id || "")
+          }, payload), "*");
+        } catch (_error) {}
+      };
+      try {
+        var installedApp = addCustomAppToTaskbarAndHomeScreen(data.game);
+        showToast("Added to taskbar", installedApp.title + " was also added to the home screen.", "apps");
+        shortcutReply({ ok: true, app: installedApp });
+      } catch (error) {
+        shortcutReply({ ok: false, error: error && error.message ? error.message : "This game could not be added." });
+      }
+      return;
+    }
+    if (data.type !== "neo-shell:proxy-open" && data.type !== "neo-shell:proxy-embed" && data.type !== "neo-shell:proxy-resource") return;
     if (!ownsFrameWindow(event.source)) return;
     var target = normalizedProxyTarget(data.href);
     if (!target) return;
