@@ -4578,10 +4578,97 @@
 
     var timeout = 0;
     var hostWindow = body.closest(".neo-window");
+    var youtubePopoutSnapshot = null;
+    var youtubePopoutDrag = null;
+
+    function setShellYouTubePopout(data) {
+      if (app.id !== "youtube-app" || !hostWindow) return;
+      if (data.active === true) {
+        if (!youtubePopoutSnapshot) {
+          youtubePopoutSnapshot = {
+            style: hostWindow.getAttribute("style"),
+            maximized: hostWindow.classList.contains("is-maximized"),
+            snapped: hostWindow.classList.contains("is-snapped"),
+            tabFullscreen: hostWindow.classList.contains("is-tab-fullscreen")
+          };
+        }
+        cancelWindowMotion(hostWindow);
+        hostWindow.classList.remove("is-maximized", "is-snapped", "is-tab-fullscreen");
+        hostWindow.classList.add("is-youtube-popout");
+        hostWindow.dataset.youtubePopoutMode = data.mode === "shorts" ? "shorts" : "watch";
+        var layerRect = windowLayer.getBoundingClientRect();
+        var isShort = hostWindow.dataset.youtubePopoutMode === "shorts";
+        var width = Math.min(isShort ? 270 : 440, Math.max(220, layerRect.width - 20));
+        var height = isShort ? Math.min(480, Math.max(300, layerRect.height - 20)) : Math.round(width * 9 / 16);
+        if (height > layerRect.height - 20) {
+          height = Math.max(124, layerRect.height - 20);
+          if (!isShort) width = Math.round(height * 16 / 9);
+        }
+        hostWindow.style.inset = "auto";
+        hostWindow.style.width = Math.round(width) + "px";
+        hostWindow.style.height = Math.round(height) + "px";
+        hostWindow.style.left = Math.max(0, Math.round(layerRect.width - width - 14)) + "px";
+        hostWindow.style.top = Math.max(0, Math.round(layerRect.height - height - 14)) + "px";
+        activateWindow(hostWindow);
+        return;
+      }
+      if (!youtubePopoutSnapshot) return;
+      var snapshot = youtubePopoutSnapshot;
+      youtubePopoutSnapshot = null;
+      youtubePopoutDrag = null;
+      hostWindow.classList.remove("is-youtube-popout");
+      delete hostWindow.dataset.youtubePopoutMode;
+      if (snapshot.style == null) hostWindow.removeAttribute("style");
+      else hostWindow.setAttribute("style", snapshot.style);
+      hostWindow.classList.toggle("is-maximized", snapshot.maximized);
+      hostWindow.classList.toggle("is-snapped", snapshot.snapped);
+      hostWindow.classList.toggle("is-tab-fullscreen", snapshot.tabFullscreen);
+      syncMaximizeButton(hostWindow);
+      activateWindow(hostWindow);
+    }
+
+    function dragShellYouTubePopout(data) {
+      if (app.id !== "youtube-app" || !hostWindow || !youtubePopoutSnapshot || !hostWindow.classList.contains("is-youtube-popout")) return;
+      var phase = String(data.phase || "");
+      if (phase === "start") {
+        var rect = hostWindow.getBoundingClientRect();
+        var layerRect = windowLayer.getBoundingClientRect();
+        youtubePopoutDrag = {
+          screenX: Number(data.screenX) || 0,
+          screenY: Number(data.screenY) || 0,
+          left: rect.left - layerRect.left,
+          top: rect.top - layerRect.top,
+          maxLeft: Math.max(0, layerRect.width - rect.width),
+          maxTop: Math.max(0, layerRect.height - rect.height)
+        };
+        hostWindow.classList.add("is-dragging");
+        activateWindow(hostWindow);
+        return;
+      }
+      if (!youtubePopoutDrag) return;
+      if (phase === "move") {
+        hostWindow.style.left = Math.round(clamp(youtubePopoutDrag.left + (Number(data.screenX) || 0) - youtubePopoutDrag.screenX, 0, youtubePopoutDrag.maxLeft)) + "px";
+        hostWindow.style.top = Math.round(clamp(youtubePopoutDrag.top + (Number(data.screenY) || 0) - youtubePopoutDrag.screenY, 0, youtubePopoutDrag.maxTop)) + "px";
+        return;
+      }
+      if (phase === "end" || phase === "cancel") {
+        youtubePopoutDrag = null;
+        hostWindow.classList.remove("is-dragging");
+      }
+    }
+
     function handleEmbeddedMediaState(event) {
       if (event.source !== frame.contentWindow) return;
       var data = event.data;
       if (!data || typeof data !== "object") return;
+      if (data.type === "neo-shell:youtube-popout") {
+        setShellYouTubePopout(data);
+        return;
+      }
+      if (data.type === "neo-shell:youtube-popout-drag") {
+        dragShellYouTubePopout(data);
+        return;
+      }
       if (data.type === "neo-shell:video-route") {
         if (data.active === true) pauseMusicForVideoFocus();
         window.dispatchEvent(new CustomEvent("neo-media-priority", {
@@ -4683,6 +4770,7 @@
       window.removeEventListener("message", handleEmbeddedMediaState);
       window.removeEventListener("neo-window-state-change", relayHostWindowState);
       if (browserBacked) window.removeEventListener("message", relayNeoBrowserMessage);
+      setShellYouTubePopout({ active: false });
       clearEmbeddedMediaState();
     };
     function applyHostIntegration() {
@@ -5081,7 +5169,7 @@
   }
 
   function saveWindowState(win) {
-    if (!win || isSmallScreen() || win.classList.contains("is-minimized") || win.classList.contains("is-snapped") || win.classList.contains("is-tab-fullscreen")) return;
+    if (!win || isSmallScreen() || win.classList.contains("is-minimized") || win.classList.contains("is-snapped") || win.classList.contains("is-tab-fullscreen") || win.classList.contains("is-youtube-popout")) return;
     var id = win.dataset.appId;
     var current = Object.assign({}, windowStates[id] || {});
     current.maximized = win.classList.contains("is-maximized");

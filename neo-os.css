@@ -2253,6 +2253,26 @@ input[type="range"] {
   pointer-events: none;
 }
 
+.neo-window.is-youtube-popout {
+  min-width: 220px;
+  min-height: 124px;
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+  border-radius: 10px;
+  resize: none;
+  transition: box-shadow var(--neo-fast) var(--neo-ease), border-color var(--neo-fast) var(--neo-ease);
+}
+
+.neo-window.is-youtube-popout .window-chrome,
+.neo-window.is-youtube-popout .tab-fullscreen-exit,
+.neo-window.is-youtube-popout [data-window-resize] { display: none !important; }
+
+.neo-window.is-youtube-popout .window-body {
+  grid-row: 1;
+  overflow: hidden;
+  background: #000;
+}
+
 .connection-panel {
   position: absolute;
   z-index: 8050;
