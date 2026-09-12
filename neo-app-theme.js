@@ -163,6 +163,22 @@
     apply(event.data.state || {}, event.data.palette);
   });
 
+  function closeDialogFromBackdrop(event) {
+    const dialog = event.target;
+    if (event.defaultPrevented
+      || typeof HTMLDialogElement === 'undefined'
+      || !(dialog instanceof HTMLDialogElement)
+      || !dialog.open) return;
+    const bounds = dialog.getBoundingClientRect();
+    const clickedInside = event.clientX >= bounds.left
+      && event.clientX <= bounds.right
+      && event.clientY >= bounds.top
+      && event.clientY <= bounds.bottom;
+    if (!clickedInside) dialog.close();
+  }
+
+  document.addEventListener('click', closeDialogFromBackdrop);
+
   new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(node => {
     if (node.matches?.('iframe')) node.addEventListener('load', () => syncFrame(node));
     node.querySelectorAll?.('iframe').forEach(frame => frame.addEventListener('load', () => syncFrame(frame)));
