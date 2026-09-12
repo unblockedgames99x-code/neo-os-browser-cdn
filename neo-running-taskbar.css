@@ -10,6 +10,22 @@
   border: 0 !important;
 }
 
+/* With no running apps, remove the inter-item spacing reserved for the dock
+   and center the launcher tile exactly inside the floating taskbar capsule. */
+html[data-taskbar-position="left"]:has(#neo-dock:empty) .taskbar-center,
+html[data-taskbar-position="right"]:has(#neo-dock:empty) .taskbar-center,
+html[data-taskbar-running-apps="false"][data-taskbar-position="left"] .taskbar-center,
+html[data-taskbar-running-apps="false"][data-taskbar-position="right"] .taskbar-center {
+  justify-content: center !important;
+}
+
+html[data-taskbar-position="left"]:has(#neo-dock:empty) .taskbar-start-button,
+html[data-taskbar-position="right"]:has(#neo-dock:empty) .taskbar-start-button,
+html[data-taskbar-running-apps="false"][data-taskbar-position="left"] .taskbar-start-button,
+html[data-taskbar-running-apps="false"][data-taskbar-position="right"] .taskbar-start-button {
+  margin: 0 !important;
+}
+
 html[data-taskbar-running-apps="false"] .taskbar .dock {
   display: none !important;
   width: 0 !important;
