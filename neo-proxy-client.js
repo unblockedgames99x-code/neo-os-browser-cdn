@@ -31,11 +31,15 @@
         clearTimeout(request.timer);
         rejectPromise(new DOMException("The request was aborted.", "AbortError"));
       };
+      // Cold proxy startup can legitimately take up to 40 seconds while the
+      // service worker and transport come online.  A shorter client timeout
+      // made image-heavy apps discard every pending cover just before the
+      // proxy became ready.
       var timer = setTimeout(function () {
         pending.delete(id);
         if (signal) signal.removeEventListener("abort", abort);
         rejectPromise(new Error("The NEO web proxy did not answer."));
-      }, 15000);
+      }, 45000);
       pending.set(id, {
         resolve: resolvePromise,
         reject: rejectPromise,
