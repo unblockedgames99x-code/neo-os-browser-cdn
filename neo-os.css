@@ -344,14 +344,6 @@ html[data-boot="complete"] .neo-start-screen:not([hidden]) {
 
 .neo-start-option:active { transform: scale(0.985); }
 
-.neo-start-option-mark {
-  grid-column: 1;
-  width: 3px;
-  height: 22px;
-  margin-bottom: 2px;
-  background: #fff;
-}
-
 .neo-start-option strong,
 .neo-start-option small { grid-column: 1; }
 
