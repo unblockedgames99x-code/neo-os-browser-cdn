@@ -566,7 +566,6 @@
     });
     var payload = { messages: preparedMessages, model: model.id, image: attachedImage };
     var route = REFERENCE_API_URL;
-    if (window.NEO_PROXY_CLIENT && window.parent !== window) route = await window.NEO_PROXY_CLIENT.resolve(route, "ai");
     var lastError = null;
     for (var attempt = 0; attempt < 2; attempt += 1) {
       try {
@@ -591,6 +590,20 @@
       } catch (error) {
         if (signal.aborted || error.name === "AbortError") throw abortError();
         lastError = error;
+        var directTransportFailed = attempt === 0
+          && route === REFERENCE_API_URL
+          && !Number.isFinite(error.status)
+          && window.NEO_PROXY_CLIENT
+          && window.parent !== window;
+        if (directTransportFailed) {
+          try {
+            route = await window.NEO_PROXY_CLIENT.resolve(REFERENCE_API_URL, "ai", signal);
+            continue;
+          } catch (proxyError) {
+            if (signal.aborted || proxyError.name === "AbortError") throw abortError();
+            lastError = proxyError;
+          }
+        }
         if (attempt === 1 || (Number.isFinite(error.status) && !retryableStatus(error.status))) break;
         await retryPause(650, signal);
       }
