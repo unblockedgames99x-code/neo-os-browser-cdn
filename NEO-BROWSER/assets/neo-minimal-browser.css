@@ -346,9 +346,11 @@ main,
   text-align: center;
 }
 
-.neo-browser-minimal .bookmarks-bar {
-  background: var(--browser-chrome);
-  border-color: var(--browser-line);
+/* Bookmarks remain available from the address-bar button, but the permanent
+   bookmark shelf is intentionally removed so pages start directly below the
+   browser toolbar. */
+.neo-browser-minimal .bookmarks-bar-wrap {
+  display: none !important;
 }
 
 .neo-browser-minimal .newtab {
