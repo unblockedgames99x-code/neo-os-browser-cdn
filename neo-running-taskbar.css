@@ -10,6 +10,17 @@
   border: 0 !important;
 }
 
+html[data-taskbar-running-apps="false"] .taskbar .dock {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
 html[data-taskbar-position="left"],
 html[data-taskbar-position="right"] {
   --neo-taskbar-vertical-size: 132px;
@@ -22,6 +33,12 @@ html[data-taskbar-position="right"]:has(#neo-dock:empty) {
   --neo-taskbar-vertical-avoid: 86px;
 }
 
+html[data-taskbar-running-apps="false"][data-taskbar-position="left"],
+html[data-taskbar-running-apps="false"][data-taskbar-position="right"] {
+  --neo-taskbar-vertical-size: 66px;
+  --neo-taskbar-vertical-avoid: 86px;
+}
+
 html[data-taskbar-style="typical"][data-taskbar-position="left"] .taskbar,
 html[data-taskbar-style="typical"][data-taskbar-position="right"] .taskbar {
   width: 132px !important;
@@ -29,6 +46,11 @@ html[data-taskbar-style="typical"][data-taskbar-position="right"] .taskbar {
 
 html[data-taskbar-style="typical"][data-taskbar-position="left"]:has(#neo-dock:empty) .taskbar,
 html[data-taskbar-style="typical"][data-taskbar-position="right"]:has(#neo-dock:empty) .taskbar {
+  width: 72px !important;
+}
+
+html[data-taskbar-running-apps="false"][data-taskbar-style="typical"][data-taskbar-position="left"] .taskbar,
+html[data-taskbar-running-apps="false"][data-taskbar-style="typical"][data-taskbar-position="right"] .taskbar {
   width: 72px !important;
 }
 

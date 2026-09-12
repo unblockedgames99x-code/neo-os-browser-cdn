@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-boot="pending" data-neo-app="shell" data-interface-style="modern" data-wallpaper="we-steam-1403160205" data-performance-mode="normal" data-auto-performance-active="false" data-taskbar-position="left" data-taskbar-style="current" data-taskbar-surface="glass" data-taskbar-outline="true" data-window-bar-style="current">
+<html lang="en" data-boot="pending" data-neo-app="shell" data-interface-style="modern" data-wallpaper="we-steam-1403160205" data-performance-mode="normal" data-auto-performance-active="false" data-taskbar-position="left" data-taskbar-style="current" data-taskbar-surface="glass" data-taskbar-outline="true" data-taskbar-running-apps="true" data-window-bar-style="current">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http://127.0.0.1:3092 http://localhost:3092; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: http://127.0.0.1:3092 http://localhost:3092 https://lol.samidy.workers.dev https://lunchbreak.dyercountylawncare.workers.dev https://neo-stratus-api-w6nw.onrender.com wss://nextnode9124.b-cdn.net wss://support.pired.org wss://girlspreples.com wss://northstreetumc.org wss://pcesc.com wss://kcchallengevbc.com wss://slcbmooc.org wss://wisp.mercurywork.shop; frame-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
@@ -1230,6 +1230,13 @@
             </label>
           </div>
           <div class="taskbar-option-group">
+            <label class="toggle-row taskbar-running-apps-toggle">
+              <span><strong>Running app buttons</strong><small>Show each open app as a named button on the taskbar</small></span>
+              <input type="checkbox" data-setting="taskbarRunningApps" checked />
+              <span class="switch" aria-hidden="true"></span>
+            </label>
+          </div>
+          <div class="taskbar-option-group" data-taskbar-drag-control>
             <label class="toggle-row taskbar-running-apps-toggle">
               <span><strong>Drag running apps</strong><small>Reorder open app tiles directly on the taskbar</small></span>
               <input type="checkbox" data-setting="taskbarAppDragging" checked />

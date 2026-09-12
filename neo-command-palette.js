@@ -109,9 +109,14 @@
   }
 
   function runningIds() {
-    return new Set(Array.from(document.querySelectorAll("#neo-dock .dock-button[data-app]:not(.is-leaving)")).map(function (button) {
-      return String(button.dataset.app || "");
-    }));
+    var ids = Array.from(document.querySelectorAll('.neo-window[data-app-id]:not(.is-closing)')).map(function (win) {
+      return String(win.dataset.appId || "");
+    });
+    document.querySelectorAll("#neo-dock .dock-button[data-app]:not(.is-leaving)").forEach(function (button) {
+      var id = String(button.dataset.app || "");
+      if (id && ids.indexOf(id) === -1) ids.push(id);
+    });
+    return new Set(ids);
   }
 
   function resultIcon(app) {
