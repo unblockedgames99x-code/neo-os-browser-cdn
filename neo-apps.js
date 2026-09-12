@@ -188,20 +188,6 @@
       core: true,
       category: "Creativity",
       aliases: ["paint", "draw", "canvas", "sketch"]
-    },
-    clock: {
-      id: "clock",
-      title: "Clock",
-      subtitle: "Clock and stopwatch",
-      icon: "monitor",
-      lazy: true,
-      width: 560,
-      height: 520,
-      launcher: true,
-      pinned: false,
-      core: true,
-      category: "Utilities",
-      aliases: ["clock", "time", "stopwatch", "timer"]
     }
   });
 
@@ -356,6 +342,15 @@
         if (Array.isArray(savedApps)) localStorage.setItem(key, JSON.stringify(savedApps.filter(function (id) { return id !== "manga"; })));
       });
       localStorage.setItem(removeMangaAppKey, "1");
+    }
+
+    var removeClockAppKey = "neo_os_remove_clock_app_v1";
+    if (localStorage.getItem(removeClockAppKey) !== "1") {
+      ["neo_os_pinned_apps_v1", "neo_os_installed_apps_v1"].forEach(function (key) {
+        var savedApps = JSON.parse(localStorage.getItem(key) || "null");
+        if (Array.isArray(savedApps)) localStorage.setItem(key, JSON.stringify(savedApps.filter(function (id) { return id !== "clock"; })));
+      });
+      localStorage.setItem(removeClockAppKey, "1");
     }
 
     var nowggMigrationKey = "neo_os_nowgg_app_v2";
