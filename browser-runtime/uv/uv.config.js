@@ -1,7 +1,13 @@
 /* global Ultraviolet */
 (() => {
   const engineVersion = "neo-browse-v69";
-  const runtimeRoot = "/neo-os/browser-runtime";
+  const runsInDocument = typeof document !== "undefined";
+  const configSource = runsInDocument && document.currentScript?.src
+    ? document.currentScript.src
+    : self.location.href;
+  const assetBase = new URL(runsInDocument ? "../../" : "./", configSource);
+  const runtimeRoot = new URL("browser-runtime", assetBase).href.replace(/\/$/, "");
+  const routePrefix = new URL("browse-v69/", assetBase).pathname;
   const emptyCssUrlMarker =
     "data:application/x-neo-browser-empty-url;base64,AA==";
 
@@ -14,7 +20,7 @@
   }
 
   self.__uv$config = {
-    prefix: "/neo-os/browse-v69/",
+    prefix: routePrefix,
     encodeUrl,
     decodeUrl,
     handler: `${runtimeRoot}/uv/uv.handler.js?engine=${engineVersion}`,

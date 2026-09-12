@@ -2,12 +2,22 @@
   "use strict";
 
   const ENGINE_VERSION = "neo-browse-v69";
-  const OS_SCOPE = "/neo-os/";
-  const ROUTE_PREFIX = "/neo-os/browse-v69/";
-  const RUNTIME_ROOT = "/neo-os/browser-runtime";
+  const RUNTIME_SCRIPT_URL = document.currentScript?.src || document.baseURI;
+  const CORE_BASE_URL = new URL("./", RUNTIME_SCRIPT_URL);
+  const BROWSER_BASE_URL = (() => {
+    try {
+      const configuredBrowser = window.NEO_LOCAL_CONFIG?.browser;
+      if (configuredBrowser) return new URL("../", configuredBrowser);
+    } catch (error) {}
+    return CORE_BASE_URL;
+  })();
+  const browserAsset = (path) => new URL(path, BROWSER_BASE_URL).href;
+  const OS_SCOPE = CORE_BASE_URL.pathname;
+  const ROUTE_PREFIX = new URL(`browse-v69/`, BROWSER_BASE_URL).pathname;
+  const RUNTIME_ROOT = browserAsset("browser-runtime").replace(/\/$/, "");
   const NEW_TAB_DESTINATION = "neo://newtab";
-  const NEW_TAB_PAGE = "/neo-os/browser-newtab.html?v=neo-browse-v69";
-  const WORKER_URL = `/neo-os/browser-sw.js?engine=${ENGINE_VERSION}`;
+  const NEW_TAB_PAGE = `${browserAsset("browser-newtab.html")}?v=${ENGINE_VERSION}`;
+  const WORKER_URL = `${browserAsset("browser-sw.js")}?engine=${ENGINE_VERSION}`;
   const BAREMUX_WORKER_URL = `${RUNTIME_ROOT}/baremux/worker.js?engine=${ENGINE_VERSION}`;
   const PRIMARY_TRANSPORT_URL = `${RUNTIME_ROOT}/epoxy/index.mjs?engine=${ENGINE_VERSION}`;
   const FALLBACK_TRANSPORT_URL = `${RUNTIME_ROOT}/libcurl/index.mjs?engine=${ENGINE_VERSION}`;
@@ -200,7 +210,7 @@
       const link = existing || document.createElement("link");
       link.id = "neo-browser-runtime-styles";
       link.rel = "stylesheet";
-      link.href = `/neo-os/neo-browser-runtime.css?engine=${ENGINE_VERSION}&ui=stream-music-v1`;
+      link.href = `${browserAsset("neo-browser-runtime.css")}?engine=${ENGINE_VERSION}&ui=stream-music-v1`;
       link.addEventListener("load", resolve, { once: true });
       link.addEventListener("error", () => reject(new Error("The web app styles could not load.")), { once: true });
       if (!existing) document.head.appendChild(link);
@@ -215,7 +225,7 @@
     const theme = String(name || "").trim();
     if (!theme) return Promise.resolve("");
     if (appThemePromises.has(theme)) return appThemePromises.get(theme);
-    const source = theme === "stream-music" ? "/neo-os/stream-music-frame.css" : "";
+    const source = theme === "stream-music" ? browserAsset("stream-music-frame.css") : "";
     if (!source) return Promise.resolve("");
     const request = withTimeout(
       fetch(`${source}?engine=${ENGINE_VERSION}`, { cache: "no-store" }).then((response) => {
@@ -764,7 +774,7 @@
         <button type="button" data-browser-forward aria-label="Go forward">${icon("arrow-right")}</button>
         <button type="button" data-browser-reload aria-label="Reload page">${icon("refresh")}</button>
         <form class="neo-browser-address" data-browser-address-form>
-          <span class="neo-browser-address-mark" aria-hidden="true"><img src="/neo-os/assets/duckduckgo.png" width="17" height="17" alt="" /></span>
+          <span class="neo-browser-address-mark" aria-hidden="true"><img src="${browserAsset("assets/duckduckgo.png")}" width="17" height="17" alt="" /></span>
           <label class="sr-only" for="neo-runtime-address">Address or search</label>
           <input id="neo-runtime-address" data-browser-address autocomplete="off" spellcheck="false" placeholder="Search DuckDuckGo or type a URL" aria-label="Address or search" />
           <button type="submit" data-browser-submit aria-label="Open address">${icon("arrow-right")}</button>
@@ -1509,7 +1519,7 @@
 
     function updateTabIcon(tab) {
       if (!tab?.icon) return;
-      let iconHref = "/neo-os/assets/duckduckgo.png";
+      let iconHref = browserAsset("assets/duckduckgo.png");
       try {
         const document = tab.frame.contentDocument;
         const icon = document?.querySelector('link[rel~="icon"][href], link[rel="shortcut icon"][href]');
@@ -1720,7 +1730,7 @@
       element.dataset.tabId = id;
       element.innerHTML = `
         <button class="neo-browser-tab" type="button" role="tab" aria-selected="false" tabindex="-1">
-          <img class="neo-browser-tab-icon" src="/neo-os/assets/duckduckgo.png" width="16" height="16" alt="" />
+          <img class="neo-browser-tab-icon" src="${browserAsset("assets/duckduckgo.png")}" width="16" height="16" alt="" />
           <span class="neo-browser-tab-label"></span>
         </button>
         <button class="neo-browser-tab-close" type="button" aria-label="Close tab"><span aria-hidden="true">&times;</span></button>

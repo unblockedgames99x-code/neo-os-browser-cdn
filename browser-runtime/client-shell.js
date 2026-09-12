@@ -118,7 +118,7 @@
     const relation = String(node.rel || "").toLowerCase();
     if (relation !== "modulepreload" && relation !== "stylesheet") return;
 
-    const routePrefix = window.location.pathname.match(/^\/neo-os\/browse-v\d+\//)?.[0] || "/neo-os/browse/";
+    const routePrefix = window.location.pathname.match(/^.*\/browse-v\d+\//)?.[0] || "/browse/";
     let routedUrl;
     try {
       routedUrl = new URL(node.getAttribute("href") || node.href, window.location.href);

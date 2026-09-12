@@ -1,9 +1,9 @@
-import "/neo-os/browser-runtime/uv/uv.bundle.js?engine=neo-browse-v69";
-import "/neo-os/browser-runtime/uv/uv.config.js?engine=neo-browse-v69";
-import "/neo-os/browser-runtime/uv/uv.sw.js";
+import "./browser-runtime/uv/uv.bundle.js?engine=neo-browse-v69";
+import "./browser-runtime/uv/uv.config.js?engine=neo-browse-v69";
+import "./browser-runtime/uv/uv.sw.js";
 
 const ENGINE_VERSION = "neo-browse-v69";
-const ROUTE_PREFIX = "/neo-os/browse-v69/";
+const ROUTE_PREFIX = new URL("./browse-v69/", self.location.href).pathname;
 const ultraviolet = new UVServiceWorker();
 const RETRYABLE_METHODS = new Set(["GET", "HEAD"]);
 const FALLBACK_TIMEOUT_MS = 8000;
