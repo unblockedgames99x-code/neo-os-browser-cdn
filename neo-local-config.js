@@ -10,9 +10,9 @@
   window.NEO_LOCAL_CONFIG = Object.freeze({
     enabled: true,
     externalIntegrations: false,
-    onlineApps: Object.freeze(["chat", "neo-cloud", "nowgg", "neo-ai", "discord", "youtube-app", "geometry-dash"]),
+    onlineApps: Object.freeze(["chat", "neo-cloud", "nowgg", "neo-ai", "discord", "youtube-app", "games", "movies", "geometry-dash"]),
     assetBase: base.href,
-    music: new URL("music-v2/index.html?v=20260911-music-server-v4&theme=system-v1&widgets=live-v1", base).href,
+    music: new URL("music-v2/index.html?v=20260912-proxy-music-v2&theme=system-v1&widgets=live-v1", base).href,
     browser: new URL("NEO-BROWSER/index.html?v=20260910-fast-browser-v2", base).href,
     gamesCatalog: new URL("../games/index.json", base).href,
     gamesCovers: new URL("../games/covers.json", base).href,

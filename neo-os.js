@@ -646,7 +646,9 @@
       widgets: "./assets/widgets.svg?v=20260907-widgets-logo-v1",
       discord: "./assets/discord-official.png?v=20260828-user-artwork-v2",
       youtube: "./assets/youtube-official.webp?v=20260828-user-artwork-v1",
-      chatgpt: "./assets/neo-ai-logo.svg?v=20260910-chatgpt-white-v1"
+      chatgpt: "./assets/neo-ai-logo.svg?v=20260910-chatgpt-white-v1",
+      "xbox-games": "./assets/xbox-games.svg?v=20260912-games-v1",
+      movies: "./assets/movies-icon.webp?v=20260912-user-artwork-v1"
     };
     if (imageIcons[name]) return '<img class="app-image-icon" src="' + imageIcons[name] + '" width="24" height="24" alt="">';
     var customIcon = safeCustomAppIcon(name);
@@ -1296,7 +1298,7 @@
   function interfaceStyleScopeForApp(app) {
     if (!app) return "shell";
     if (app.custom) return "bridge";
-    if (["browser", "stream", "chat", "discord", "youtube-app", "neo-cloud", "nowgg", "neo-ai"].indexOf(app.id) !== -1) return "bridge";
+    if (["browser", "stream", "chat", "discord", "youtube-app", "neo-cloud", "nowgg", "neo-ai", "games", "movies"].indexOf(app.id) !== -1) return "bridge";
     if (["skins", "vscode", "terminal"].indexOf(app.id) !== -1) return "native";
     if (app.template || app.lazy || app.runtime) return "native";
     return "shell";
@@ -1308,6 +1310,8 @@
     if (appId === "neo-ai") return "ai";
     if (appId === "chat") return "chat";
     if (appId === "youtube-app") return "youtube";
+    if (appId === "games") return "games";
+    if (appId === "movies") return "movies";
     if (appId === "browser" || appId === "discord" || appId === "nowgg") return "browser";
     return "app";
   }
@@ -4580,9 +4584,10 @@
     var hostWindow = body.closest(".neo-window");
     var youtubePopoutSnapshot = null;
     var youtubePopoutDrag = null;
+    var supportsShellMediaPopout = app.id === "youtube-app" || app.id === "movies";
 
     function setShellYouTubePopout(data) {
-      if (app.id !== "youtube-app" || !hostWindow) return;
+      if (!supportsShellMediaPopout || !hostWindow) return;
       if (data.active === true) {
         if (!youtubePopoutSnapshot) {
           youtubePopoutSnapshot = {
@@ -4594,7 +4599,7 @@
         }
         cancelWindowMotion(hostWindow);
         hostWindow.classList.remove("is-maximized", "is-snapped", "is-tab-fullscreen");
-        hostWindow.classList.add("is-youtube-popout");
+        hostWindow.classList.add("is-youtube-popout", "is-media-popout");
         hostWindow.dataset.youtubePopoutMode = data.mode === "shorts" ? "shorts" : "watch";
         var layerRect = windowLayer.getBoundingClientRect();
         var isShort = hostWindow.dataset.youtubePopoutMode === "shorts";
@@ -4616,7 +4621,7 @@
       var snapshot = youtubePopoutSnapshot;
       youtubePopoutSnapshot = null;
       youtubePopoutDrag = null;
-      hostWindow.classList.remove("is-youtube-popout");
+      hostWindow.classList.remove("is-youtube-popout", "is-media-popout");
       delete hostWindow.dataset.youtubePopoutMode;
       if (snapshot.style == null) hostWindow.removeAttribute("style");
       else hostWindow.setAttribute("style", snapshot.style);
@@ -4628,7 +4633,7 @@
     }
 
     function dragShellYouTubePopout(data) {
-      if (app.id !== "youtube-app" || !hostWindow || !youtubePopoutSnapshot || !hostWindow.classList.contains("is-youtube-popout")) return;
+      if (!supportsShellMediaPopout || !hostWindow || !youtubePopoutSnapshot || !hostWindow.classList.contains("is-media-popout")) return;
       var phase = String(data.phase || "");
       if (phase === "start") {
         var rect = hostWindow.getBoundingClientRect();
@@ -4661,11 +4666,11 @@
       if (event.source !== frame.contentWindow) return;
       var data = event.data;
       if (!data || typeof data !== "object") return;
-      if (data.type === "neo-shell:youtube-popout") {
+      if (data.type === "neo-shell:youtube-popout" || data.type === "neo-shell:media-popout") {
         setShellYouTubePopout(data);
         return;
       }
-      if (data.type === "neo-shell:youtube-popout-drag") {
+      if (data.type === "neo-shell:youtube-popout-drag" || data.type === "neo-shell:media-popout-drag") {
         dragShellYouTubePopout(data);
         return;
       }
@@ -4889,6 +4894,12 @@
       if (url.protocol !== "http:" && url.protocol !== "https:") return "";
       url.username = "";
       url.password = "";
+      var hostname = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+      if (hostname === "localhost" || hostname === "0.0.0.0" || hostname === "::1" || hostname.endsWith(".local")) return "";
+      if (/^127\./.test(hostname) || /^10\./.test(hostname) || /^192\.168\./.test(hostname) || /^169\.254\./.test(hostname)) return "";
+      var private172 = hostname.match(/^172\.(\d{1,3})\./);
+      if (private172 && Number(private172[1]) >= 16 && Number(private172[1]) <= 31) return "";
+      if (/^(?:fc|fd|fe8|fe9|fea|feb)/i.test(hostname)) return "";
       return url.href;
     } catch (_error) {
       return "";
@@ -4922,7 +4933,7 @@
 
   function handleProxyBridgeMessage(event) {
     var data = event.data;
-    if (!data || (data.type !== "neo-shell:proxy-open" && data.type !== "neo-shell:proxy-embed")) return;
+    if (!data || (data.type !== "neo-shell:proxy-open" && data.type !== "neo-shell:proxy-embed" && data.type !== "neo-shell:proxy-resource")) return;
     if (!ownsFrameWindow(event.source)) return;
     var target = normalizedProxyTarget(data.href);
     if (!target) return;
@@ -4930,10 +4941,11 @@
       openBrowserTarget(target, data.label || "Web page");
       return;
     }
+    var resultType = data.type === "neo-shell:proxy-resource" ? "neo-shell:proxy-resource-result" : "neo-shell:proxy-embed-result";
     var reply = function (payload) {
       try {
         event.source.postMessage(Object.assign({
-          type: "neo-shell:proxy-embed-result",
+          type: resultType,
           id: String(data.id || "")
         }, payload), "*");
       } catch (_error) {}

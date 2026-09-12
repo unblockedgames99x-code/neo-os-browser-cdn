@@ -1,16 +1,18 @@
 <!doctype html>
 <html lang="en" data-neo-app="ai">
 <head>
-  <script src="../neo-ad-shield.js?v=20260910-sitewide-v1"></script>
+  <script src="../neo-ad-shield.js?v=20260912-sitewide-v2"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#000000">
   <title>NEO AI</title>
   <link rel="icon" href="../assets/neo-ai-logo.svg?v=20260910-chatgpt-white-v1">
   <link rel="stylesheet" href="../neo-theme-system.css?v=20260910-ai-v1">
-  <link rel="stylesheet" href="app.css?v=20260910-ai-cowork-v1">
+  <link rel="stylesheet" href="app.css?v=20260912-serum-models-v1">
   <script defer src="../neo-app-theme.js?v=20260910-ai-v1"></script>
-  <script defer src="app.js?v=20260910-ai-failover-v2"></script>
+  <script defer src="../neo-link-proxy.js?v=20260912-all-links-v2"></script>
+  <script defer src="../neo-proxy-client.js?v=20260912-resource-proxy-v1"></script>
+  <script defer src="app.js?v=20260912-serum-models-v1"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -49,7 +51,7 @@
         </button>
         <button class="model-badge" id="model-badge" type="button" data-action="models" aria-label="Choose AI model" title="Choose AI model">
           <img src="../assets/neo-ai-logo.svg?v=20260910-chatgpt-white-v1" alt="">
-          <span><strong id="active-model-name">GPT 5.6 Luna</strong><small id="active-model-provider">OpenAI</small></span>
+          <span><strong id="active-model-name">GPT-OSS 120B</strong><small id="active-model-provider">Serum</small></span>
           <svg><use href="#i-chevron"></use></svg>
         </button>
         <div class="top-actions">
@@ -64,7 +66,7 @@
         <div class="welcome" id="welcome">
           <div class="welcome-mark"><img src="../assets/neo-ai-logo.svg?v=20260910-chatgpt-white-v1" alt=""></div>
           <h1>What can I help you with?</h1>
-          <p>Choose from 30 AI models, ask several models to work together, add files, search the web, or create images and video. Chats stay on this device.</p>
+          <p>Choose from three fast chat models, ask the whole team to work together, add files, or search the web. Chats stay on this device.</p>
           <div class="prompt-grid" id="prompt-grid">
             <button type="button" data-prompt="Explain this simply: "><svg><use href="#i-sparkles"></use></svg><span><strong>Explain simply</strong><small>Break down a hard topic</small></span></button>
             <button type="button" data-prompt="Summarize the following: "><svg><use href="#i-lines"></use></svg><span><strong>Summarize</strong><small>Pull out the main points</small></span></button>
@@ -87,7 +89,7 @@
             <button type="button" data-action="pick-file"><svg><use href="#i-paperclip"></use></svg><span><strong>Add files &amp; images</strong><small>Upload, paste, or drop</small></span></button>
             <button type="button" data-action="web" aria-pressed="false"><svg><use href="#i-globe"></use></svg><span><strong>Web search</strong><small>Include current sources</small></span><i class="toggle"></i></button>
             <div class="menu-label">Tools</div>
-            <button type="button" data-action="models"><svg><use href="#i-model"></use></svg><span><strong>Choose model</strong><small>Text, image, and video models</small></span></button>
+            <button type="button" data-action="models"><svg><use href="#i-model"></use></svg><span><strong>Choose model</strong><small>Three chat models</small></span></button>
             <button type="button" data-action="cowork" aria-pressed="false"><svg><use href="#i-cowork"></use></svg><span><strong>AI Coworkers</strong><small>Several models, one answer</small></span><i class="toggle"></i></button>
             <button type="button" data-action="study" aria-pressed="false"><svg><use href="#i-study"></use></svg><span><strong>Study mode</strong><small>Quizzes, flashcards, and more</small></span><i class="toggle"></i></button>
           </div>
@@ -127,10 +129,10 @@
   </dialog>
 
   <dialog id="models-dialog" class="catalog-dialog">
-    <div class="dialog-head"><div><small>30 AVAILABLE MODELS</small><h2>Choose a model</h2></div><button class="icon-button" type="button" data-action="close-dialog" aria-label="Close"><svg><use href="#i-close"></use></svg></button></div>
+    <div class="dialog-head"><div><small>3 AVAILABLE MODELS</small><h2>Choose a model</h2></div><button class="icon-button" type="button" data-action="close-dialog" aria-label="Close"><svg><use href="#i-close"></use></svg></button></div>
     <div class="model-toolbar">
       <label class="model-search"><svg><use href="#i-search"></use></svg><input id="model-search" type="search" placeholder="Search models or providers" autocomplete="off"></label>
-      <div class="model-filters" id="model-filters" aria-label="Model type"><button type="button" data-model-filter="all" aria-pressed="true">All</button><button type="button" data-model-filter="text" aria-pressed="false">Chat</button><button type="button" data-model-filter="image" aria-pressed="false">Image</button><button type="button" data-model-filter="video" aria-pressed="false">Video</button></div>
+      <div class="model-filters" id="model-filters" aria-label="Model type"><button type="button" data-model-filter="all" aria-pressed="true">All</button><button type="button" data-model-filter="text" aria-pressed="false">Chat</button></div>
     </div>
     <div class="model-list" id="model-list"></div>
     <div class="generation-options">

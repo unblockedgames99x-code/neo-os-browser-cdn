@@ -4,46 +4,16 @@
   if (window.NEO_AI_APP) return;
 
   var STORAGE_KEY = "neo_ai_workspace_v1";
-  var DEFAULT_MODEL_ID = "gpt-5-6-luna";
-  var ANONYMOUS_MODEL_ID = "openai-fast";
+  var DEFAULT_MODEL_ID = "gpt-oss-120b";
   var AI_MODELS = [
-    { id: "gpt-5-6-luna", name: "GPT 5.6 Luna", provider: "OpenAI", context: 1050000, reasoning: true, vision: true, type: "text" },
-    { id: "gemma-3-12b", name: "Gemma 3 12B", provider: "Google", context: 131072, vision: true, type: "text" },
-    { id: "llama-4-maverick", name: "Llama 4 Maverick", provider: "Meta", context: 1000000, reasoning: true, vision: true, type: "text" },
-    { id: "grok-4-3", name: "Grok 4.3", provider: "xAI", context: 1000000, reasoning: true, vision: true, type: "text" },
-    { id: "grok-4-6", name: "Grok 4.6", provider: "xAI", context: 256000, reasoning: true, vision: true, type: "text" },
-    { id: "grok-code-fast-1", name: "Grok Code Fast 1", provider: "xAI", context: 256000, reasoning: true, type: "text" },
-    { id: "deepseek-v4-flash", name: "DeepSeek V4 Flash", provider: "DeepSeek", context: 1000000, reasoning: true, type: "text" },
-    { id: "qwen3.8-max", name: "Qwen 3.8 Max", provider: "Qwen", context: 1000000, reasoning: true, vision: true, type: "text" },
-    { id: "qwen3.7-max", name: "Qwen 3.7 Max", provider: "Qwen", context: 1000000, reasoning: true, type: "text" },
-    { id: "qwen3.7-plus", name: "Qwen 3.7 Plus", provider: "Qwen", context: 1000000, reasoning: true, vision: true, type: "text" },
-    { id: "qwen3.6-plus", name: "Qwen 3.6 Plus", provider: "Qwen", context: 1000000, reasoning: true, type: "text" },
-    { id: "qwen3.5-plus", name: "Qwen 3.5 Plus", provider: "Qwen", context: 1000000, reasoning: true, vision: true, type: "text" },
-    { id: "qwen3.5-omni-plus", name: "Qwen 3.5 Omni Plus", provider: "Qwen", context: 262144, reasoning: true, vision: true, type: "text" },
-    { id: "qwen3-coder-480b", name: "Qwen3 Coder 480B", provider: "Qwen", context: 262144, reasoning: true, type: "text" },
-    { id: "qwen-image-3.0-pro", name: "Qwen Image 3.0 Pro", provider: "Qwen", type: "image" },
-    { id: "qwen-image-2.0-pro", name: "Qwen Image 2.0 Pro", provider: "Qwen", type: "image" },
-    { id: "qwen-video", name: "Qwen Video", provider: "Qwen", type: "video" },
-    { id: "seedance-2.0", name: "Seedance 2.0", provider: "ByteDance", type: "video" },
-    { id: "seedance-2.0-fast", name: "Seedance 2.0 Fast", provider: "ByteDance", type: "video" },
-    { id: "kimi-k2-6", name: "Kimi K2.6", provider: "Moonshot", context: 262144, reasoning: true, type: "text" },
-    { id: "kimi-k2-7-code", name: "Kimi K2.7 Code", provider: "Moonshot", context: 262144, reasoning: true, type: "text" },
-    { id: "glm-5.3-flash", name: "GLM 5.3 Flash", provider: "Z.ai", context: 1000000, reasoning: true, vision: true, type: "text" },
-    { id: "nemotron-3.5-lightning", name: "Nemotron 3.5 Lightning", provider: "NVIDIA", context: 262144, reasoning: true, type: "text" },
-    { id: "deepseek-v4-flash-0731", name: "DeepSeek V4 Flash 0731", provider: "DeepSeek", context: 1000000, reasoning: true, type: "text" },
-    { id: "gemma-4-31b", name: "Gemma 4 31B", provider: "Google", context: 262144, reasoning: true, vision: true, type: "text" },
-    { id: "qwen3.6-27b", name: "Qwen3.6 27B", provider: "Qwen", context: 262144, reasoning: true, type: "text" },
-    { id: "muse-glimmer-30b", name: "Muse Glimmer 30B", provider: "Meta", context: 131072, type: "text" },
-    { id: "inkling-small", name: "Inkling Small", provider: "Thinking Machines", context: 524288, reasoning: true, type: "text" },
-    { id: "glm-5.2", name: "GLM 5.2", provider: "Z.ai", context: 1000000, reasoning: true, type: "text" },
-    { id: "qwen3.8-2.4t", name: "Qwen3.8 2.4T", provider: "Qwen", context: 1000000, reasoning: true, vision: true, type: "text" }
+    { id: "gpt-oss-120b", name: "GPT-OSS 120B", provider: "Serum", description: "High quality", vision: false, type: "text" },
+    { id: "gpt-oss-20b", name: "GPT-OSS 20B (Fast)", provider: "Serum", description: "Fast responses", vision: false, type: "text" },
+    { id: "qwen3-27b", name: "Qwen3 27B", provider: "Serum", description: "Balanced chat", vision: false, type: "text" },
+    
   ];
-  var COWORK_MODEL_IDS = ["gpt-5-6-luna", "grok-4-3", "llama-4-maverick", "qwen3.8-max", "qwen3.5-plus", "grok-code-fast-1", "deepseek-v4-flash", "qwen3.7-plus", "kimi-k2-6"];
-  var AUTO_COWORK_MODELS = ["gpt-5-6-luna", "qwen3.8-max", "grok-4-3"];
-  var REFERENCE_API_URL = "https://photon.girlspreples.org/api/v1/q";
-  var ANONYMOUS_CHAT_URL = "https://text.pollinations.ai/openai";
-  var ANONYMOUS_TEXT_URL = "https://text.pollinations.ai/";
-  var IMAGE_API_URL = "https://image.pollinations.ai/prompt/";
+  var COWORK_MODEL_IDS = ["gpt-oss-120b", "gpt-oss-20b", "qwen3-27b"];
+  var AUTO_COWORK_MODELS = COWORK_MODEL_IDS.slice();
+  var REFERENCE_API_URL = "https://nextnode9124.b-cdn.net/api/ai/chat";
   var SEARCH_URL = "https://api.duckduckgo.com/";
   var MAX_IMAGE_BYTES = 4 * 1024 * 1024;
   var MAX_TEXT_BYTES = 1024 * 1024;
@@ -171,13 +141,13 @@
     });
     modelList.innerHTML = visible.map(function (model) {
       var active = model.id === state.settings.model;
-      var details = model.type === "text" ? formatContext(model.context) + (model.vision ? " · Vision" : "") + (model.reasoning ? " · Reasoning" : "") : model.type === "image" ? "Image generation" : "Video generation";
+      var details = model.description || (model.type === "text" ? "Text chat" : "Generation");
       return '<button class="model-row' + (active ? ' active' : '') + '" type="button" data-model-id="' + escapeHtml(model.id) + '" aria-pressed="' + String(active) + '"><span class="provider-mark">' + escapeHtml(model.provider.slice(0, 1)) + '</span><span><strong>' + escapeHtml(model.name) + '</strong><small>' + escapeHtml(model.provider + " · " + details) + '</small></span><em>' + (active ? 'Selected' : model.type) + '</em></button>';
     }).join("") || '<div class="empty-models">No matching models</div>';
     var selected = getModel(state.settings.model);
     byId("image-options").hidden = selected.type !== "image";
     byId("video-options").hidden = selected.type !== "video";
-    byId("reasoning-setting").closest("label").hidden = selected.type !== "text";
+    byId("reasoning-setting").closest("label").hidden = !selected.reasoning;
   }
 
   function renderCoworkSettings() {
@@ -195,7 +165,7 @@
       var checked = selectedIds.includes(model.id);
       return '<label class="cowork-model' + (checked ? ' selected' : '') + '"><input type="checkbox" data-cowork-model="' + escapeHtml(model.id) + '"' + (checked ? ' checked' : '') + (state.settings.cowork.auto ? ' disabled' : '') + '><span class="provider-mark">' + escapeHtml(model.provider.slice(0, 1)) + '</span><span><strong>' + escapeHtml(model.name) + '</strong><small>' + escapeHtml(model.provider) + '</small></span></label>';
     }).join("");
-    byId("cowork-summary").textContent = state.settings.cowork.auto ? "Auto team: GPT 5.6 Luna, Qwen 3.8 Max, and Grok 4.3." : selectedIds.length + " of 5 models selected.";
+    byId("cowork-summary").textContent = state.settings.cowork.auto ? "Auto team: GPT-OSS 120B, GPT-OSS 20B, and Qwen3 27B." : selectedIds.length + " of 3 models selected.";
   }
 
   function showToast(text) {
@@ -508,6 +478,7 @@
 
   async function searchWeb(query, signal) {
     var url = SEARCH_URL + "?q=" + encodeURIComponent(query) + "&format=json&no_html=1&no_redirect=1&skip_disambig=0";
+    if (window.NEO_PROXY_CLIENT && window.parent !== window) url = await window.NEO_PROXY_CLIENT.resolve(url, "search");
     var response = await fetch(url, { signal: signal, mode: "cors" });
     if (!response.ok) throw new Error("Search is temporarily unavailable.");
     var data = await response.json();
@@ -578,208 +549,57 @@
 
   async function requestReference(messages, modelId, signal, onProgress) {
     var model = getModel(modelId);
-    var relayController = new AbortController();
-    var timedOut = false;
-    var timeout = 0;
-    function abortRelay() { relayController.abort(); }
-    function armTimeout() {
-      clearTimeout(timeout);
-      timeout = setTimeout(function () { timedOut = true; relayController.abort(); }, 20000);
-    }
     if (signal.aborted) throw abortError();
-    signal.addEventListener("abort", abortRelay, { once: true });
-    armTimeout();
-    try {
-      var requestId = id("request");
-      var payload = { requestId: requestId, messages: messages, model: model.id };
-      if (model.reasoning && state.settings.reasoning !== "auto") payload.reasoning_effort = state.settings.reasoning;
-      var mode = requestMode();
-      if (mode) payload.mode = mode;
-      var response = await fetch(REFERENCE_API_URL, {
-        method: "POST",
-        mode: "cors",
-        signal: relayController.signal,
-        cache: "no-store",
-        credentials: "omit",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      if (!response.ok) {
-        var problem = await response.text().catch(function () { return ""; });
-        throw new Error(model.name + " relay failed (" + response.status + "). " + problem.slice(0, 120));
+    var attachedImage = null;
+    var preparedMessages = messages.map(function (message) {
+      var content = message.content;
+      if (Array.isArray(content)) {
+        content = content.map(function (part) {
+          if (part && part.type === "image_url" && part.image_url && /^data:image\//i.test(part.image_url.url || "")) {
+            if (!attachedImage) attachedImage = part.image_url.url;
+            return "[Image attached]";
+          }
+          return part && part.type === "text" ? String(part.text || "") : "";
+        }).filter(Boolean).join("\n");
       }
-      if (!response.body || typeof response.body.getReader !== "function") throw new Error(model.name + " did not provide a stream.");
-      var reader = response.body.getReader();
-      var decoder = new TextDecoder();
-      var buffer = "";
-      var answer = "";
-      var relayError = "";
-      var finished = false;
-      function consumeLine(line) {
-        var raw = String(line || "").trim();
-        if (!raw) return;
-        var packet;
-        try { packet = JSON.parse(raw); } catch (_error) { return; }
-        if (!packet || !packet.e || !packet.d || (packet.d.requestId && packet.d.requestId !== requestId)) return;
-        if (packet.e === "chat:token" && packet.d.token) {
-          answer += String(packet.d.token);
-          if (onProgress) onProgress(answer);
-        } else if (packet.e === "chat:error") relayError = String(packet.d.error || (model.name + " failed."));
-        else if (packet.e === "chat:done") finished = true;
-        else if (packet.e === "chat:cancelled") throw abortError();
-      }
-      while (!finished && !relayError) {
-        armTimeout();
-        var chunk = await reader.read();
-        if (chunk.done) break;
-        timedOut = false;
-        buffer += decoder.decode(chunk.value, { stream: true });
-        var lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-        lines.forEach(consumeLine);
-      }
-      if (buffer.trim() && !finished && !relayError) consumeLine(buffer);
-      if (relayError) throw new Error(relayError);
-      if (!answer.trim()) throw new Error(model.name + " returned an empty response.");
-      return answer;
-    } catch (error) {
-      if (signal.aborted) throw abortError();
-      if (timedOut || error.name === "AbortError") throw new Error(model.name + " took too long to respond.");
-      throw error;
-    } finally {
-      clearTimeout(timeout);
-      signal.removeEventListener("abort", abortRelay);
-    }
-  }
-
-  async function requestAnonymous(messages, signal, onProgress) {
+      return { role: message.role, content: String(content || "") };
+    });
+    var payload = { messages: preparedMessages, model: model.id, image: attachedImage };
+    var route = REFERENCE_API_URL;
+    if (window.NEO_PROXY_CLIENT && window.parent !== window) route = await window.NEO_PROXY_CLIENT.resolve(route, "ai");
     var lastError = null;
     for (var attempt = 0; attempt < 2; attempt += 1) {
-      if (signal.aborted) throw abortError();
       try {
-        var response = await fetchWithTimeout(ANONYMOUS_CHAT_URL, {
+        var response = await fetchWithTimeout(route, {
           method: "POST",
           mode: "cors",
           cache: "no-store",
           credentials: "omit",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: ANONYMOUS_MODEL_ID,
-            messages: messages,
-            stream: false,
-            private: true
-          })
-        }, signal, 12000);
+          body: JSON.stringify(payload)
+        }, signal, 20000);
         if (!response.ok) {
-          var routeError = new Error("The backup AI could not connect (" + response.status + ").");
+          var routeError = new Error(model.name + " could not connect (" + response.status + ").");
           routeError.status = response.status;
           throw routeError;
         }
         var data = await response.json();
-        var content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-        var answer = Array.isArray(content) ? content.map(function (part) {
-          return typeof part === "string" ? part : (part && (part.text || part.content)) || "";
-        }).join("") : String(content || "");
-        if (!answer.trim()) throw new Error("The backup AI returned an empty response.");
+        var answer = String(data && data.reply || "").trim();
+        if (!answer) throw new Error(model.name + " returned an empty response.");
         if (onProgress) onProgress(answer);
         return answer;
       } catch (error) {
         if (signal.aborted || error.name === "AbortError") throw abortError();
         lastError = error;
-        var shouldRetry = error.retryable === true || !Number.isFinite(error.status) || retryableStatus(error.status);
-        if (!shouldRetry || attempt === 1) break;
+        if (attempt === 1 || (Number.isFinite(error.status) && !retryableStatus(error.status))) break;
         await retryPause(650, signal);
       }
     }
-    throw lastError || new Error("The backup AI could not connect.");
-  }
-
-  function plainMessageText(content) {
-    if (typeof content === "string") return content;
-    if (!Array.isArray(content)) return String(content || "");
-    return content.map(function (part) {
-      if (typeof part === "string") return part;
-      if (part && part.type === "text") return String(part.text || "");
-      if (part && part.type === "image_url") return "[Image attached]";
-      return "";
-    }).filter(Boolean).join("\n");
-  }
-
-  function anonymousTextPrompt(messages) {
-    var transcript = messages.slice(-10).map(function (message) {
-      var role = message.role === "assistant" ? "Assistant" : message.role === "system" ? "System" : "User";
-      return role + ": " + plainMessageText(message.content);
-    }).join("\n\n");
-    var prompt = "Continue the conversation below as NEO AI. Follow the system instructions and answer the final user message directly.\n\n" + transcript + "\n\nAssistant:";
-    return prompt.length > 2200 ? prompt.slice(prompt.length - 2200) : prompt;
-  }
-
-  async function requestAnonymousText(messages, signal, onProgress) {
-    var prompt = anonymousTextPrompt(messages);
-    var lastError = null;
-    for (var attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        var url = ANONYMOUS_TEXT_URL + encodeURIComponent(prompt) + "?model=" + encodeURIComponent(ANONYMOUS_MODEL_ID) + "&private=true&seed=" + Date.now();
-        var response = await fetchWithTimeout(url, {
-          method: "GET",
-          mode: "cors",
-          cache: "no-store",
-          credentials: "omit"
-        }, signal, 15000);
-        if (!response.ok) {
-          var routeError = new Error("The recovery AI could not connect (" + response.status + ").");
-          routeError.status = response.status;
-          throw routeError;
-        }
-        var answer = String(await response.text() || "").trim();
-        if (!answer) throw new Error("The recovery AI returned an empty response.");
-        if (onProgress) onProgress(answer);
-        return answer;
-      } catch (error) {
-        if (signal.aborted || error.name === "AbortError") throw abortError();
-        lastError = error;
-        var shouldRetry = error.retryable === true || !Number.isFinite(error.status) || retryableStatus(error.status);
-        if (!shouldRetry || attempt === 1) break;
-        await retryPause(650, signal);
-      }
-    }
-    throw lastError || new Error("The recovery AI could not connect.");
+    throw lastError || new Error(model.name + " could not connect.");
   }
 
   async function requestModel(messages, modelId, signal, onProgress) {
-    try {
-      return await requestReference(messages, modelId, signal, onProgress);
-    } catch (relayFailure) {
-      if (relayFailure.name === "AbortError") throw relayFailure;
-      try {
-        return await requestAnonymous(messages, signal, onProgress);
-      } catch (backupFailure) {
-        if (backupFailure.name === "AbortError") throw backupFailure;
-        try {
-          return await requestAnonymousText(messages, signal, onProgress);
-        } catch (recoveryFailure) {
-          if (recoveryFailure.name === "AbortError") throw recoveryFailure;
-          throw new Error("Every AI route is busy right now. Please try again in a moment.");
-        }
-      }
-    }
-  }
-
-  function mediaSource(result) {
-    if (!result) return "";
-    if (typeof result === "string") return result;
-    return String(result.src || (result.getAttribute && (result.getAttribute("data-source") || result.getAttribute("src"))) || "");
-  }
-
-  async function generateMedia(model, prompt, signal) {
-    if (signal.aborted) throw abortError();
-    if (model.type !== "image") throw new Error("Video generation is unavailable in prompt-free mode.");
-    var ratioParts = state.settings.media.imageRatio.split(":").map(Number);
-    var width = ratioParts[0] >= ratioParts[1] ? 1024 : Math.max(512, Math.round(1024 * ratioParts[0] / ratioParts[1]));
-    var height = ratioParts[1] >= ratioParts[0] ? 1024 : Math.max(512, Math.round(1024 * ratioParts[1] / ratioParts[0]));
-    var imagePrompt = prompt + (state.settings.media.imageStyle === "auto" ? "" : ". Style: " + state.settings.media.imageStyle + ".");
-    var source = IMAGE_API_URL + encodeURIComponent(imagePrompt) + "?width=" + width + "&height=" + height + "&nologo=true&private=true&seed=" + Date.now();
-    return { src: source, fallback: true };
+    return requestReference(messages, modelId, signal, onProgress);
   }
 
   async function runCowork(requestMessages, sourceMessage, controller, typing) {
@@ -833,20 +653,6 @@
     var webResults = [];
     var selectedModel = getModel(state.settings.model);
     try {
-      if (selectedModel.type !== "text") {
-        typing.querySelector(".message-content").textContent = selectedModel.type === "image" ? "Creating image…" : "Creating video… this can take a few minutes.";
-        var generated = await generateMedia(selectedModel, sourceMessage.content, controller.signal);
-        var mediaAssistant = {
-          id: id("msg"), role: "assistant", model: selectedModel.id, created: Date.now(),
-          content: "Created with **" + selectedModel.name + "**" + (generated.fallback ? " through a compatible generation route." : "."),
-          media: { type: selectedModel.type, src: generated.src }
-        };
-        chat.messages.push(mediaAssistant);
-        chat.updated = Date.now();
-        saveState();
-        renderAll();
-        return;
-      }
       var outboundMessages;
       if (state.settings.web) {
         try {
@@ -910,7 +716,7 @@
     var imageSources = pendingImages.map(function (image) { return image.dataUrl; });
     var attachedFiles = pendingFiles.map(function (file) { return { name: file.name, text: file.text }; });
     var selectedModel = getModel(state.settings.model);
-    var fallbackPrompt = selectedModel.type === "image" ? "Create an image from the attached reference." : selectedModel.type === "video" ? "Create a video from the attached reference." : "What is in these images?";
+    var fallbackPrompt = "Describe the attached image or file.";
     var message = { id: id("msg"), role: "user", content: text || fallbackPrompt, images: imageSources.length ? imageSources : undefined, files: attachedFiles.length ? attachedFiles : undefined, created: Date.now() };
     chat.messages.push(message);
     if (chat.messages.length === 1 || chat.title === "New chat") chat.title = titleFrom(message.content);

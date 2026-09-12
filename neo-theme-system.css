@@ -184,6 +184,32 @@ html[data-neo-theme="glass"] {
   --desktop-muted: #a1adbc; --desktop-line: #344253; --desktop-accent: #dceaff; --desktop-accent-text: #0b111a;
 }
 
+html[data-neo-theme="acrylic"] {
+  --desktop-bg: rgba(8, 13, 21, .70) !important;
+  --desktop-surface: rgba(24, 34, 49, .76) !important;
+  --desktop-text: #f7fbff !important;
+  --desktop-muted: #b8c4d4 !important;
+  --desktop-line: rgba(154, 181, 214, .42) !important;
+  --desktop-accent: #8bd8ff !important;
+  --desktop-accent-text: #06141d;
+  --neo-acrylic-canvas: rgba(8, 13, 21, .70);
+  --neo-acrylic-surface: rgba(24, 34, 49, .76);
+  --neo-acrylic-surface-strong: rgba(18, 27, 40, .88);
+  --neo-acrylic-solid-bg: #080d15;
+  --neo-acrylic-solid-surface: #182231;
+  --neo-acrylic-backdrop: blur(26px) saturate(145%);
+  --neo-theme-raised: rgba(42, 56, 76, .84);
+  --neo-theme-soft: rgba(21, 31, 46, .72);
+  --neo-theme-hover: rgba(67, 86, 111, .72);
+  --desktop-surface-2: rgba(45, 60, 81, .76);
+  --neo-theme-control: rgba(28, 40, 58, .78);
+  --neo-theme-control-hover: rgba(66, 86, 112, .76);
+  --neo-theme-selected: color-mix(in srgb, var(--desktop-accent) 24%, rgba(24, 34, 49, .84));
+  --neo-theme-glass: rgba(20, 29, 43, .72);
+  --neo-theme-overlay: rgba(3, 7, 13, .68);
+  --neo-theme-shadow: rgba(0, 0, 0, .48);
+}
+
 html[data-neo-theme="coral"] {
   --desktop-bg: #120a0b; --desktop-surface: #241214; --desktop-text: #fff3f0;
   --desktop-muted: #c2a09c; --desktop-line: #523036; --desktop-accent: #ff7a70; --desktop-accent-text: #240a08;
@@ -864,6 +890,171 @@ html[data-neo-app="tv"] .neo-shell-brand { color: var(--desktop-text); }
 html[data-neo-app="tv"] .neo-shell-brand span { color: var(--desktop-muted); }
 html[data-neo-app="tv"] .neo-shell-nav { color: var(--desktop-text); background: var(--neo-theme-glass); border-color: var(--desktop-line); }
 html[data-neo-app="tv"] .neo-shell-nav a:hover { color: var(--desktop-text); background: var(--neo-theme-control-hover); }
+
+/* Acrylic is an opt-in, structural treatment. It changes app/chrome surfaces,
+   never image, video, canvas, poster, cover, or artwork rendering. */
+html[data-neo-theme="acrylic"] body {
+  color: var(--desktop-text);
+  background-color: var(--neo-acrylic-canvas) !important;
+}
+
+html[data-neo-theme="acrylic"][data-neo-app="shell"] .neo-window {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .065), transparent 38%),
+    var(--neo-acrylic-canvas) !important;
+  border-color: var(--desktop-line) !important;
+  box-shadow:
+    0 28px 84px rgba(0, 0, 0, .48),
+    inset 0 1px rgba(255, 255, 255, .13) !important;
+  -webkit-backdrop-filter: var(--neo-acrylic-backdrop);
+  backdrop-filter: var(--neo-acrylic-backdrop);
+}
+
+html[data-neo-theme="acrylic"][data-neo-app="shell"] :is(.window-chrome,.window-body) {
+  color: var(--desktop-text);
+  background-color: var(--neo-acrylic-surface) !important;
+  border-color: var(--desktop-line) !important;
+}
+
+html[data-neo-theme="acrylic"][data-neo-app="shell"] .window-body {
+  background-color: var(--neo-acrylic-canvas) !important;
+}
+
+html[data-neo-theme="acrylic"][data-neo-app="shell"] :is(
+  .app-launcher,
+  .notification-center,
+  .desktop-context-menu,
+  .context-submenu,
+  .desktop-palette,
+  .neo-toast,
+  .control-center,
+  .system-search
+) {
+  color: var(--desktop-text);
+  background-color: var(--neo-acrylic-surface-strong) !important;
+  border-color: var(--desktop-line) !important;
+  -webkit-backdrop-filter: var(--neo-acrylic-backdrop);
+  backdrop-filter: var(--neo-acrylic-backdrop);
+}
+
+/* Owned iframe apps receive the same theme name from neo-app-theme.js. Keep
+   only their structural canvas and chrome translucent so authored art stays
+   crisp and colour-correct. */
+html[data-neo-theme="acrylic"][data-neo-app]:not([data-neo-app="shell"]) :is(
+  body,
+  #root,
+  .app-shell,
+  .desktop-app,
+  .native-app,
+  .control-app,
+  .neo-utility,
+  .neo-library,
+  .neo-messages,
+  .neo-browser-runtime,
+  .wallpaper-studio
+) {
+  color: var(--desktop-text);
+  background-color: var(--neo-acrylic-canvas) !important;
+}
+
+html[data-neo-theme="acrylic"][data-neo-app]:not([data-neo-app="shell"]) :is(
+  header,
+  nav,
+  aside,
+  dialog,
+  [class*="sidebar"],
+  [class*="topbar"],
+  [class*="toolbar"],
+  [class*="commandbar"],
+  [class*="composer"],
+  [class*="settings-panel"]
+) {
+  color: var(--desktop-text);
+  background-color: var(--neo-acrylic-surface) !important;
+  border-color: var(--desktop-line) !important;
+}
+
+/* Moving/resizing and lower-work modes retain transparency but stop live blur,
+   which avoids repaint spikes while a window follows the pointer. */
+html[data-neo-theme="acrylic"].is-window-interacting :is(
+  .neo-window,
+  .app-launcher,
+  .notification-center,
+  .desktop-context-menu,
+  .context-submenu,
+  .desktop-palette,
+  .neo-toast,
+  .control-center,
+  .system-search
+),
+html[data-neo-theme="acrylic"] .neo-window:is(.is-dragging,.is-resizing),
+html[data-neo-theme="acrylic"]:is([data-performance-mode="performance"],[data-performance-mode="ultimate"]) :is(
+  .neo-window,
+  .app-launcher,
+  .notification-center,
+  .desktop-context-menu,
+  .context-submenu,
+  .desktop-palette,
+  .neo-toast,
+  .control-center,
+  .system-search,
+  body
+) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Honour both the platform preference and shell-friendly preference hooks.
+   Reduced transparency is intentionally opaque, not merely less blurred. */
+html[data-neo-theme="acrylic"]:is(
+  [data-reduced-transparency="true"],
+  [data-reduce-transparency="true"],
+  [data-transparency="reduced"],
+  [data-desktop-transparency="reduced"]
+) {
+  --desktop-bg: var(--neo-acrylic-solid-bg) !important;
+  --desktop-surface: var(--neo-acrylic-solid-surface) !important;
+  --neo-acrylic-canvas: var(--neo-acrylic-solid-bg);
+  --neo-acrylic-surface: var(--neo-acrylic-solid-surface);
+  --neo-acrylic-surface-strong: #121b28;
+  --neo-theme-glass: var(--neo-acrylic-solid-surface);
+}
+
+html[data-neo-theme="acrylic"]:is(
+  [data-reduced-transparency="true"],
+  [data-reduce-transparency="true"],
+  [data-transparency="reduced"],
+  [data-desktop-transparency="reduced"]
+) :is(.neo-window,.app-launcher,.notification-center,.desktop-context-menu,.context-submenu,.desktop-palette,.neo-toast,.control-center,.system-search,body) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  html[data-neo-theme="acrylic"] {
+    --desktop-bg: var(--neo-acrylic-solid-bg) !important;
+    --desktop-surface: var(--neo-acrylic-solid-surface) !important;
+    --neo-acrylic-canvas: var(--neo-acrylic-solid-bg);
+    --neo-acrylic-surface: var(--neo-acrylic-solid-surface);
+    --neo-acrylic-surface-strong: #121b28;
+    --neo-theme-glass: var(--neo-acrylic-solid-surface);
+  }
+
+  html[data-neo-theme="acrylic"] :is(.neo-window,.app-launcher,.notification-center,.desktop-context-menu,.context-submenu,.desktop-palette,.neo-toast,.control-center,.system-search,body) {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  html[data-neo-theme="acrylic"] {
+    --desktop-bg: var(--neo-acrylic-solid-bg) !important;
+    --desktop-surface: var(--neo-acrylic-solid-surface) !important;
+    --neo-acrylic-canvas: var(--neo-acrylic-solid-bg);
+    --neo-acrylic-surface: var(--neo-acrylic-solid-surface);
+    --neo-acrylic-surface-strong: #121b28;
+  }
+}
 
 @media (max-width: 700px) {
   .theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

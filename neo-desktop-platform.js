@@ -336,22 +336,137 @@
   }
 
   function terminal(body) {
-    const key='neo_terminal_sessions_v1';let sessions;try{sessions=JSON.parse(localStorage.getItem(key));}catch(_){}if(!Array.isArray(sessions)||!sessions.length)sessions=[{id:Date.now(),lines:['NEO local terminal — simulated commands; no system shell.','Type help to see available commands.'],history:[]}];sessions=sessions.slice(0,8).map(s=>({id:s.id||Date.now(),lines:Array.isArray(s.lines)?s.lines.slice(-300).map(String):[],history:Array.isArray(s.history)?s.history.slice(-100).map(String):[]}));
-    const app=el('div','desktop-app desktop-terminal'),tabs=el('div','terminal-tabs'),log=el('pre','terminal-log'),form=el('form','terminal-composer'),input=el('input');input.setAttribute('aria-label','Terminal command');input.autocomplete='off';form.append(el('span','', 'neo:~/workspace $'),input);button('Run',null,form).type='submit';app.append(tabs,log,form);body.append(app);log.setAttribute('role','log');log.setAttribute('aria-live','polite');let active=sessions[0],cursor=active.history.length;
-    function persist(){try{localStorage.setItem(key,JSON.stringify(sessions));}catch(_){notify('Terminal history could not be saved.');}}
-    function draw(){tabs.replaceChildren();sessions.forEach((s,i)=>{const r=row(tabs);const b=button('Session '+(i+1),()=>{active=s;cursor=s.history.length;draw();},r);b.setAttribute('aria-pressed',String(s===active));if(sessions.length>1)button('×',()=>{sessions=sessions.filter(x=>x!==s);if(active===s)active=sessions[0];persist();draw();},r);});button('+',()=>{if(sessions.length>=8)return notify('Up to 8 terminal sessions.');active={id:Date.now(),lines:['New local session.'],history:[]};sessions.push(active);cursor=0;persist();draw();},tabs);log.textContent=active.lines.join('\n');log.scrollTop=log.scrollHeight;}
-    function run(command){const [name,...args]=command.trim().split(/\s+/),arg=args.join(' ');let result='';switch(name.toLowerCase()){
-      case 'help':result='help, clear, echo TEXT, date, pwd, ls, cat FILE, open APP, apps, whoami, version, settings, theme NAME, volume 0–100, fullscreen\nFiles are the local Code workspace. Commands never execute programs or network requests.';break;
-      case 'clear':active.lines=[];break;case 'echo':result=arg;break;case 'date':result=new Date().toString();break;case 'pwd':result='/neo/workspace (local simulation)';break;case 'ls':result=Object.keys(workspace).join('\n');break;case 'cat':result=Object.hasOwn(workspace,arg)?workspace[arg]:'File not found. Use ls.';break;
-      case 'apps':result=window.NEO_SHELL.getApps().map(a=>a.id+' — '+(a.title||a.name||a.id)).join('\n');break;
-      case 'open':if(window.NEO_SHELL.getApps().some(a=>a.id===arg)){window.NEO_SHELL.openApp(arg);result='Opened '+arg;}else result='Unknown app. Use apps.';break;
-      case 'whoami':result='Local device user';break;case 'version':result='NEO OS · local desktop';break;case 'settings':window.NEO_SHELL.openApp('control');break;
-      case 'theme':if(Object.hasOwn(C.themes,arg)){B.set({theme:arg});result='Theme: '+arg;}else result='Themes: '+Object.keys(C.themes).join(', ');break;
-      case 'volume':if(arg!==''&&Number.isFinite(+arg)&&+arg>=0&&+arg<=100){B.set({volume:+arg});result='Master volume: '+arg;}else result='Usage: volume 0–100';break;
-      case 'fullscreen':document.documentElement.requestFullscreen?.().catch(()=>notify('Fullscreen was declined by this browser.'));break;
-      case '':break;default:result='Unsupported local command: '+name+'. Type help. No system command was executed.';
-    }if(result)active.lines.push(result);active.lines=active.lines.slice(-300);}
-    form.onsubmit=e=>{e.preventDefault();const command=input.value.trim();if(!command)return;active.lines.push('$ '+command);active.history.push(command);active.history=active.history.slice(-100);input.value='';run(command);cursor=active.history.length;persist();draw();};input.onkeydown=e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();cursor=Math.max(0,Math.min(active.history.length,cursor+(e.key==='ArrowUp'?-1:1)));input.value=active.history[cursor]||'';}};draw();
+    const sessionKey='neo_terminal_sessions_v1',directoryKey='neo_terminal_directories_v1',rootPath='/neo/workspace';
+    let directories=[];try{directories=JSON.parse(localStorage.getItem(directoryKey));}catch(_){}if(!Array.isArray(directories))directories=[];
+    const virtualDirectories=new Set(['']);
+    function resolvePath(raw,from){
+      let value=String(raw??'').trim();
+      if((value.startsWith('"')&&value.endsWith('"'))||(value.startsWith("'")&&value.endsWith("'")))value=value.slice(1,-1);
+      value=value.replace(/\\/g,'/');
+      let base=String(from||'');
+      if(!value)return base;
+      if(value==='~'||value==='~/workspace'||value===rootPath||value==='/')return '';
+      if(value.startsWith(rootPath+'/')){value=value.slice(rootPath.length+1);base='';}
+      else if(value.startsWith('~/workspace/')){value=value.slice(12);base='';}
+      else if(value.startsWith('/'))return null;
+      const parts=base?base.split('/'):[];
+      for(const rawPart of value.split('/')){
+        const part=rawPart.trim();
+        if(!part||part==='.')continue;
+        if(part==='..'){parts.pop();continue;}
+        if(part.length>80||!(/^[a-zA-Z0-9_ .-]+$/).test(part))return null;
+        parts.push(part);
+      }
+      const resolved=parts.join('/');return resolved.length<=160?resolved:null;
+    }
+    directories.forEach(path=>{const safe=resolvePath(path,'');if(safe!==null){virtualDirectories.add(safe);const parts=safe.split('/');while(parts.length>1){parts.pop();virtualDirectories.add(parts.join('/'));}}});
+    Object.keys(workspace).forEach(path=>{const safe=resolvePath(path,'');if(safe===null)return;const parts=safe.split('/');while(parts.length>1){parts.pop();virtualDirectories.add(parts.join('/'));}});
+    function makeSession(message){return{id:Date.now()+Math.floor(Math.random()*100000),lines:[message||'NEO local terminal — simulated commands; no system shell.','Type help to see available commands.'],history:[],cwd:''};}
+    let sessions;try{sessions=JSON.parse(localStorage.getItem(sessionKey));}catch(_){}if(!Array.isArray(sessions)||!sessions.length)sessions=[makeSession()];
+    sessions=sessions.slice(0,8).map((session,index)=>{const cwd=resolvePath(session&&session.cwd,'');return{id:session&&session.id||Date.now()+index,lines:Array.isArray(session&&session.lines)?session.lines.slice(-300).map(String):[],history:Array.isArray(session&&session.history)?session.history.slice(-100).map(String):[],cwd:cwd!==null&&directoryExists(cwd)?cwd:''};});
+    const app=el('div','desktop-app desktop-terminal'),tabs=el('div','terminal-tabs'),log=el('pre','terminal-log'),form=el('form','terminal-composer'),prompt=el('span'),input=el('input');
+    input.setAttribute('aria-label','Terminal command');input.autocomplete='off';input.autocapitalize='off';input.spellcheck=false;form.append(prompt,input);const runButton=button('Run',null,form);runButton.type='submit';app.append(tabs,log,form);body.append(app);log.setAttribute('role','log');log.setAttribute('aria-live','polite');let active=sessions[0],cursor=active.history.length,historyDraft='';
+    function pathLabel(path){return rootPath+(path?'/'+path:'');}
+    function promptLabel(session){return'neo:'+(session.cwd?'~/workspace/'+session.cwd:'~/workspace')+' $';}
+    function fileExists(path){return Object.hasOwn(workspace,path);}
+    function directoryExists(path){if(path==='')return true;if(virtualDirectories.has(path))return true;const prefix=path+'/';return Object.keys(workspace).some(name=>name.startsWith(prefix))||Array.from(virtualDirectories).some(name=>name.startsWith(prefix));}
+    function directoryHasChildren(path){const prefix=path?path+'/':'';return Object.keys(workspace).some(name=>name.startsWith(prefix))||Array.from(virtualDirectories).some(name=>name!==path&&name.startsWith(prefix));}
+    function parentPath(path){const index=path.lastIndexOf('/');return index<0?'':path.slice(0,index);}
+    function listDirectory(path){
+      const prefix=path?path+'/':'',items=new Map();
+      virtualDirectories.forEach(directory=>{if(!directory||directory===path||!directory.startsWith(prefix))return;const rest=directory.slice(prefix.length),name=rest.split('/')[0];if(name)items.set(name,name+'/');});
+      Object.keys(workspace).forEach(file=>{if(!file.startsWith(prefix))return;const rest=file.slice(prefix.length);if(!rest)return;const slash=rest.indexOf('/');const name=slash<0?rest:rest.slice(0,slash);items.set(name,slash<0&&!items.has(name)?name:name+'/');});
+      return Array.from(items.values()).sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'})).join('\n')||'(empty)';
+    }
+    function parseWords(value){return(String(value||'').match(/"[^"]*"|'[^']*'|\S+/g)||[]).map(word=>((word.startsWith('"')&&word.endsWith('"'))||(word.startsWith("'")&&word.endsWith("'")))?word.slice(1,-1):word);}
+    function parseEcho(value){
+      let quote='',redirect=-1,append=false;
+      for(let index=0;index<value.length;index+=1){const char=value[index];if((char==='"'||char==="'")&&(!quote||quote===char)){quote=quote?'':char;continue;}if(char==='>'&&!quote){redirect=index;append=value[index+1]==='>';break;}}
+      if(redirect<0)return{text:((value.startsWith('"')&&value.endsWith('"'))||(value.startsWith("'")&&value.endsWith("'")))?value.slice(1,-1):value};
+      let text=value.slice(0,redirect).trim(),target=value.slice(redirect+(append?2:1)).trim();
+      if((text.startsWith('"')&&text.endsWith('"'))||(text.startsWith("'")&&text.endsWith("'")))text=text.slice(1,-1);
+      if((target.startsWith('"')&&target.endsWith('"'))||(target.startsWith("'")&&target.endsWith("'")))target=target.slice(1,-1);
+      return{text,target,append};
+    }
+    function saveDirectories(){try{localStorage.setItem(directoryKey,JSON.stringify(Array.from(virtualDirectories).filter(Boolean)));return true;}catch(_){notify('Terminal folders could not be saved.');return false;}}
+    function persist(){try{localStorage.setItem(sessionKey,JSON.stringify(sessions));saveDirectories();}catch(_){notify('Terminal history could not be saved.');}}
+    function focusInput(){requestAnimationFrame(()=>{if(input.isConnected){input.focus({preventScroll:true});input.setSelectionRange(input.value.length,input.value.length);}});}
+    function createTab(){if(sessions.length>=8){notify('Up to 8 terminal sessions.');return;}active=makeSession('New local session.');sessions.push(active);cursor=0;historyDraft='';persist();draw();focusInput();}
+    function closeTab(session){
+      const index=sessions.indexOf(session);if(index<0)return;
+      sessions.splice(index,1);if(!sessions.length)sessions.push(makeSession('New local session.'));
+      if(active===session)active=sessions[Math.min(index,sessions.length-1)];cursor=active.history.length;historyDraft='';persist();draw();focusInput();
+    }
+    function draw(){
+      tabs.replaceChildren();sessions.forEach((session,index)=>{const group=el('span','desktop-row'),label='Session '+(index+1);const selectTab=button(label,()=>{active=session;cursor=session.history.length;historyDraft='';input.value='';draw();focusInput();},group);selectTab.setAttribute('aria-pressed',String(session===active));selectTab.title=pathLabel(session.cwd);const close=button('×',()=>closeTab(session),group);close.setAttribute('aria-label','Close '+label);close.title='Close terminal tab (Ctrl+W)';tabs.append(group);});
+      const add=button('+',createTab,tabs);add.title='New terminal tab (Ctrl+T)';prompt.textContent=promptLabel(active);prompt.title=pathLabel(active.cwd);log.textContent=active.lines.join('\n');log.scrollTop=log.scrollHeight;
+    }
+    function writeWorkspaceFile(path,text,append){
+      const existed=fileExists(path),previous=workspace[path];workspace[path]=append&&existed?(String(previous)+(String(previous)?'\n':'')+text):text;
+      if(saveFiles())return true;if(existed)workspace[path]=previous;else delete workspace[path];return false;
+    }
+    function removeWorkspaceFile(path){const previous=workspace[path];delete workspace[path];if(saveFiles())return true;workspace[path]=previous;return false;}
+    function commandResult(text){if(text!==undefined&&text!==null&&String(text)!=='')active.lines.push(String(text));}
+    function run(command){
+      const words=parseWords(command),name=String(words.shift()||'').toLowerCase(),argument=words.join(' '),rawArgument=command.trim().slice((command.trim().match(/^\S+/)||[''])[0].length).trim();let result='';
+      switch(name){
+        case 'help':result='Commands:\n  ls/dir [PATH]       list virtual files\n  cd [PATH]           change virtual folder (.. is supported)\n  pwd                 show the virtual path\n  cat/type FILE       read a virtual file\n  mkdir PATH          create a virtual folder\n  touch FILE          create a virtual file\n  rm/del PATH         remove a virtual file or empty folder\n  echo TEXT [> FILE]  print or safely write a virtual file\n  open APP, apps      launch or list NEO apps\n  whoami, date, time, neofetch, ver, history, ping HOST\n  cls/clear, exit, settings, theme NAME, volume 0–100, fullscreen\nEverything stays inside NEO storage. No real shell, filesystem, or network commands run.';break;
+        case 'clear':case 'cls':active.lines=[];break;
+        case 'echo':{
+          const parsed=parseEcho(rawArgument);if(parsed.target===undefined){result=parsed.text;break;}const target=resolvePath(parsed.target,active.cwd);
+          if(target===null||!target){result='Usage: echo TEXT > FILE';break;}if(directoryExists(target)){result='Cannot write a folder: '+pathLabel(target);break;}if(!directoryExists(parentPath(target))){result='Folder not found: '+pathLabel(parentPath(target));break;}if(writeWorkspaceFile(target,parsed.text,parsed.append))result=(parsed.append?'Appended to ':'Wrote ')+pathLabel(target);break;
+        }
+        case 'date':result=new Date().toString();break;
+        case 'time':result=new Date().toLocaleTimeString();break;
+        case 'pwd':result=pathLabel(active.cwd);break;
+        case 'ls':case 'dir':{
+          const target=resolvePath(argument,active.cwd);if(target===null)result='That path is outside the NEO workspace.';else if(fileExists(target))result=target.split('/').pop();else if(!directoryExists(target))result='Folder not found: '+pathLabel(target);else result=listDirectory(target);break;
+        }
+        case 'cd':{
+          const target=resolvePath(argument,argument?active.cwd:'');if(target===null)result='That path is outside the NEO workspace.';else if(fileExists(target))result='Not a folder: '+pathLabel(target);else if(!directoryExists(target))result='Folder not found: '+pathLabel(target);else active.cwd=target;break;
+        }
+        case 'cat':case 'type':{
+          const target=resolvePath(argument,active.cwd);if(!argument||target===null||!target)result='Usage: '+name+' FILE';else if(directoryExists(target))result='Cannot read a folder: '+pathLabel(target);else result=fileExists(target)?String(workspace[target]):'File not found: '+pathLabel(target);break;
+        }
+        case 'mkdir':{
+          const target=resolvePath(argument,active.cwd);if(!argument||target===null||!target)result='Usage: mkdir FOLDER';else if(fileExists(target)||directoryExists(target))result='Already exists: '+pathLabel(target);else if(!directoryExists(parentPath(target)))result='Parent folder not found: '+pathLabel(parentPath(target));else{virtualDirectories.add(target);saveDirectories();result='Created '+pathLabel(target);}break;
+        }
+        case 'touch':{
+          const target=resolvePath(argument,active.cwd);if(!argument||target===null||!target)result='Usage: touch FILE';else if(directoryExists(target))result='A folder already uses that name: '+pathLabel(target);else if(!directoryExists(parentPath(target)))result='Parent folder not found: '+pathLabel(parentPath(target));else if(fileExists(target))result='File already exists: '+pathLabel(target);else if(writeWorkspaceFile(target,'',false))result='Created '+pathLabel(target);break;
+        }
+        case 'rm':case 'del':{
+          if(!argument||argument.startsWith('-')){result='Usage: '+name+' PATH. Options are not supported. No system command was executed; no real files were touched.';break;}const target=resolvePath(argument,active.cwd);
+          if(target===null||!target)result='The virtual workspace root cannot be removed.';else if(fileExists(target)){if(removeWorkspaceFile(target))result='Removed '+pathLabel(target);}else if(directoryExists(target)){if(directoryHasChildren(target))result='Folder is not empty: '+pathLabel(target);else{virtualDirectories.delete(target);saveDirectories();result='Removed '+pathLabel(target);}}else result='Not found: '+pathLabel(target);break;
+        }
+        case 'apps':result=window.NEO_SHELL.getApps().map(item=>item.id+' — '+(item.title||item.name||item.id)).join('\n');break;
+        case 'open':{
+          const wanted=argument.toLowerCase(),match=window.NEO_SHELL.getApps().find(item=>item.id.toLowerCase()===wanted||String(item.title||item.name||'').toLowerCase()===wanted);
+          if(!argument)result='Usage: open APP';else if(match){window.NEO_SHELL.openApp(match.id);result='Opened '+(match.title||match.name||match.id)+'.';}else result='Unknown app. Use apps.';break;
+        }
+        case 'whoami':result='neo';break;
+        case 'neofetch':result='NEO OS\nOS: NEO OS web edition\nHost: '+navigator.userAgent.replace(/\s+/g,' ').slice(0,72)+'\nShell: NEO Terminal (safe simulation)\nWorkspace: '+Object.keys(workspace).length+' virtual file'+(Object.keys(workspace).length===1?'':'s')+'\nNetwork: disabled for terminal commands';break;
+        case 'ver':case 'version':result='NEO OS web edition · safe local terminal';break;
+        case 'history':result=active.history.map((entry,index)=>String(index+1).padStart(3,' ')+'  '+entry).join('\n')||'No command history.';break;
+        case 'ping':{
+          const host=argument.toLowerCase();if(!(/^(?:localhost|[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?)$/).test(host))result='Usage: ping HOST';else result='PING '+host+' (simulated)\nReply from '+host+': time<1ms\nReply from '+host+': time<1ms\n2 simulated replies; 0 network packets sent.';break;
+        }
+        case 'settings':window.NEO_SHELL.openApp('control');result='Opened System Settings.';break;
+        case 'theme':if(Object.hasOwn(C.themes,argument)){B.set({theme:argument});result='Theme: '+argument;}else result='Themes: '+Object.keys(C.themes).join(', ');break;
+        case 'volume':if(argument!==''&&Number.isFinite(+argument)&&+argument>=0&&+argument<=100){B.set({volume:+argument});result='Master volume: '+argument;}else result='Usage: volume 0–100';break;
+        case 'fullscreen':document.documentElement.requestFullscreen?.().catch(()=>notify('Fullscreen was declined by this browser.'));result='Requested fullscreen mode.';break;
+        case 'exit':return'exit';
+        case '':break;
+        default:result='Unsupported local command: '+name+'. Type help. No system command was executed.';
+      }
+      commandResult(result);active.lines=active.lines.slice(-300);return'complete';
+    }
+    form.onsubmit=event=>{
+      event.preventDefault();const command=input.value.trim();if(!command)return;const session=active;session.lines.push(promptLabel(session)+' '+command);session.history.push(command);session.history=session.history.slice(-100);input.value='';historyDraft='';
+      if(run(command)==='exit'){closeTab(session);return;}cursor=active.history.length;persist();draw();focusInput();
+    };
+    input.onkeydown=event=>{if(event.key!=='ArrowUp'&&event.key!=='ArrowDown')return;event.preventDefault();if(event.key==='ArrowUp'&&cursor===active.history.length)historyDraft=input.value;cursor=Math.max(0,Math.min(active.history.length,cursor+(event.key==='ArrowUp'?-1:1)));input.value=cursor===active.history.length?historyDraft:(active.history[cursor]||'');focusInput();};
+    app.addEventListener('keydown',event=>{if(!(event.ctrlKey||event.metaKey)||event.altKey)return;const key=event.key.toLowerCase();if(key==='t'){event.preventDefault();createTab();}else if(key==='w'){event.preventDefault();closeTab(active);}else if(key==='l'){event.preventDefault();active.lines=[];persist();draw();focusInput();}});
+    app.addEventListener('pointerdown',event=>{if(!event.target.closest('button,input'))focusInput();});body._neoDesktopCleanup=persist;draw();focusInput();
   }
   function init(){
     window.NEO_SKINS.init();

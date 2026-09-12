@@ -66,7 +66,7 @@
       : "";
     var adShieldRuntime = /<script\b[^>]*\bsrc\s*=\s*["'][^"']*neo-ad-shield\.js(?:[?#][^"']*)?["']/i.test(html)
       ? ""
-      : '<script src="' + escapeAttribute(resolveUrl("./neo-ad-shield.js?v=20260910-sitewide-v1")) + '"><\/script>';
+      : '<script src="' + escapeAttribute(resolveUrl("./neo-ad-shield.js?v=20260912-sitewide-v2")) + '"><\/script>';
     var networkRuntime = "";
     if (
       isRunner() &&

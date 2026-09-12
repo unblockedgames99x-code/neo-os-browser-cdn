@@ -23,9 +23,11 @@
     "criteo.com",
     "criteo.net",
     "doubleclick.net",
+    "dolesdao.com",
     "exoclick.com",
     "googleadservices.com",
     "googlesyndication.com",
+    "googletagmanager.com",
     "googletagservices.com",
     "hilltopads.net",
     "imasdk.googleapis.com",
@@ -39,6 +41,7 @@
     "outbrain.com",
     "popads.net",
     "popcash.net",
+    "profitableratecpmnetwork.com",
     "propellerads.com",
     "pubmatic.com",
     "quantserve.com",
@@ -51,12 +54,13 @@
     "taboola.com",
     "trafficjunky.net",
     "triplelift.com",
+    "videasy.to",
     "yieldmo.com",
     "zergnet.com"
   ];
 
   var blockedHostPattern = /(^|[.-])(?:ad(?:s|server|service|sterra|system|tech|track)?|advertising|affiliate|banner|clicks?|popads?|popunder|sponsor|tracking|tracker)(?:[.-]|$)/i;
-  var blockedUrlPattern = /(?:\/pagead(?:\/|\?|$)|\/ads?(?:\/|\?|=|&|\.|_|-)|adsbygoogle|googleads|googletagservices|securepubads|prebid|popunder|vast(?:\.xml|\/)|[?&](?:ad_|ads?|adunit|bannerid|clickid|placement|popunder|slot|zoneid)=)/i;
+  var blockedUrlPattern = /(?:\/pagead(?:\/|\?|$)|\/ads?(?:\/|\?|=|&|\.|_|-)|\/core\/analytics\.js(?:\?|$)|\/_o\/(?:e|u)(?:\?|$)|adsbygoogle|googleads|googletagservices|securepubads|prebid|popunder|vast(?:\.xml|\/)|[?&](?:ad_|ads?|adunit|bannerid|clickid|placement|popunder|slot|zoneid)=)/i;
   var adTokenPattern = /(?:^|[-_\s])(?:ad|ads|advert|advertisement|adslot|adunit|banner-ad|commercial|paid-content|promoted|sponsor|sponsored)(?:$|[-_\s])/i;
   var urlAttributes = ["src", "href", "data", "action", "formaction", "poster"];
   var installedWindows = typeof WeakSet === "function" ? new WeakSet() : null;

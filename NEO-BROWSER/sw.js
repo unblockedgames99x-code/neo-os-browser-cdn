@@ -1,7 +1,7 @@
 "use strict";
 
 importScripts("./jet/jet.sw.js");
-importScripts("./assets/neo-ad-shield.js?v=20260910-sitewide-v1");
+importScripts("./assets/neo-ad-shield.js?v=20260912-sitewide-v2");
 
 const NEO_ASSET_CACHE = "neo-proxy-assets-v2";
 const NEO_ASSET_MAX_AGE = 10 * 60 * 1000;

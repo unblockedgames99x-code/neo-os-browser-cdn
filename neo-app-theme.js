@@ -9,7 +9,7 @@
     'terracotta','tangerine','amber-haze','marigold','citron','olive-grove','clover',
     'fern-hollow','emerald','eucalyptus','aqua','glacier','azure','indigo-veil','violet',
     'amethyst-smoke','plum-velvet','fuchsia','orchid-smoke','rosewood','default','glass',
-    'coral','copper','moss','teal','ocean','cobalt','lavender-night','sakura','slate','obsidian'
+    'acrylic','coral','copper','moss','teal','ocean','cobalt','lavender-night','sakura','slate','obsidian'
   ]);
   const root = document.documentElement;
   const interfaceStyleSheet = document.currentScript
@@ -57,6 +57,14 @@
 
   function normalizedInterfaceStyle(value) {
     return String(value || '').toLowerCase() === 'retro' ? 'retro' : 'modern';
+  }
+
+  function normalizedPerformanceMode(value) {
+    return value === 'performance' || value === 'ultimate' ? value : 'normal';
+  }
+
+  function applyPerformanceMode(value) {
+    root.dataset.performanceMode = normalizedPerformanceMode(value);
   }
 
   function sendInterfaceStyle(target) {
@@ -121,11 +129,16 @@
   let savedShell = {};
   try { savedShell = JSON.parse(localStorage.getItem('neo_os_settings_v1') || '{}'); } catch (_) {}
   applyInterfaceStyle(savedShell.interfaceStyle);
+  applyPerformanceMode(savedShell.performanceMode || (savedShell.performance === 'low' ? 'performance' : 'normal'));
   apply(saved);
 
   window.addEventListener('storage', event => {
     if (event.key === 'neo_os_settings_v1') {
-      try { applyInterfaceStyle(JSON.parse(event.newValue || '{}').interfaceStyle); } catch (_) {}
+      try {
+        const shell = JSON.parse(event.newValue || '{}');
+        applyInterfaceStyle(shell.interfaceStyle);
+        applyPerformanceMode(shell.performanceMode || (shell.performance === 'low' ? 'performance' : 'normal'));
+      } catch (_) {}
       return;
     }
     if (event.key !== storageKey) return;
@@ -135,6 +148,10 @@
     if (!trustedMessageOrigin(event.origin)) return;
     if (event.source === parent && event.data?.type === 'neo-shell:interface-style') {
       applyInterfaceStyle(event.data.style);
+      return;
+    }
+    if (event.source === parent && event.data?.type === 'neo-shell:performance-mode') {
+      applyPerformanceMode(event.data.mode);
       return;
     }
     if (event.data?.type === 'neo-system-preferences-request') {
@@ -151,6 +168,6 @@
     node.querySelectorAll?.('iframe').forEach(frame => frame.addEventListener('load', () => syncFrame(frame)));
   }))).observe(document.documentElement, {childList:true, subtree:true});
 
-  window.NEO_APP_THEME = Object.freeze({apply, applyInterfaceStyle, getTheme: () => root.dataset.neoTheme, getStyle: () => activeInterfaceStyle});
+  window.NEO_APP_THEME = Object.freeze({apply, applyInterfaceStyle, applyPerformanceMode, getTheme: () => root.dataset.neoTheme, getStyle: () => activeInterfaceStyle});
   if (parent !== window) parent.postMessage({type:'neo-system-preferences-request'}, messageTargetOrigin);
 })();

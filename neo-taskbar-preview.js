@@ -8,21 +8,19 @@
   var hideTimer = 0;
   var activeId = "";
   var anchor = null;
-
-  function performanceMode() {
-    var mode = document.documentElement.dataset.performanceMode || "normal";
-    return mode === "ultimate" ? "ultimate" : mode === "performance" ? "performance" : "normal";
-  }
+  var staticPreviewCache = new Map();
+  var minimizedCardCache = new Map();
 
   function previewsEnabled() {
     // The taskbar preview is a core window-management affordance, so it stays
-    // available in every performance mode. Heavier live snapshots are gated
-    // separately below.
+    // available in every performance mode.
     return true;
   }
 
   function previewSnapshotsEnabled() {
-    return performanceMode() === "normal";
+    // Live DOM snapshots are intentionally disabled. A future raster-only
+    // capture can opt in here without bringing subtree cloning back.
+    return false;
   }
 
   function clearTimers() {
@@ -43,7 +41,19 @@
 
   function cloneIcon(button) {
     var icon = button && button.querySelector(".dock-app-art");
-    return icon ? icon.cloneNode(true) : document.createElement("span");
+    if (!icon) return document.createElement("span");
+
+    // Dock artwork is tiny and owned by the shell. Recreate only that markup;
+    // never copy a live application/window subtree into a preview.
+    var copy = icon.cloneNode(false);
+    copy.innerHTML = icon.innerHTML;
+    copy.removeAttribute("id");
+    copy.removeAttribute("data-app");
+    copy.querySelectorAll("[id], [data-app]").forEach(function (node) {
+      node.removeAttribute("id");
+      node.removeAttribute("data-app");
+    });
+    return copy;
   }
 
   function fullscreenActive() {
@@ -63,48 +73,29 @@
     }) || null;
   }
 
-  function mediaPlaceholder(button) {
-    var placeholder = document.createElement("div");
-    placeholder.className = "neo-taskbar-preview-media";
-    var icon = cloneIcon(button);
-    icon.classList.add("neo-taskbar-preview-media-icon");
-    placeholder.appendChild(icon);
-    var label = document.createElement("span");
-    label.textContent = "Window content";
-    placeholder.appendChild(label);
-    return placeholder;
+  function previewCacheKey(slot, id, stateText) {
+    return String(slot || "preview") + "\u0000" + String(id || "application") + "\u0000" + String(stateText || "Running");
   }
 
-  function scrubClone(clone, button) {
-    clone.removeAttribute("id");
-    clone.removeAttribute("inert");
-    clone.removeAttribute("aria-hidden");
-    [clone].concat(Array.from(clone.querySelectorAll("*"))).forEach(function (node) {
-      Array.from(node.attributes).forEach(function (attribute) {
-        if (attribute.name.indexOf("data-") === 0 || attribute.name === "name" || attribute.name === "for") node.removeAttribute(attribute.name);
-      });
-      node.removeAttribute("id");
-      node.removeAttribute("role");
-      node.removeAttribute("aria-controls");
-      node.removeAttribute("aria-describedby");
-      node.removeAttribute("aria-labelledby");
+  function forgetCachedPreviews(id, slot) {
+    var idMarker = "\u0000" + String(id || "application") + "\u0000";
+    var slotMarker = slot ? String(slot) + "\u0000" : "";
+    staticPreviewCache.forEach(function (node, key) {
+      if (key.indexOf(idMarker) === -1 || (slotMarker && key.indexOf(slotMarker) !== 0)) return;
+      if (node && node.isConnected) node.remove();
+      staticPreviewCache.delete(key);
     });
-    clone.querySelectorAll("[autofocus]").forEach(function (node) { node.removeAttribute("autofocus"); });
-    clone.querySelectorAll("script, style, link[rel=stylesheet]").forEach(function (node) { node.remove(); });
-    clone.querySelectorAll("iframe, video, audio, canvas, object, embed").forEach(function (node) {
-      node.replaceWith(mediaPlaceholder(button));
-    });
-    clone.querySelectorAll("input, textarea, select, button, a").forEach(function (node) {
-      node.tabIndex = -1;
-      node.removeAttribute("autoplay");
-    });
-    clone.setAttribute("inert", "");
-    clone.setAttribute("aria-hidden", "true");
   }
 
-  function fallbackPreview(button, app, stateText) {
+  function staticPreview(button, app, stateText, id, slot) {
+    var key = previewCacheKey(slot, id, stateText);
+    var cached = staticPreviewCache.get(key);
+    if (cached) return cached;
+
     var fallback = document.createElement("div");
     fallback.className = "neo-taskbar-preview-fallback";
+    fallback.dataset.previewType = "static";
+    fallback.setAttribute("aria-hidden", "true");
     var icon = cloneIcon(button);
     icon.classList.add("neo-taskbar-preview-fallback-icon");
     fallback.appendChild(icon);
@@ -115,6 +106,7 @@
     small.textContent = stateText;
     copy.append(strong, small);
     fallback.appendChild(copy);
+    staticPreviewCache.set(key, fallback);
     return fallback;
   }
 
@@ -128,57 +120,16 @@
     preview.querySelector("[data-taskbar-preview-open]").setAttribute("aria-label", (minimized ? "Restore " : "Switch to ") + appName(app));
     preview.querySelector("[data-taskbar-preview-close]").setAttribute("aria-label", "Close " + appName(app));
 
-    if (!previewSnapshotsEnabled()) {
-      viewport.appendChild(fallbackPreview(button, app, stateText));
-      return;
-    }
-
-    if (win.querySelectorAll("*").length > 900) {
-      viewport.appendChild(fallbackPreview(button, app, stateText));
-      return;
-    }
-
-    var clone = win.cloneNode(true);
-    clone.classList.remove("is-minimized", "is-closing", "is-active", "is-dragging", "is-maximized");
-    clone.classList.add("neo-taskbar-preview-clone");
-    scrubClone(clone, button);
-    var width = Math.max(420, win.offsetWidth || parseFloat(win.style.width) || 1000);
-    var height = Math.max(300, win.offsetHeight || parseFloat(win.style.height) || 700);
-    clone.style.width = width + "px";
-    clone.style.height = height + "px";
-    viewport.appendChild(clone);
-    requestAnimationFrame(function () {
-      if (!clone.isConnected) return;
-      var scale = Math.min(viewport.clientWidth / width, viewport.clientHeight / height);
-      clone.style.transform = "scale(" + scale + ")";
-      clone.style.left = Math.round((viewport.clientWidth - width * scale) / 2) + "px";
-      clone.style.top = Math.round((viewport.clientHeight - height * scale) / 2) + "px";
-    });
+    // A static identity card is deliberate. Cloning a window forces the browser
+    // to duplicate and style every app node (including hidden media/iframes),
+    // which caused hover and drag jank even when those nodes were scrubbed later.
+    viewport.appendChild(staticPreview(button, app, stateText, win.dataset.appId, "hover"));
   }
 
-  function renderMinimizedViewport(viewport, win, button, app) {
-    viewport.textContent = "";
-    if (!previewSnapshotsEnabled() || win.querySelectorAll("*").length > 500) {
-      viewport.appendChild(fallbackPreview(button, app, "Minimized"));
-      return;
-    }
-
-    var clone = win.cloneNode(true);
-    clone.classList.remove("is-minimized", "is-closing", "is-active", "is-dragging", "is-maximized");
-    clone.classList.add("neo-taskbar-preview-clone");
-    scrubClone(clone, button);
-    var width = Math.max(420, win.offsetWidth || parseFloat(win.style.width) || 1000);
-    var height = Math.max(300, win.offsetHeight || parseFloat(win.style.height) || 700);
-    clone.style.width = width + "px";
-    clone.style.height = height + "px";
-    viewport.appendChild(clone);
-    requestAnimationFrame(function () {
-      if (!clone.isConnected) return;
-      var scale = Math.min(viewport.clientWidth / width, viewport.clientHeight / height);
-      clone.style.transform = "scale(" + scale + ")";
-      clone.style.left = Math.round((viewport.clientWidth - width * scale) / 2) + "px";
-      clone.style.top = Math.round((viewport.clientHeight - height * scale) / 2) + "px";
-    });
+  function renderMinimizedViewport(viewport, win, button, app, id) {
+    var content = staticPreview(button, app, "Minimized", id || win.dataset.appId, "minimized");
+    if (viewport.childNodes.length === 1 && viewport.firstChild === content) return;
+    viewport.replaceChildren(content);
   }
 
   function setWindowMuted(win, muted) {
@@ -249,20 +200,41 @@
     viewport.className = "neo-minimized-card-viewport";
     open.appendChild(viewport);
     card.append(header, open);
-    renderMinimizedViewport(viewport, win, button, app);
+    renderMinimizedViewport(viewport, win, button, app, id);
 
     function restore() { api.open(id); }
     identity.addEventListener("click", restore);
     open.addEventListener("click", restore);
     mute.addEventListener("click", function () {
-      var nextMuted = win.dataset.neoMuted !== "true";
-      setWindowMuted(win, nextMuted);
+      var currentWindow = api.windows.get(id);
+      if (!currentWindow) return;
+      var nextMuted = currentWindow.dataset.neoMuted !== "true";
+      setWindowMuted(currentWindow, nextMuted);
       mute.classList.toggle("is-muted", nextMuted);
       mute.setAttribute("aria-pressed", nextMuted ? "true" : "false");
       mute.setAttribute("aria-label", (nextMuted ? "Unmute " : "Mute ") + appName(app));
     });
-    close.addEventListener("click", function () { api.close(win); });
+    close.addEventListener("click", function () {
+      var currentWindow = api.windows.get(id);
+      if (currentWindow) api.close(currentWindow);
+    });
     return card;
+  }
+
+  function syncMinimizedCard(card, id, win) {
+    var app = api.apps[id];
+    var button = dockButton(id);
+    var muted = win.dataset.neoMuted === "true";
+    var mute = card.querySelector(".neo-minimized-card-mute");
+    var title = card.querySelector(".neo-minimized-card-identity strong");
+    var viewport = card.querySelector(".neo-minimized-card-viewport");
+    if (title) title.textContent = appName(app);
+    if (mute) {
+      mute.classList.toggle("is-muted", muted);
+      mute.setAttribute("aria-pressed", muted ? "true" : "false");
+      mute.setAttribute("aria-label", (muted ? "Unmute " : "Mute ") + appName(app));
+    }
+    if (viewport) renderMinimizedViewport(viewport, win, button, app, id);
   }
 
   function refreshMinimizedTray() {
@@ -271,7 +243,6 @@
       minimizedTray.hidden = true;
       return;
     }
-    minimizedTray.textContent = "";
     var minimized = [];
     api.windows.forEach(function (win, id) {
       if (win && win.classList.contains("is-minimized")) minimized.push({ id: id, win: win });
@@ -279,8 +250,24 @@
     minimized.sort(function (left, right) {
       return Number(right.win.style.zIndex || 0) - Number(left.win.style.zIndex || 0);
     });
-    minimized.forEach(function (entry) {
-      minimizedTray.appendChild(createMinimizedCard(entry.id, entry.win));
+    var visibleIds = new Set(minimized.map(function (entry) { return String(entry.id); }));
+    minimizedCardCache.forEach(function (card, id) {
+      if (visibleIds.has(id)) return;
+      card.remove();
+      minimizedCardCache.delete(id);
+      forgetCachedPreviews(id, "minimized");
+    });
+    minimized.forEach(function (entry, index) {
+      var id = String(entry.id);
+      var card = minimizedCardCache.get(id);
+      if (!card) {
+        card = createMinimizedCard(id, entry.win);
+        minimizedCardCache.set(id, card);
+      } else {
+        syncMinimizedCard(card, id, entry.win);
+      }
+      var current = minimizedTray.children[index] || null;
+      if (current !== card) minimizedTray.insertBefore(card, current);
     });
     minimizedTray.hidden = minimized.length === 0;
   }
@@ -490,6 +477,8 @@
           return item.dataset.minimizedApp === String(detail.id);
         });
         if (card) card.remove();
+        minimizedCardCache.delete(String(detail.id));
+        forgetCachedPreviews(String(detail.id));
         if (!minimizedTray.children.length) minimizedTray.hidden = true;
         window.setTimeout(refreshMinimizedTray, 260);
         return;
