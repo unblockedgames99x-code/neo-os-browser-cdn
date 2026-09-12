@@ -2262,8 +2262,11 @@ input[type="range"] {
 }
 
 .neo-window.is-youtube-popout .window-chrome,
-.neo-window.is-youtube-popout .tab-fullscreen-exit,
-.neo-window.is-youtube-popout [data-window-resize] { display: none !important; }
+.neo-window.is-youtube-popout .tab-fullscreen-exit { display: none !important; }
+
+.neo-window.is-youtube-popout [data-window-resize] {
+  display: block;
+}
 
 .neo-window.is-youtube-popout .window-body {
   grid-row: 1;
