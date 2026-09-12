@@ -68,7 +68,7 @@
       title: "Movies",
       subtitle: "Profiles, full movie library, series, and My List",
       icon: "movies",
-      route: "./neo-tv/index.html?build=20260912-episodes-v8",
+      route: "./neo-tv/index.html?build=20260912-media-fallback-v9",
       keepAlive: true,
       width: 1180,
       height: 760,
