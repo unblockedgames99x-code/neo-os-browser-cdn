@@ -461,7 +461,7 @@
     var chatInsertAt = Math.max(0, storedPinnedApps.indexOf("files") + 1);
     storedPinnedApps.splice(chatInsertAt, 0, "chat");
   }
-  if (Array.isArray(storedPinnedApps) && storedPinnedApps.length) {
+  if (Array.isArray(storedPinnedApps)) {
     storedPinnedApps = storedPinnedApps.filter(function (id) { return Object.prototype.hasOwnProperty.call(apps, id); });
     Object.keys(apps).forEach(function (id) {
       if (apps[id].launcher) apps[id].pinned = storedPinnedApps.indexOf(id) !== -1;
@@ -1907,7 +1907,18 @@
   }
 
   function taskbarAppIds() {
-    var availableIds = launcherApps().map(function (app) { return app.id; });
+    var visibleIds = [];
+    if (performanceMode() === "ultimate") {
+      if (apps.control && apps.control.installed) visibleIds.push("control");
+    } else {
+      normalizePinnedAppOrder().forEach(function (id) {
+        if (apps[id] && apps[id].installed && apps[id].pinned && visibleIds.indexOf(id) === -1) visibleIds.push(id);
+      });
+    }
+    openWindows.forEach(function (_, id) {
+      if (apps[id] && visibleIds.indexOf(id) === -1) visibleIds.push(id);
+    });
+    var availableIds = visibleIds;
     var next = runningTaskbarOrder.filter(function (id, index, ids) {
       return availableIds.indexOf(id) !== -1 && ids.indexOf(id) === index;
     });
@@ -1918,6 +1929,19 @@
     runningTaskbarOrder = next;
     if (changed) writeJson(RUNNING_TASKBAR_ORDER_KEY, runningTaskbarOrder);
     return next.slice();
+  }
+
+  function bindTaskbarScrolling(dock) {
+    if (!dock || dock.dataset.scrollBound === "true") return;
+    dock.dataset.scrollBound = "true";
+    dock.addEventListener("wheel", function (event) {
+      if (settings.taskbarPosition !== "bottom" || dock.scrollWidth <= dock.clientWidth + 1) return;
+      var delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      if (!delta) return;
+      var multiplier = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? Math.max(1, dock.clientWidth) : 1;
+      event.preventDefault();
+      dock.scrollLeft += delta * multiplier;
+    }, { passive: false });
   }
 
   function fitDockToViewport(dock) {
@@ -2018,6 +2042,7 @@
 
   function bindRunningTaskbarDrag() {
     var dock = document.getElementById("neo-dock");
+    bindTaskbarScrolling(dock);
     if (!dock || dock.dataset.dragBound === "true") return;
     dock.dataset.dragBound = "true";
     dock.addEventListener("dragstart", function (event) {
