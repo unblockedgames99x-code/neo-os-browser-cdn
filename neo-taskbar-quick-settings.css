@@ -17,6 +17,8 @@
   bottom: calc(70px + env(safe-area-inset-bottom));
   z-index: 6600;
   width: min(340px, calc(100vw - 20px));
+  display: grid;
+  gap: 12px;
   padding: 14px;
   color: var(--desktop-text, #f5f7fb);
   background: color-mix(in srgb, var(--desktop-surface, #11151b) 88%, transparent);
@@ -34,7 +36,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  min-width: 0;
+  margin: 0;
 }
 
 .taskbar-quick-settings h2 {
@@ -59,10 +62,10 @@
 .taskbar-quick-grid > button {
   min-height: 62px;
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr);
+  grid-template-columns: 24px minmax(0, 1fr);
   align-items: center;
-  gap: 9px;
-  padding: 10px;
+  gap: 10px;
+  padding: 10px 12px;
   color: inherit;
   text-align: left;
   background: color-mix(in srgb, var(--desktop-text, #fff) 7%, transparent);
@@ -90,12 +93,20 @@
   justify-self: center;
 }
 
-.taskbar-quick-grid span { min-width: 0; }
+.taskbar-quick-grid span {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+}
 .taskbar-quick-grid strong,
-.taskbar-quick-grid small { display: block; }
+.taskbar-quick-grid small {
+  display: block;
+  margin: 0;
+  line-height: 1.2;
+}
 .taskbar-quick-grid strong { font-size: 12px; }
 .taskbar-quick-grid small {
-  margin-top: 2px;
   overflow: hidden;
   color: currentColor;
   font-size: 9px;
@@ -107,7 +118,7 @@
 .taskbar-quick-sliders {
   display: grid;
   gap: 10px;
-  margin-top: 12px;
+  margin: 0;
   padding: 12px;
   background: color-mix(in srgb, var(--desktop-text, #fff) 5%, transparent);
   border-radius: 12px;
@@ -117,11 +128,21 @@
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr) 38px;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
+  min-width: 0;
 }
 
-.taskbar-quick-sliders .icon { width: 17px; height: 17px; }
-.taskbar-quick-sliders input { width: 100%; accent-color: var(--desktop-accent, #79cfff); }
+.taskbar-quick-sliders .icon {
+  width: 17px;
+  height: 17px;
+  justify-self: center;
+}
+.taskbar-quick-sliders input {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  accent-color: var(--desktop-accent, #79cfff);
+}
 .taskbar-quick-sliders output {
   color: var(--desktop-muted, #aab3c0);
   font-size: 10px;
