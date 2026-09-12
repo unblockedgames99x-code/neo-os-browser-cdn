@@ -1,4 +1,4 @@
-/* Running-app taskbar. The app strip is intentionally empty until a window opens. */
+/* Full app taskbar. The app strip contains every installed launcher app at startup. */
 .taskbar .dock:empty {
   display: none !important;
   width: 0 !important;
@@ -10,7 +10,7 @@
   border: 0 !important;
 }
 
-/* With no running apps, remove the inter-item spacing reserved for the dock
+/* With no available apps, remove the inter-item spacing reserved for the dock
    and center the launcher tile exactly inside the floating taskbar capsule. */
 html[data-taskbar-position="left"]:has(#neo-dock:empty) .taskbar-center,
 html[data-taskbar-position="right"]:has(#neo-dock:empty) .taskbar-center,
