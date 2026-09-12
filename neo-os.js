@@ -16,6 +16,7 @@
   var DEFAULT_WINDOW_HEIGHT = 760;
   var WINDOW_TOP_GAP = 8;
   var PINNED_APPS_KEY = "neo_os_pinned_apps_v1";
+  var RUNNING_TASKBAR_ORDER_KEY = "neo_os_running_taskbar_order_v1";
   var INSTALLED_APPS_KEY = "neo_os_installed_apps_v1";
   var CUSTOM_APPS_KEY = "neo_os_custom_apps_v1";
   var BOOT_SESSION_KEY = "neo_os_booted_session";
@@ -55,6 +56,10 @@
   var connectionPanel = document.getElementById("connection-panel");
   var connectionPanelReturnFocus = null;
   var openWindows = new Map();
+  var runningTaskbarOrder = readJson(RUNNING_TASKBAR_ORDER_KEY, []);
+  if (!Array.isArray(runningTaskbarOrder)) runningTaskbarOrder = [];
+  var runningTaskbarDragId = "";
+  var runningTaskbarSuppressOpenUntil = 0;
   var desktopShortcutContextMenu = null;
   var desktopShortcutContextAppId = "";
   var desktopShortcutDrag = null;
@@ -151,7 +156,7 @@
   }
 
   var defaultSettings = {
-    designVersion: 17,
+    designVersion: 18,
     wallpaper: "we-steam-1403160205",
     wallpaperFavorites: [],
     wallpaperRecent: [],
@@ -175,6 +180,7 @@
     taskbarStyle: "current",
     taskbarSurface: "glass",
     taskbarOutline: true,
+    taskbarAppDragging: true,
     windowBarStyle: "current",
     interfaceStyle: "modern",
     cursorTheme: "system",
@@ -224,6 +230,9 @@
   if (savedDesignVersion < 17) {
     savedSettings.autoPerformanceMode = false;
   }
+  if (savedDesignVersion < 18) {
+    savedSettings.taskbarAppDragging = true;
+  }
   savedSettings.performanceMode = normalizePerformanceMode(savedSettings.performanceMode);
   savedSettings.taskbarPosition = normalizeTaskbarPosition(savedSettings.taskbarPosition);
   savedSettings.taskbarStyle = normalizeTaskbarStyle(savedSettings.taskbarStyle);
@@ -251,7 +260,7 @@
   delete savedSettings.taskbarMaterial;
   delete savedSettings.taskbarOpacity;
   delete savedSettings.taskbarBlur;
-  savedSettings.designVersion = 17;
+  savedSettings.designVersion = 18;
   var settings = Object.assign({}, defaultSettings, savedSettings);
   var appliedTabAppearanceSignature = "";
   // Keep imported wallpapers and the local reactive scene. Remote workshop defaults
@@ -1426,6 +1435,7 @@
     root.dataset.taskbarStyle = settings.taskbarStyle;
     root.dataset.taskbarSurface = settings.taskbarSurface;
     root.dataset.taskbarOutline = settings.taskbarOutline ? "true" : "false";
+    root.dataset.taskbarAppDragging = settings.taskbarAppDragging ? "true" : "false";
     root.dataset.windowBarStyle = settings.windowBarStyle;
     root.dataset.interfaceStyle = settings.interfaceStyle;
     root.dataset.cursorTheme = settings.cursorTheme;
@@ -1448,6 +1458,10 @@
     root.style.setProperty("--neo-accent-on-light-hover", accent.onLightHover);
     root.style.setProperty("--neo-accent-soft", "rgba(" + accent.visibleRgb + ", 0.16)");
     root.style.setProperty("--messages-blue", accent.onLight);
+    document.querySelectorAll("#neo-dock .dock-button[data-app]").forEach(function (button) {
+      button.draggable = Boolean(settings.taskbarAppDragging);
+      if (!settings.taskbarAppDragging) button.classList.remove("is-dragging", "is-drop-before", "is-drop-after");
+    });
     document.querySelectorAll(".neo-window iframe").forEach(function (frame) {
       applyInterfaceStyleToFrame(frame);
       applyCursorThemeToFrame(frame);
@@ -1815,25 +1829,50 @@
     }
   }
 
-  function createDockButton(app) {
+  function syncDockButton(button, app) {
     var win = openWindows.get(app.id);
     var minimized = Boolean(win && win.classList.contains("is-minimized"));
+    button.draggable = Boolean(settings.taskbarAppDragging);
+    button.classList.toggle("is-running", Boolean(win));
+    button.classList.toggle("is-minimized", minimized);
+    button.setAttribute("aria-label", (minimized ? "Restore " : "Switch to ") + appAccessibleName(app));
+    button.setAttribute("aria-description", settings.taskbarAppDragging ? "Drag to reorder running apps" : "Running app");
+    var label = button.querySelector(".dock-app-name");
+    if (label) label.textContent = app.title;
+  }
+
+  function createDockButton(app) {
     var button = document.createElement("button");
-    button.className = "dock-button";
+    button.className = "dock-button is-entering";
     button.type = "button";
     button.dataset.app = app.id;
-    button.draggable = false;
-    var accessibleName = appAccessibleName(app);
-    if (!app.hideName) button.dataset.tooltip = app.title;
-    button.setAttribute("aria-label", (minimized ? "Restore " : (win ? "Switch to " : "Open ")) + accessibleName);
+    button.dataset.tooltip = app.title;
     var art = document.createElement("span");
     art.className = "dock-app-tile dock-app-art app-icon-shape " + appIconClass(app.icon);
     art.innerHTML = iconMarkup(app.icon);
     art.querySelectorAll("img").forEach(function (image) { image.draggable = false; });
-    button.appendChild(art);
-    button.classList.toggle("is-running", Boolean(win));
-    button.classList.toggle("is-minimized", minimized);
+    var label = document.createElement("span");
+    label.className = "dock-app-name";
+    label.textContent = app.title;
+    button.append(art, label);
+    syncDockButton(button, app);
+    window.setTimeout(function () { if (button.isConnected) button.classList.remove("is-entering"); }, 220);
     return button;
+  }
+
+  function runningTaskbarIds() {
+    var openIds = [];
+    openWindows.forEach(function (_, id) { if (apps[id]) openIds.push(id); });
+    var next = runningTaskbarOrder.filter(function (id, index, ids) {
+      return openIds.indexOf(id) !== -1 && ids.indexOf(id) === index;
+    });
+    openIds.forEach(function (id) { if (next.indexOf(id) === -1) next.push(id); });
+    var changed = next.length !== runningTaskbarOrder.length || next.some(function (id, index) {
+      return id !== runningTaskbarOrder[index];
+    });
+    runningTaskbarOrder = next;
+    if (changed) writeJson(RUNNING_TASKBAR_ORDER_KEY, runningTaskbarOrder);
+    return next.slice();
   }
 
   function fitDockToViewport(dock) {
@@ -1844,7 +1883,7 @@
     taskbar.style.removeProperty("--vertical-dock-gap");
     if (settings.taskbarPosition !== "left" && settings.taskbarPosition !== "right") return;
 
-    var count = dock.querySelectorAll(".dock-button").length;
+    var count = dock.querySelectorAll(".dock-button:not(.is-leaving)").length;
     if (!count) return;
     var viewportHeight = Math.max(320, window.innerHeight || document.documentElement.clientHeight || 720);
     var naturalHit = Math.min(46, Math.max(36, viewportHeight * 0.051));
@@ -1873,23 +1912,131 @@
     if (!dock) return;
     var previousScrollLeft = dock.scrollLeft;
     var previousScrollTop = dock.scrollTop;
-    var visible = new Map();
-    if (performanceMode() === "ultimate") {
-      if (apps.control && apps.control.installed) visible.set("control", apps.control);
-    } else {
-      normalizePinnedAppOrder().forEach(function (id) {
-        if (apps[id] && apps[id].installed && apps[id].pinned) visible.set(id, apps[id]);
+    var visibleIds = runningTaskbarIds();
+    var visibleSet = new Set(visibleIds);
+    Array.from(dock.querySelectorAll(".dock-button[data-app]")).forEach(function (button) {
+      var id = button.dataset.app;
+      if (visibleSet.has(id)) {
+        button.classList.remove("is-leaving");
+        return;
+      }
+      if (button.classList.contains("is-leaving")) return;
+      button.classList.add("is-leaving");
+      button.draggable = false;
+      window.setTimeout(function () {
+        if (button.isConnected && !openWindows.has(id)) button.remove();
+        fitDockToViewport(dock);
+      }, 190);
+    });
+    visibleIds.forEach(function (id, index) {
+      var app = apps[id];
+      var button = Array.from(dock.querySelectorAll(".dock-button[data-app]")).find(function (candidate) {
+        return candidate.dataset.app === id;
       });
-    }
-    openWindows.forEach(function (_, id) { if (apps[id]) visible.set(id, apps[id]); });
-    dock.textContent = "";
-    visible.forEach(function (app) { dock.appendChild(createDockButton(app)); });
+      if (!button) button = createDockButton(app);
+      syncDockButton(button, app);
+      var activeChildren = Array.from(dock.children).filter(function (child) {
+        return child.classList.contains("dock-button") && !child.classList.contains("is-leaving");
+      });
+      var current = activeChildren[index] || null;
+      if (current !== button) dock.insertBefore(button, current);
+      else if (!button.isConnected) dock.appendChild(button);
+    });
     fitDockToViewport(dock);
     requestAnimationFrame(function () {
       dock.scrollLeft = previousScrollLeft;
       dock.scrollTop = previousScrollTop;
     });
     syncDesktopShortcutVisibility();
+  }
+
+  function clearRunningTaskbarDropMarkers(dock) {
+    if (!dock) return;
+    dock.querySelectorAll(".is-drop-before, .is-drop-after").forEach(function (button) {
+      button.classList.remove("is-drop-before", "is-drop-after");
+    });
+  }
+
+  function moveRunningTaskbarApp(draggedId, targetId, placeAfter) {
+    var ids = runningTaskbarIds();
+    var from = ids.indexOf(draggedId);
+    var target = ids.indexOf(targetId);
+    if (from === -1 || target === -1 || draggedId === targetId) return;
+    ids.splice(from, 1);
+    target = ids.indexOf(targetId) + (placeAfter ? 1 : 0);
+    ids.splice(target, 0, draggedId);
+    runningTaskbarOrder = ids;
+    writeJson(RUNNING_TASKBAR_ORDER_KEY, runningTaskbarOrder);
+    renderDock();
+    window.dispatchEvent(new CustomEvent("neo-taskbar-order-change", { detail: { order: ids.slice() } }));
+  }
+
+  function bindRunningTaskbarDrag() {
+    var dock = document.getElementById("neo-dock");
+    if (!dock || dock.dataset.dragBound === "true") return;
+    dock.dataset.dragBound = "true";
+    dock.addEventListener("dragstart", function (event) {
+      var button = event.target.closest(".dock-button[data-app]");
+      if (!button || !settings.taskbarAppDragging) {
+        event.preventDefault();
+        return;
+      }
+      runningTaskbarDragId = button.dataset.app;
+      runningTaskbarSuppressOpenUntil = Date.now() + 500;
+      button.classList.add("is-dragging");
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", runningTaskbarDragId);
+      }
+    });
+    dock.addEventListener("dragover", function (event) {
+      if (!runningTaskbarDragId || !settings.taskbarAppDragging) return;
+      var button = event.target.closest(".dock-button[data-app]");
+      if (!button || button.dataset.app === runningTaskbarDragId) return;
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+      clearRunningTaskbarDropMarkers(dock);
+      var rect = button.getBoundingClientRect();
+      var vertical = settings.taskbarPosition === "left" || settings.taskbarPosition === "right";
+      var placeAfter = vertical ? event.clientY >= rect.top + rect.height / 2 : event.clientX >= rect.left + rect.width / 2;
+      button.classList.add(placeAfter ? "is-drop-after" : "is-drop-before");
+    });
+    dock.addEventListener("drop", function (event) {
+      var button = event.target.closest(".dock-button[data-app]");
+      if (!button || !runningTaskbarDragId) return;
+      event.preventDefault();
+      var rect = button.getBoundingClientRect();
+      var vertical = settings.taskbarPosition === "left" || settings.taskbarPosition === "right";
+      var placeAfter = vertical ? event.clientY >= rect.top + rect.height / 2 : event.clientX >= rect.left + rect.width / 2;
+      moveRunningTaskbarApp(runningTaskbarDragId, button.dataset.app, placeAfter);
+      clearRunningTaskbarDropMarkers(dock);
+    });
+    dock.addEventListener("dragend", function () {
+      runningTaskbarSuppressOpenUntil = Date.now() + 300;
+      runningTaskbarDragId = "";
+      clearRunningTaskbarDropMarkers(dock);
+      dock.querySelectorAll(".is-dragging").forEach(function (button) { button.classList.remove("is-dragging"); });
+    });
+    dock.addEventListener("keydown", function (event) {
+      if (!settings.taskbarAppDragging || !event.altKey || !event.shiftKey) return;
+      var vertical = settings.taskbarPosition === "left" || settings.taskbarPosition === "right";
+      var direction = vertical
+        ? (event.key === "ArrowUp" ? -1 : (event.key === "ArrowDown" ? 1 : 0))
+        : (event.key === "ArrowLeft" ? -1 : (event.key === "ArrowRight" ? 1 : 0));
+      if (!direction) return;
+      var button = event.target.closest(".dock-button[data-app]");
+      var ids = runningTaskbarIds();
+      var index = button ? ids.indexOf(button.dataset.app) : -1;
+      var swap = index + direction;
+      if (index === -1 || swap < 0 || swap >= ids.length) return;
+      event.preventDefault();
+      var targetId = ids[swap];
+      moveRunningTaskbarApp(button.dataset.app, targetId, direction > 0);
+      var moved = Array.from(dock.querySelectorAll(".dock-button[data-app]")).find(function (candidate) {
+        return candidate.dataset.app === button.dataset.app;
+      });
+      if (moved) moved.focus();
+    });
   }
 
   function normalizePinnedAppOrder() {
@@ -7773,6 +7920,7 @@
       var appButton = event.target.closest("[data-app]");
       if (appButton) {
         event.preventDefault();
+        if (appButton.classList.contains("dock-button") && Date.now() < runningTaskbarSuppressOpenUntil) return;
         openApp(appButton.getAttribute("data-app"));
         return;
       }
@@ -8104,6 +8252,7 @@
       });
     }
     renderDock();
+    bindRunningTaskbarDrag();
     initializeDesktopShortcuts();
     if (window.NEO_TASKBAR_PREVIEW) window.NEO_TASKBAR_PREVIEW.start(document.getElementById("neo-dock"), openWindows, apps, openApp, closeWindow);
     renderLauncher();

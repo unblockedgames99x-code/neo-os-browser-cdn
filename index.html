@@ -116,6 +116,8 @@
     <link rel="stylesheet" href="./neo-liquid-scrollbars.css?v=20260907-scroll-containers-v2" />
     <link rel="stylesheet" href="./neo-interface-styles.css?v=20260907-launcher-picture-alignment-v12&amp;taskbar=spacing-alignment-v2&amp;chat=exact-imessage-logo-v2&amp;preview=retro-v1&amp;menus=contrast-v1&amp;launcher-icon=centered-v1&amp;settings=combined-v1" />
     <link rel="stylesheet" href="./neo-dock-interactions.css?v=20260909-desktop-shortcuts-v2" />
+    <link rel="stylesheet" href="./neo-running-taskbar.css?v=20260912-running-apps-v1" />
+    <link rel="stylesheet" href="./neo-command-palette.css?v=20260912-command-palette-v1" />
     <link rel="stylesheet" href="./neo-taskbar-quick-settings.css?v=20260910-quick-settings-v1" />
   </head>
   <body>
@@ -492,26 +494,7 @@
             <svg class="icon taskbar-launcher-icon" aria-hidden="true"><use href="#i-apps"></use></svg>
             <span class="sr-only">Apps</span>
           </button>
-          <div class="dock" id="neo-dock" aria-label="Pinned apps">
-            <button class="dock-button" type="button" data-app="browser" aria-label="Open web app">
-              <span class="dock-app-art app-icon-shape app-icon-duckduckgo"><img class="app-image-icon" src="./assets/duckduckgo.png" width="32" height="32" alt="" /></span>
-            </button>
-            <button class="dock-button" type="button" data-app="files" aria-label="Drive" data-tooltip="Drive">
-              <span class="dock-app-tile dock-app-art app-icon-shape app-icon-google-drive"><img class="app-image-icon" src="./assets/google-drive.svg?v=20260824-drive-logo-v3" width="32" height="32" alt="" /></span>
-            </button>
-            <button class="dock-button" type="button" data-app="chat" aria-label="NEO Chat" data-tooltip="NEO Chat">
-              <span class="dock-app-tile dock-app-art app-icon-shape app-icon-chat"><img class="app-image-icon" src="./assets/imessage-logo.png?v=20260908-imessage-logo-v2" width="32" height="32" alt="" /></span>
-            </button>
-            <button class="dock-button" type="button" data-app="media" aria-label="Media Player" data-tooltip="Media Player">
-              <span class="dock-app-tile dock-app-art app-icon-shape app-icon-media-player"><img class="app-image-icon" src="./assets/media-player.svg?v=20260827-high-resolution-v1" width="32" height="32" alt="" /></span>
-            </button>
-            <button class="dock-button" type="button" data-app="wallpaper" aria-label="Wallpaper studio" data-tooltip="Wallpaper">
-              <span class="dock-app-tile dock-app-art app-icon-shape app-icon-wallpaper"><img class="app-image-icon" src="./assets/wallpaper-engine.png" width="32" height="32" alt="" /></span>
-            </button>
-            <button class="dock-button" type="button" data-app="control" aria-label="Taskbar settings" data-tooltip="Taskbar">
-              <span class="dock-app-tile dock-app-art app-icon-shape app-icon-settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg></span>
-            </button>
-          </div>
+          <div class="dock" id="neo-dock" aria-label="Running apps"></div>
         </div>
         <div class="taskbar-tray" aria-label="System status">
           <button class="taskbar-network taskbar-quick-button" id="taskbar-network" type="button" data-taskbar-quick-toggle aria-label="Open quick settings" aria-expanded="false" aria-controls="taskbar-quick-settings" title="Quick settings">
@@ -1246,6 +1229,13 @@
               <span class="switch" aria-hidden="true"></span>
             </label>
           </div>
+          <div class="taskbar-option-group">
+            <label class="toggle-row taskbar-running-apps-toggle">
+              <span><strong>Drag running apps</strong><small>Reorder open app tiles directly on the taskbar</small></span>
+              <input type="checkbox" data-setting="taskbarAppDragging" checked />
+              <span class="switch" aria-hidden="true"></span>
+            </label>
+          </div>
         </section>
       </div>
     </template>
@@ -1420,7 +1410,8 @@
     <script src="./neo-chat-experience.js" defer></script>
     <script src="./neo-desktop-platform.js?v=20260907-widget-logo-v3&amp;tab=custom-url-v1&amp;themes=expanded-v1&amp;styles=launcher-picture-alignment-v12&amp;rainmeter=controls-v1&amp;editor=proxy-links-v2&amp;cursor=custom-v1&amp;settings=combined-v1" defer></script>
     <script src="./neo-leave-guard.js?v=20260907-anti-close-v1" defer></script>
-    <script src="./neo-os.js?v=20260912-media-popout-v1&amp;taskbar=launcher-v1&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=motion-v1&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;styles=launcher-picture-alignment-v12&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;artwork=stable-cover-v2&amp;rainmeter=thin-weekday-v1&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;cursor=custom-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;proxy=resource-v1" defer></script>
+    <script src="./neo-os.js?v=20260912-media-popout-v1&amp;taskbar=running-apps-v1&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=motion-v1&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;styles=launcher-picture-alignment-v12&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;artwork=stable-cover-v2&amp;rainmeter=thin-weekday-v1&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;cursor=custom-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;proxy=resource-v1" defer></script>
+    <script src="./neo-command-palette.js?v=20260912-command-palette-v1" defer></script>
     <script src="./neo-taskbar-quick-settings.js?v=20260910-quick-settings-v1" defer></script>
     <script src="./neo-backup.js?v=20260830-backup-v1" defer></script>
     <script src="./neo-window-resize.js?v=20260901-mobile-compat-v1" defer></script>

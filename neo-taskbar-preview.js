@@ -36,7 +36,7 @@
   }
 
   function visibleTitle(app) {
-    return app && !app.hideName ? String(app.title || "Application") : "Open window";
+    return app ? String(app.title || app.accessibleName || "Application") : "Application";
   }
 
   function cloneIcon(button) {
@@ -333,7 +333,7 @@
         preview.hidden = true;
         preview.querySelector("[data-taskbar-preview-viewport]").textContent = "";
       }
-    }, 120);
+    }, 190);
   }
 
   function queueHide(delay) {

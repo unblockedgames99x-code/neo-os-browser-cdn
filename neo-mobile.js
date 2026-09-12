@@ -47,8 +47,11 @@
     root.dataset.coarsePointer = coarseQuery.matches ? "true" : "false";
     root.dataset.mobileKeyboard = keyboardOpen ? "true" : "false";
 
-    document.querySelectorAll(".dock-button, .desktop-icon, .desktop-shortcut").forEach(function (item) {
+    document.querySelectorAll(".desktop-icon, .desktop-shortcut").forEach(function (item) {
       item.draggable = false;
+    });
+    document.querySelectorAll(".dock-button[data-app]").forEach(function (item) {
+      item.draggable = !isMobile() && root.dataset.taskbarAppDragging !== "false";
     });
 
     window.dispatchEvent(new CustomEvent("neo-mobile-viewport-change", {
