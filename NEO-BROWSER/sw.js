@@ -3,7 +3,7 @@
 importScripts("./jet/jet.sw.js");
 importScripts("./assets/neo-ad-shield.js?v=20260912-sitewide-v2");
 
-const NEO_ASSET_CACHE = "neo-proxy-assets-v2";
+const NEO_ASSET_CACHE = "neo-proxy-assets-v3";
 const NEO_ASSET_MAX_AGE = 10 * 60 * 1000;
 const NEO_ASSET_MAX_BYTES = 5 * 1024 * 1024;
 const NEO_CACHEABLE_DESTINATIONS = new Set(["font", "image", "script", "style"]);
@@ -14,10 +14,36 @@ function originalRequestUrl(requestUrl) {
     const marker = "/~/";
     const start = parsed.pathname.indexOf(marker);
     if (start === -1) return "";
-    return decodeURIComponent(parsed.pathname.slice(start + marker.length));
+    const routed = parsed.pathname.slice(start + marker.length).split("/");
+    const encoded = routed.length > 2 ? routed.slice(2).join("/") : routed.at(-1);
+    return decodeURIComponent(encoded || "");
   } catch (_error) {
     return "";
   }
+}
+
+function needsHtmlContentType(request, destination) {
+  if (request.mode !== "navigate" && !["document", "iframe"].includes(request.destination)) return false;
+  try {
+    const url = new URL(destination);
+    return url.hostname === "raw.githubusercontent.com" && /\.html?$/i.test(url.pathname);
+  } catch (_error) {
+    return false;
+  }
+}
+
+async function routeNavigation(event, destination) {
+  const response = await globalThis.$scramjetController.route(event);
+  if (!needsHtmlContentType(event.request, destination)) return response;
+  const headers = new Headers(response.headers);
+  headers.set("content-type", "text/html; charset=utf-8");
+  headers.delete("content-disposition");
+  headers.set("x-neo-game-document", "1");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
 
 self.addEventListener("install", () => {
@@ -95,7 +121,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       shouldCacheAsset(event.request)
         ? routeStaticAsset(event)
-        : globalThis.$scramjetController.route(event)
+        : routeNavigation(event, destination)
     );
   }
 });

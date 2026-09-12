@@ -53,7 +53,7 @@
       title: "Games",
       subtitle: "4,292 games from the Greatest Greatest master list",
       icon: "xbox-games",
-      route: "./neo-games/index.html?build=20260912-master-list-v1",
+      route: "./neo-games/index.html?build=20260912-game-player-v2",
       keepAlive: false,
       width: 1180,
       height: 760,

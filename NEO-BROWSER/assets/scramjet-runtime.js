@@ -2,7 +2,7 @@
   "use strict";
 
   const pageBase = new URL("./", document.baseURI);
-  const serviceWorkerUrl = new URL("sw.js?v=20260911-google-sites-v1", pageBase);
+  const serviceWorkerUrl = new URL("sw.js?v=20260912-game-doc-v2", pageBase);
   const serviceWorkerScope = pageBase.pathname;
   const proxyBase = new URL("~/", pageBase).pathname;
   const bareMuxWorkerUrl = new URL(
@@ -62,6 +62,8 @@
   let lastVisibleUrl = "";
   let selectedRelay = "";
   let bareMuxConnection = null;
+  let navigationSerial = 0;
+  let readySerial = 0;
 
   function withTimeout(promise, milliseconds, message) {
     let timer = 0;
@@ -631,6 +633,35 @@
     window.dispatchEvent(new CustomEvent("neo:scramjet:urlchange", { detail: { url } }));
   }
 
+  function announceReady(frameElement, serial) {
+    if (!active || attachedFrame !== frameElement || serial !== navigationSerial || readySerial === serial) return;
+    readySerial = serial;
+    try { globalThis.NEOAdShield?.install(frameElement.contentWindow); } catch {}
+    installImageRecovery(frameElement.contentWindow);
+    emitUrl(originalUrl());
+    let title = "";
+    try { title = frameElement.contentDocument?.title || ""; } catch {}
+    window.dispatchEvent(new CustomEvent("neo:scramjet:ready", { detail: { title } }));
+  }
+
+  function waitForFirstPaint(frameElement, serial) {
+    const startedAt = performance.now();
+    const check = () => {
+      if (!active || attachedFrame !== frameElement || serial !== navigationSerial || readySerial === serial) return;
+      let interactive = false;
+      try {
+        const frameDocument = frameElement.contentDocument;
+        interactive = Boolean(frameDocument?.body) && frameDocument.readyState !== "loading";
+      } catch {}
+      if (interactive || performance.now() - startedAt > 6000) {
+        announceReady(frameElement, serial);
+        return;
+      }
+      window.setTimeout(check, 80);
+    };
+    window.setTimeout(check, 80);
+  }
+
   function installImageRecovery(frameWindow) {
     let frameDocument;
     try { frameDocument = frameWindow?.document; } catch { return; }
@@ -666,12 +697,7 @@
     attachedFrame = frameElement;
     frameElement.addEventListener("load", () => {
       if (!active || !isProxyUrl(frameElement.src)) return;
-      try { globalThis.NEOAdShield?.install(frameElement.contentWindow); } catch {}
-      installImageRecovery(frameElement.contentWindow);
-      emitUrl(originalUrl());
-      let title = "";
-      try { title = frameElement.contentDocument?.title || ""; } catch {}
-      window.dispatchEvent(new CustomEvent("neo:scramjet:ready", { detail: { title } }));
+      announceReady(frameElement, navigationSerial);
     });
     return proxyFrame;
   }
@@ -710,6 +736,8 @@
   }
 
   async function go(url, frameElement) {
+    const serial = ++navigationSerial;
+    readySerial = 0;
     const requestedUrl = String(url);
     const localPage = localCompatibilityPage(requestedUrl);
     if (localPage) {
@@ -733,6 +761,7 @@
     frameElement.removeAttribute("srcdoc");
     frameElement.style.opacity = "1";
     frame.go(url);
+    waitForFirstPaint(frameElement, serial);
   }
 
   function deactivate() {

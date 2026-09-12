@@ -21,6 +21,9 @@
         if (neoLaunchParams.get("neo-youtube-mode") === "1") {
             document.documentElement.classList.add("neo-youtube-mode");
         }
+        if (neoLaunchParams.get("neo-game-mode") === "1") {
+            document.documentElement.classList.add("neo-game-mode");
+        }
     </script>
     <script src="assets/app-session.js?v=20260910-tab-isolation-v1"></script>
     <style id="neo-critical">
@@ -40,6 +43,11 @@
         html.neo-app-mode main,
         html.neo-app-mode .view,
         html.neo-app-mode #frame { width: 100% !important; height: 100% !important; }
+        html.neo-game-mode,
+        html.neo-game-mode body,
+        html.neo-game-mode .app,
+        html.neo-game-mode main,
+        html.neo-game-mode .view { overflow: hidden !important; overscroll-behavior: none; }
     </style>
     <meta name="apple-mobile-web-app-title" content="NEO BROWSER" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -73,9 +81,9 @@
     <link rel="stylesheet" href="../neo-liquid-scrollbars.css?v=20260907-scroll-containers-v2">
     <script src="assets/migrate.js" defer></script>
     <script src="assets/libcurl-compat.js?v=20260907-runtime-fallback-v2" defer></script>
-    <script src="assets/scramjet-runtime.js?v=20260911-google-sites-v1" defer></script>
+    <script src="assets/scramjet-runtime.js?v=20260912-proxy-ready-v2" defer></script>
     <script src="assets/app.js?v=20260909-lazy-network-v1" defer></script>
-    <script src="assets/search-reliability.js?v=20260909-ddg-lite-v1" defer></script>
+    <script src="assets/search-reliability.js?v=20260912-bing-search-v1" defer></script>
     <script src="assets/neo-minimal-browser.js?v=20260907-runtime-recovery-v1" defer></script>
     <script src="assets/neo.js?v=20260907-persistent-tabs-v2" defer></script>
     <script src="assets/app-mode.js?v=20260908-youtube-pip-v1" defer></script>

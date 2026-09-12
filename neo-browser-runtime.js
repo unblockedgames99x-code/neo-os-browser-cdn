@@ -641,7 +641,7 @@
       // Plain domains and search phrases are handled below.
     }
     if (!input.includes(" ") && input.includes(".")) return `https://${input}`;
-    return `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(input)}`;
+    return `https://www.bing.com/search?q=${encodeURIComponent(input)}`;
   }
 
   function externalDestination(value) {
