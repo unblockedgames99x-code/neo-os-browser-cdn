@@ -265,7 +265,13 @@
   }
 
   function isExpectedController(worker) {
-    return Boolean(worker && worker.scriptURL === serviceWorkerUrl.href);
+    if (!worker?.scriptURL) return false;
+    try {
+      const active = new URL(worker.scriptURL);
+      return active.origin === serviceWorkerUrl.origin && active.pathname === serviceWorkerUrl.pathname;
+    } catch {
+      return false;
+    }
   }
 
   function waitForExpectedController(timeout = 3000) {
@@ -295,7 +301,7 @@
 
     const inheritedController = navigator.serviceWorker.controller;
     if (isExpectedController(inheritedController)) return inheritedController;
-    if (location.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(location.hostname)) {
+    if (pageBase.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(pageBase.hostname)) {
       throw new Error("Secure browsing compatibility requires HTTPS.");
     }
 

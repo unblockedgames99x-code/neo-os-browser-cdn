@@ -3,7 +3,7 @@
   <title>NEO Browser</title>
   <script><![CDATA[
     var browserFrame = null;
-    var workerUrl = new URL('sw.js?v=20260910-nextnode-proxy-v1', location.href).href;
+    var workerUrl = new URL('sw.js?v=20260912-game-doc-v2', location.href).href;
     var workerScope = new URL('./', location.href).pathname;
     var controllerReloadKey = 'neo:browser-wrapper-controller:v1';
 
