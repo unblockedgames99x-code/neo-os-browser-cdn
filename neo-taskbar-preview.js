@@ -8,6 +8,7 @@
   var hideTimer = 0;
   var activeId = "";
   var anchor = null;
+  var nowPlayingState = null;
   var staticPreviewCache = new Map();
   var minimizedCardCache = new Map();
 
@@ -127,9 +128,85 @@
   }
 
   function renderMinimizedViewport(viewport, win, button, app, id) {
+    var music = minimizedMusicState(id || win.dataset.appId);
+    if (music) {
+      renderMinimizedMusic(viewport, music, button);
+      return;
+    }
     var content = staticPreview(button, app, "Minimized", id || win.dataset.appId, "minimized");
     if (viewport.childNodes.length === 1 && viewport.firstChild === content) return;
     viewport.replaceChildren(content);
+  }
+
+  function minimizedMusicState(id) {
+    if (String(id || "") !== "stream" || !nowPlayingState) return null;
+    if (nowPlayingState.active === false || nowPlayingState.appId !== "stream") return null;
+    if (nowPlayingState.kind !== "audio" || nowPlayingState.transport !== true) return null;
+    return String(nowPlayingState.title || "").trim() ? nowPlayingState : null;
+  }
+
+  function renderMinimizedMusic(viewport, state, button) {
+    var content = viewport.querySelector(".neo-minimized-now-playing");
+    if (!content) {
+      content = document.createElement("span");
+      content.className = "neo-minimized-now-playing";
+      content.dataset.previewType = "now-playing";
+      var image = document.createElement("img");
+      image.className = "neo-minimized-now-playing-cover";
+      image.alt = "";
+      image.referrerPolicy = "no-referrer";
+      image.hidden = true;
+      var fallback = cloneIcon(button);
+      fallback.classList.add("neo-minimized-now-playing-fallback");
+      content.append(image, fallback);
+      viewport.replaceChildren(content);
+    }
+
+    var cover = content.querySelector(".neo-minimized-now-playing-cover");
+    var fallbackIcon = content.querySelector(".neo-minimized-now-playing-fallback");
+    var source = String(state.cover || "");
+    if (!source) {
+      cover.hidden = true;
+      cover.removeAttribute("src");
+      delete cover.dataset.coverSource;
+      fallbackIcon.hidden = false;
+      return;
+    }
+    if (cover.dataset.coverSource === source) {
+      cover.hidden = false;
+      fallbackIcon.hidden = true;
+      return;
+    }
+    cover.hidden = true;
+    fallbackIcon.hidden = false;
+    cover.onload = function () {
+      if (cover.dataset.coverSource !== source) return;
+      cover.hidden = false;
+      fallbackIcon.hidden = true;
+    };
+    cover.onerror = function () {
+      if (cover.dataset.coverSource !== source) return;
+      cover.hidden = true;
+      fallbackIcon.hidden = false;
+    };
+    cover.dataset.coverSource = source;
+    cover.src = source;
+  }
+
+  function mediaControl(action, label, icon) {
+    var control = document.createElement("button");
+    control.type = "button";
+    control.className = "neo-minimized-media-control neo-minimized-media-" + action;
+    control.dataset.minimizedMediaAction = action;
+    control.setAttribute("aria-label", label);
+    control.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-' + icon + '"></use></svg>';
+    control.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      var target = document.querySelector('[data-now-playing-action="' + action + '"]');
+      if (target) target.click();
+    });
+    return control;
   }
 
   function setWindowMuted(win, muted) {
@@ -199,7 +276,15 @@
     var viewport = document.createElement("span");
     viewport.className = "neo-minimized-card-viewport";
     open.appendChild(viewport);
-    card.append(header, open);
+    var mediaControls = document.createElement("span");
+    mediaControls.className = "neo-minimized-media-controls";
+    mediaControls.hidden = true;
+    mediaControls.append(
+      mediaControl("previous", "Previous track", "skip-back"),
+      mediaControl("toggle", "Play", "play"),
+      mediaControl("next", "Next track", "skip-forward")
+    );
+    card.append(header, open, mediaControls);
     renderMinimizedViewport(viewport, win, button, app, id);
 
     function restore() { api.open(id); }
@@ -228,11 +313,27 @@
     var mute = card.querySelector(".neo-minimized-card-mute");
     var title = card.querySelector(".neo-minimized-card-identity strong");
     var viewport = card.querySelector(".neo-minimized-card-viewport");
+    var open = card.querySelector(".neo-minimized-card-open");
+    var mediaControls = card.querySelector(".neo-minimized-media-controls");
+    var mediaToggle = card.querySelector('[data-minimized-media-action="toggle"]');
+    var music = minimizedMusicState(id);
+    card.classList.toggle("is-music-now-playing", Boolean(music));
     if (title) title.textContent = appName(app);
     if (mute) {
       mute.classList.toggle("is-muted", muted);
       mute.setAttribute("aria-pressed", muted ? "true" : "false");
       mute.setAttribute("aria-label", (muted ? "Unmute " : "Mute ") + appName(app));
+    }
+    if (open) {
+      open.setAttribute("aria-label", music
+        ? "Restore " + appName(app) + " playing " + music.title
+        : "Restore " + appName(app));
+    }
+    if (mediaControls) mediaControls.hidden = !music;
+    if (mediaToggle && music) {
+      var playing = music.playing === true;
+      mediaToggle.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-' + (playing ? "pause" : "play") + '"></use></svg>';
+      mediaToggle.setAttribute("aria-label", playing ? "Pause" : "Play");
     }
     if (viewport) renderMinimizedViewport(viewport, win, button, app, id);
   }
@@ -263,9 +364,8 @@
       if (!card) {
         card = createMinimizedCard(id, entry.win);
         minimizedCardCache.set(id, card);
-      } else {
-        syncMinimizedCard(card, id, entry.win);
       }
+      syncMinimizedCard(card, id, entry.win);
       var current = minimizedTray.children[index] || null;
       if (current !== card) minimizedTray.insertBefore(card, current);
     });
@@ -491,6 +591,11 @@
     });
     window.addEventListener("neo-taskbar-layout-change", function () {
       hideNow();
+      requestAnimationFrame(refreshMinimizedTray);
+    });
+    window.addEventListener("neo-now-playing-change", function (event) {
+      var detail = event.detail || {};
+      nowPlayingState = detail.active === false ? null : detail;
       requestAnimationFrame(refreshMinimizedTray);
     });
     refreshMinimizedTray();

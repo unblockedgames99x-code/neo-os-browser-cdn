@@ -210,6 +210,7 @@ html[data-fullscreen="true"] .neo-minimized-tray {
 }
 
 .neo-minimized-card {
+  position: relative;
   width: 220px;
   flex: 0 0 220px;
   padding: 5px;
@@ -344,6 +345,115 @@ html[data-fullscreen="true"] .neo-minimized-tray {
 .neo-minimized-card-viewport .neo-taskbar-preview-fallback strong { font-size: 10px; }
 .neo-minimized-card-viewport .neo-taskbar-preview-fallback small,
 .neo-minimized-card-viewport .neo-taskbar-preview-media > span { font-size: 8px; }
+
+.neo-minimized-card.is-music-now-playing {
+  width: 180px;
+  flex-basis: 180px;
+  aspect-ratio: 1;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #08090a;
+}
+
+.neo-minimized-card.is-music-now-playing .neo-minimized-card-header { display: none; }
+
+.neo-minimized-card.is-music-now-playing .neo-minimized-card-open {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.neo-minimized-card.is-music-now-playing .neo-minimized-card-viewport {
+  height: 100%;
+  aspect-ratio: 1;
+  border-radius: inherit;
+}
+
+.neo-minimized-now-playing {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(31, 219, 107, 0.25), transparent 54%),
+    #0a0b0c;
+}
+
+.neo-minimized-now-playing::after {
+  content: "";
+  position: absolute;
+  inset: 38% 0 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.74));
+}
+
+.neo-minimized-now-playing-cover {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.neo-minimized-now-playing-cover[hidden] { display: none; }
+
+.neo-minimized-now-playing-fallback {
+  width: 62px !important;
+  height: 62px !important;
+}
+
+.neo-minimized-now-playing-fallback .app-image-icon,
+.neo-minimized-now-playing-fallback.app-image-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.neo-minimized-media-controls {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(7, 8, 10, 0.64);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  transform: translateX(-50%);
+}
+
+.neo-minimized-media-controls[hidden] { display: none; }
+
+.neo-minimized-media-control {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.09) !important;
+}
+
+.neo-minimized-media-control:hover,
+.neo-minimized-media-control:focus-visible {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.neo-minimized-media-control .icon { width: 14px; height: 14px; }
+
+.neo-minimized-media-toggle {
+  width: 36px;
+  height: 36px;
+  color: #0a0b0c !important;
+  background: #fff !important;
+}
+
+.neo-minimized-media-toggle:hover,
+.neo-minimized-media-toggle:focus-visible { background: #dfffea !important; }
 
 @keyframes neo-minimized-card-in {
   from { opacity: 0; transform: translateY(-5px) scale(0.98); }

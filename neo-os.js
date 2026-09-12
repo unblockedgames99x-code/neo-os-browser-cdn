@@ -1016,6 +1016,9 @@
         nowPlayingWidget.hidden = true;
         if (topbarMedia) topbarMedia.hidden = true;
         syncGameNowPlayingOverlay();
+        window.dispatchEvent(new CustomEvent("neo-now-playing-change", {
+          detail: { active: false, source: source }
+        }));
       }
       return;
     }
@@ -1136,6 +1139,9 @@
       toggle.setAttribute("aria-label", playing ? "Pause" : "Play");
     }
     syncGameNowPlayingOverlay();
+    window.dispatchEvent(new CustomEvent("neo-now-playing-change", {
+      detail: Object.assign({ active: true }, nowPlayingState)
+    }));
   }
 
   function showStreamNowPlaying() {
