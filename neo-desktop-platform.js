@@ -205,6 +205,7 @@
   }
 
   function skinGallery(body) {
+    const shell=window.NEO_SHELL;
     const widgetInfo={
       clock:{label:'Clock',description:'Time and date at a glance',category:'Essentials',icon:'i-monitor',accent:'#72d8ff'},
       calendar:{label:'Calendar',description:'Today and the current month',category:'Essentials',icon:'i-list',accent:'#fb923c'},
@@ -228,6 +229,38 @@
     headingCopy.append(el('h1','','Widgets'),el('p','','Add what you need, then drag widgets from any empty area and resize them from the edges.'));
     const total=el('span','widget-manager-total');heading.append(headingIcon,headingCopy,total);app.append(heading);
 
+    const builtinWidgets=[
+      {setting:'desktopSystemWidget',label:'System status',description:'Workspace readiness at a glance',icon:'i-info',accent:'#a78bfa'},
+      {setting:'desktopActiveAppWidget',label:'Active app',description:'The app currently in focus',icon:'i-monitor',accent:'#34d399'},
+      {setting:'desktopNowPlayingWidget',label:'Now playing',description:'Song details and playback controls',icon:'i-music',accent:'#fb7185'}
+    ];
+    const builtin=el('section','widget-builtin-section'),builtinHead=el('div','widget-section-heading'),builtinCopy=el('div');
+    builtinCopy.append(el('h2','','Desktop status cards'),el('p','','Optional cards for the desktop. All are off by default.'));
+    builtinHead.append(builtinCopy);builtin.append(builtinHead);
+    const builtinGrid=el('div','widget-builtin-grid');builtin.append(builtinGrid);app.append(builtin);
+    builtinWidgets.forEach(item=>{
+      const card=el('article','widget-installed-card widget-builtin-card');card.style.setProperty('--widget-accent',item.accent);
+      const visual=el('span','widget-installed-icon');visual.append(spriteIcon(item.icon));
+      const copy=el('div','widget-installed-copy');copy.append(el('strong','',item.label),el('small','',item.description));
+      const actions=el('div','widget-installed-actions'),toggle=button('',()=>{
+        const enabled=!Boolean(shell.getSetting(item.setting));
+        if(enabled&&!shell.getSetting('widgets'))shell.setSetting('widgets',true);
+        shell.setSetting(item.setting,enabled);
+      },actions);
+      toggle.classList.add('widget-action-button','is-primary');toggle.dataset.statusWidgetSetting=item.setting;toggle.setAttribute('role','switch');
+      toggle.append(spriteIcon('i-eye'),el('span','','Off'));
+      card.append(visual,copy,actions);builtinGrid.append(card);
+    });
+
+    function syncBuiltinWidgets(){
+      builtinGrid.querySelectorAll('[data-status-widget-setting]').forEach(toggle=>{
+        const enabled=Boolean(shell.getSetting(toggle.dataset.statusWidgetSetting));
+        toggle.setAttribute('aria-checked',String(enabled));
+        toggle.classList.toggle('is-enabled',enabled);
+        const label=toggle.querySelector('span');if(label)label.textContent=enabled?'On':'Off';
+      });
+    }
+
     const library=el('section','widget-library-section'),libraryHead=el('div','widget-section-heading'),libraryCopy=el('div');
     libraryCopy.append(el('h2','','Widget library'),el('p','','Choose a widget to add to your desktop.'));
     const styleField=el('label','widget-style-field'),styleLabel=el('span','','New widget style'),styleSelect=el('select');
@@ -250,7 +283,7 @@
       widgets.forEach(widget=>{const item=widgetInfo[widget.type]||{label:widget.type,icon:'i-apps',accent:'#72d8ff'},card=el('article','widget-installed-card');card.style.setProperty('--widget-accent',item.accent);const visual=el('span','widget-installed-icon');visual.append(spriteIcon(item.icon));const copy=el('div','widget-installed-copy');copy.append(el('strong','',item.label),el('small','',(widget.hidden?'Hidden':'On desktop')+' · '+widget.style.replace(/-/g,' ')));const actions=el('div','widget-installed-actions');const visibility=button('',()=>{window.NEO_SKINS.show(widget.id,widget.hidden);refresh();},actions);visibility.classList.add('widget-action-button');visibility.append(spriteIcon('i-eye'),el('span','',widget.hidden?'Show':'Hide'));visibility.setAttribute('aria-label',(widget.hidden?'Show ':'Hide ')+item.label+' widget');const customize=button('',()=>window.NEO_SKINS.edit(widget.id),actions);customize.classList.add('widget-action-button','is-primary');customize.append(spriteIcon('i-settings'),el('span','','Customize'));customize.setAttribute('aria-label','Customize '+item.label+' widget');card.append(visual,copy,actions);list.append(card);});
     }
     renderFilters();renderLibrary();
-    refresh();window.addEventListener('neo-skins-changed',refresh);body._neoDesktopCleanup=()=>window.removeEventListener('neo-skins-changed',refresh);
+    refresh();syncBuiltinWidgets();window.addEventListener('neo-skins-changed',refresh);window.addEventListener('neo-status-widgets-change',syncBuiltinWidgets);body._neoDesktopCleanup=()=>{window.removeEventListener('neo-skins-changed',refresh);window.removeEventListener('neo-status-widgets-change',syncBuiltinWidgets);};
   }
 
   function editor(body) {

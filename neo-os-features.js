@@ -430,10 +430,19 @@
     });
     var widgets = menu.querySelector('[data-widget-action="show"]');
     var lock = menu.querySelector('[data-widget-action="lock"]');
+    var statusWidgetSettings = {
+      "system-status": "desktopSystemWidget",
+      "active-app": "desktopActiveAppWidget",
+      "now-playing": "desktopNowPlayingWidget"
+    };
     var bottomVisualizer = menu.querySelector('[data-widget-action="bottom-visualizer"]');
     var bottomVisualizerLabel = menu.querySelector("[data-bottom-visualizer-label]");
     if (widgets) widgets.setAttribute("aria-checked", !api || !api.getSetting || api.getSetting("widgets") ? "true" : "false");
     if (lock) lock.setAttribute("aria-checked", !api || !api.getSetting || api.getSetting("widgetLock") ? "true" : "false");
+    Object.keys(statusWidgetSettings).forEach(function (action) {
+      var button = menu.querySelector('[data-widget-action="' + action + '"]');
+      if (button) button.setAttribute("aria-checked", api && api.getSetting && api.getSetting(statusWidgetSettings[action]) ? "true" : "false");
+    });
     var bottomVisualizerEnabled = Boolean(window.NEO_BOTTOM_VISUALIZER && window.NEO_BOTTOM_VISUALIZER.isEnabled());
     if (bottomVisualizer) bottomVisualizer.setAttribute("aria-checked", bottomVisualizerEnabled ? "true" : "false");
     if (bottomVisualizerLabel) bottomVisualizerLabel.textContent = bottomVisualizerEnabled ? "Remove bottom music visualizer" : "Add bottom music visualizer";
@@ -636,8 +645,19 @@
 
   function runWidgetAction(button) {
     var action = button.dataset.widgetAction;
+    var statusWidgetSettings = {
+      "system-status": "desktopSystemWidget",
+      "active-app": "desktopActiveAppWidget",
+      "now-playing": "desktopNowPlayingWidget"
+    };
     if (action === "manage") api.openApp("skins");
     else if (action === "bottom-visualizer" && window.NEO_BOTTOM_VISUALIZER) window.NEO_BOTTOM_VISUALIZER.toggle();
+    else if (statusWidgetSettings[action]) {
+      var setting = statusWidgetSettings[action];
+      var enabled = !api.getSetting(setting);
+      if (enabled && !api.getSetting("widgets")) api.setSetting("widgets", true);
+      api.setSetting(setting, enabled);
+    }
     else if (action === "reset") api.resetLayout();
     else if (action === "show") api.setSetting("widgets", !api.getSetting("widgets"));
     else if (action === "lock") api.setSetting("widgetLock", !api.getSetting("widgetLock"));

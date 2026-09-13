@@ -2116,7 +2116,7 @@ html[data-interface-style="retro"] .neo-window[data-app-id="skins"] .widget-mana
   background-image: none !important;
 }
 
-html[data-interface-style="retro"] .neo-window[data-app-id="skins"] :is(.widget-manager-heading-icon,.widget-empty-icon,.widget-manager-total,.widget-installed-count,.widget-library-section,.widget-installed-section,.widget-library-card,.widget-installed-card,.widget-library-icon,.widget-installed-icon,.widget-library-add,.widget-empty-state) {
+html[data-interface-style="retro"] .neo-window[data-app-id="skins"] :is(.widget-manager-heading-icon,.widget-empty-icon,.widget-manager-total,.widget-installed-count,.widget-builtin-section,.widget-library-section,.widget-installed-section,.widget-library-card,.widget-installed-card,.widget-library-icon,.widget-installed-icon,.widget-library-add,.widget-empty-state) {
   color: var(--retro-ink) !important;
   background: var(--retro-panel) !important;
   border-color: var(--retro-dark-edge) !important;

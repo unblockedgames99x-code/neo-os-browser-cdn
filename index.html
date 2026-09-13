@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-boot="pending" data-neo-app="shell" data-interface-style="modern" data-wallpaper="we-steam-1403160205" data-performance-mode="normal" data-auto-performance-active="false" data-taskbar-position="left" data-taskbar-style="current" data-taskbar-surface="glass" data-taskbar-outline="true" data-taskbar-running-apps="true" data-taskbar-app-names="false" data-window-bar-style="ultra">
+<html lang="en" data-boot="pending" data-neo-app="shell" data-interface-style="modern" data-wallpaper="we-steam-1403160205" data-performance-mode="normal" data-auto-performance-active="false" data-taskbar-position="left" data-taskbar-style="current" data-taskbar-surface="glass" data-taskbar-outline="true" data-taskbar-running-apps="true" data-taskbar-app-names="false" data-window-bar-style="ultra" data-desktop-system-widget="false" data-desktop-active-app-widget="false" data-desktop-now-playing-widget="false">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http://127.0.0.1:3092 http://localhost:3092; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: http://127.0.0.1:3092 http://localhost:3092 https://pipedapi.ducks.party https://api.piped.private.coffee https://lol.samidy.workers.dev https://lunchbreak.dyercountylawncare.workers.dev https://neo-stratus-api-w6nw.onrender.com wss://nextnode9124.b-cdn.net wss://support.pired.org wss://girlspreples.com wss://northstreetumc.org wss://pcesc.com wss://kcchallengevbc.com wss://slcbmooc.org wss://wisp.mercurywork.shop; frame-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
@@ -93,7 +93,7 @@
       type="image/svg+xml"
       fetchpriority="high"
     />
-    <link rel="stylesheet" href="./neo-os.css?v=20260901-clean-desktop-v1&amp;boot=universal-loader-v3&amp;popout=resizable-v1" />
+    <link rel="stylesheet" href="./neo-os.css?v=20260912-status-widget-toggles-v1&amp;boot=universal-loader-v3&amp;popout=resizable-v1" />
     <link rel="stylesheet" href="./neo-taskbar-menu.css?v=20260828-app-spacing-v2" />
     <link rel="stylesheet" href="./neo-taskbar-preview.css?v=20260912-fullscreen-cards-v2" />
     <link rel="stylesheet" href="./neo-apps.css?v=20260912-calculator-fit-v1" />
@@ -117,9 +117,9 @@
     <link rel="stylesheet" href="./neo-range.css?v=20260906-range-fill-v1" />
     <link rel="stylesheet" href="./neo-skin-interactions.css?v=20260907-live-weather-v1" />
     <link rel="stylesheet" href="./neo-theme-system.css?v=20260912-acrylic-theme-v1" />
-    <link rel="stylesheet" href="./neo-production-polish.css?v=20260912-ultra-window-bar-v2&amp;taskbar=surfaces-v1&amp;motion=window-drag-v3&amp;themes=expanded-v1&amp;window=detached-v2&amp;launcher=motion-v1" />
+    <link rel="stylesheet" href="./neo-production-polish.css?v=20260912-status-widget-toggles-v1&amp;taskbar=surfaces-v1&amp;motion=window-drag-v3&amp;themes=expanded-v1&amp;window=detached-v2&amp;launcher=motion-v1" />
     <link rel="stylesheet" href="./neo-liquid-scrollbars.css?v=20260907-scroll-containers-v2" />
-    <link rel="stylesheet" href="./neo-interface-styles.css?v=20260912-calculator-fit-v1&amp;taskbar=spacing-alignment-v2&amp;chat=exact-imessage-logo-v2&amp;preview=retro-v1&amp;menus=contrast-v1&amp;launcher-icon=centered-v1&amp;settings=combined-v1" />
+    <link rel="stylesheet" href="./neo-interface-styles.css?v=20260912-status-widget-toggles-v1&amp;taskbar=spacing-alignment-v2&amp;chat=exact-imessage-logo-v2&amp;preview=retro-v1&amp;menus=contrast-v1&amp;launcher-icon=centered-v1&amp;settings=combined-v1" />
     <link rel="stylesheet" href="./neo-dock-interactions.css?v=20260909-desktop-shortcuts-v2" />
     <link rel="stylesheet" href="./neo-running-taskbar.css?v=20260912-taskbar-app-names-v1" />
     <link rel="stylesheet" href="./neo-command-palette.css?v=20260912-command-palette-v1" />
@@ -578,6 +578,10 @@
             <button class="context-back" type="button" role="menuitem" data-context-back><svg class="icon context-arrow" aria-hidden="true"><use href="#i-chevron"></use></svg><span>Back</span></button>
             <button type="button" role="menuitem" data-widget-action="manage"><svg class="icon" aria-hidden="true"><use href="#i-apps"></use></svg><span>Add or customize widgets</span></button>
             <button type="button" role="menuitemcheckbox" aria-checked="false" data-widget-action="bottom-visualizer"><svg class="icon" aria-hidden="true"><use href="#i-music"></use></svg><span data-bottom-visualizer-label>Add bottom music visualizer</span></button>
+            <span class="context-separator" role="separator"></span>
+            <button type="button" role="menuitemcheckbox" aria-checked="false" data-widget-action="system-status"><span class="context-check" aria-hidden="true"></span><span>System status</span></button>
+            <button type="button" role="menuitemcheckbox" aria-checked="false" data-widget-action="active-app"><span class="context-check" aria-hidden="true"></span><span>Active app</span></button>
+            <button type="button" role="menuitemcheckbox" aria-checked="false" data-widget-action="now-playing"><span class="context-check" aria-hidden="true"></span><span>Now playing</span></button>
             <span class="context-separator" role="separator"></span>
             <button type="button" role="menuitemcheckbox" aria-checked="true" data-widget-action="show"><span class="context-check" aria-hidden="true"></span><span>Show widgets</span></button>
             <button type="button" role="menuitemcheckbox" aria-checked="true" data-widget-action="lock"><span class="context-check" aria-hidden="true"></span><span>Lock positions</span></button>
@@ -1178,6 +1182,24 @@
             <span><strong>Wallpaper Engine</strong><small>Choose, import, and control desktop wallpaper</small></span>
             <svg class="icon" aria-hidden="true"><use href="#i-chevron"></use></svg>
           </button>
+          <div class="taskbar-option-group desktop-status-widget-options">
+            <div class="taskbar-option-title"><strong>Desktop status cards</strong><small>Choose which cards appear on the desktop · Off by default</small></div>
+            <label class="toggle-row">
+              <span><strong>System status</strong><small>Show the System ready card</small></span>
+              <input type="checkbox" data-setting="desktopSystemWidget" />
+              <span class="switch" aria-hidden="true"></span>
+            </label>
+            <label class="toggle-row">
+              <span><strong>Active app</strong><small>Show the app currently in focus</small></span>
+              <input type="checkbox" data-setting="desktopActiveAppWidget" />
+              <span class="switch" aria-hidden="true"></span>
+            </label>
+            <label class="toggle-row">
+              <span><strong>Now playing</strong><small>Show song details and playback controls</small></span>
+              <input type="checkbox" data-setting="desktopNowPlayingWidget" />
+              <span class="switch" aria-hidden="true"></span>
+            </label>
+          </div>
           <div class="section-heading taskbar-options-heading">
             <div><h3>Taskbar options</h3><p>Move the taskbar and choose how its surface looks.</p></div>
             <span class="taskbar-options-status" data-taskbar-options-summary aria-live="polite">Left · Floating · Glass</span>
@@ -1412,9 +1434,9 @@
     <script src="./neo-connection-monitor.js?v=20260909-server-fallback-v2" defer></script>
     <script src="./neo-skins.js?v=20260909-all-audio-v1&amp;scale=300-v1&amp;equalizer=live-v2&amp;music=symbols-v1" defer></script>
     <script src="./neo-chat-experience.js" defer></script>
-    <script src="./neo-desktop-platform.js?v=20260907-widget-logo-v3&amp;tab=custom-url-v1&amp;themes=expanded-v1&amp;styles=launcher-picture-alignment-v12&amp;rainmeter=controls-v1&amp;editor=proxy-links-v2&amp;cursor=custom-v1&amp;settings=combined-v1" defer></script>
+    <script src="./neo-desktop-platform.js?v=20260912-status-widget-toggles-v1&amp;tab=custom-url-v1&amp;themes=expanded-v1&amp;styles=launcher-picture-alignment-v12&amp;rainmeter=controls-v1&amp;editor=proxy-links-v2&amp;cursor=custom-v1&amp;settings=combined-v1" defer></script>
     <script src="./neo-leave-guard.js?v=20260907-anti-close-v1" defer></script>
-    <script src="./neo-os.js?v=20260912-media-popout-v1&amp;taskbar=app-names-v1&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=motion-v1&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;styles=launcher-picture-alignment-v12&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;artwork=stable-cover-v2&amp;rainmeter=thin-weekday-v1&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;cursor=custom-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;window-bar=maximized-ultra-v1&amp;proxy=resource-v1&amp;games=pin-shortcut-v1&amp;taskbar-glass=transparency-v1" defer></script>
+    <script src="./neo-os.js?v=20260912-status-widget-toggles-v1&amp;taskbar=app-names-v1&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=motion-v1&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;styles=launcher-picture-alignment-v12&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;artwork=stable-cover-v2&amp;rainmeter=thin-weekday-v1&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;cursor=custom-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;window-bar=maximized-ultra-v1&amp;proxy=resource-v1&amp;games=pin-shortcut-v1&amp;taskbar-glass=transparency-v1" defer></script>
     <script src="./neo-command-palette.js?v=20260912-command-palette-v1" defer></script>
     <script src="./neo-taskbar-quick-settings.js?v=20260910-quick-settings-v1" defer></script>
     <script src="./neo-backup.js?v=20260830-backup-v1" defer></script>

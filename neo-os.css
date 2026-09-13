@@ -783,6 +783,12 @@ html[data-widgets="false"] .widget-layer {
   transform: translate(var(--widget-x), calc(var(--widget-y) - 8px));
 }
 
+html[data-desktop-system-widget="false"] [data-widget="system"],
+html[data-desktop-active-app-widget="false"] [data-widget="activity"],
+html[data-desktop-now-playing-widget="false"] [data-widget="now-playing"] {
+  display: none !important;
+}
+
 .neo-widget {
   position: relative;
   overflow: hidden;

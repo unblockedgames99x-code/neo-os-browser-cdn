@@ -1560,6 +1560,7 @@ html[data-taskbar-outline="false"] .taskbar {
   white-space: nowrap;
 }
 
+.widget-builtin-section,
 .widget-library-section,
 .widget-installed-section {
   margin: 0 24px 20px;
@@ -1568,6 +1569,26 @@ html[data-taskbar-outline="false"] .taskbar {
   border: 1px solid var(--desktop-line);
   border-radius: 18px;
   box-shadow: inset 0 1px color-mix(in srgb, var(--desktop-text) 6%, transparent);
+}
+
+.widget-builtin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.widget-builtin-card {
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+}
+
+.desktop-app .widget-builtin-card .widget-action-button[role="switch"] {
+  min-width: 66px;
+}
+
+.desktop-app .widget-builtin-card .widget-action-button.is-enabled {
+  color: var(--neo-accent-contrast, #071015);
+  background: var(--neo-accent-visible, var(--desktop-accent));
+  border-color: var(--neo-accent-visible, var(--desktop-accent));
 }
 
 .widget-section-heading {
@@ -1853,8 +1874,10 @@ html[data-taskbar-outline="false"] .taskbar {
 
   .tab-appearance-grid { grid-template-columns: repeat(3, minmax(104px, 1fr)); }
   .widget-manager-heading { padding: 20px 18px 16px; }
+  .widget-builtin-section,
   .widget-library-section,
   .widget-installed-section { margin-right: 14px; margin-left: 14px; padding: 15px; }
+  .widget-builtin-grid { grid-template-columns: 1fr; }
   .widget-library-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 

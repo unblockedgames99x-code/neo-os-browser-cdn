@@ -157,7 +157,7 @@
   }
 
   var defaultSettings = {
-    designVersion: 22,
+    designVersion: 23,
     wallpaper: "we-steam-1403160205",
     wallpaperFavorites: [],
     wallpaperRecent: [],
@@ -174,6 +174,9 @@
     weather: true,
     batterySaver: false,
     widgets: true,
+    desktopSystemWidget: false,
+    desktopActiveAppWidget: false,
+    desktopNowPlayingWidget: false,
     widgetLock: true,
     dockMagnify: false,
     dockIconSize: "normal",
@@ -251,6 +254,11 @@
       ? 100 - clamp(legacyTaskbarTintStrength, 0, 100)
       : 62;
   }
+  if (savedDesignVersion < 23) {
+    savedSettings.desktopSystemWidget = false;
+    savedSettings.desktopActiveAppWidget = false;
+    savedSettings.desktopNowPlayingWidget = false;
+  }
   savedSettings.performanceMode = normalizePerformanceMode(savedSettings.performanceMode);
   savedSettings.taskbarPosition = normalizeTaskbarPosition(savedSettings.taskbarPosition);
   savedSettings.taskbarStyle = normalizeTaskbarStyle(savedSettings.taskbarStyle);
@@ -279,7 +287,7 @@
   delete savedSettings.taskbarOpacity;
   delete savedSettings.taskbarBlur;
   delete savedSettings.taskbarTintStrength;
-  savedSettings.designVersion = 22;
+  savedSettings.designVersion = 23;
   var settings = Object.assign({}, defaultSettings, savedSettings);
   var appliedTabAppearanceSignature = "";
   // Keep imported wallpapers and the local reactive scene. Remote workshop defaults
@@ -1445,6 +1453,9 @@
     root.dataset.motion = wallpaperSettings.motion ? "true" : "false";
     root.dataset.weather = settings.weather && mode === "normal" && !effectiveReducedMotion() ? "true" : "false";
     root.dataset.widgets = settings.widgets && mode !== "ultimate" ? "true" : "false";
+    root.dataset.desktopSystemWidget = settings.desktopSystemWidget ? "true" : "false";
+    root.dataset.desktopActiveAppWidget = settings.desktopActiveAppWidget ? "true" : "false";
+    root.dataset.desktopNowPlayingWidget = settings.desktopNowPlayingWidget ? "true" : "false";
     root.dataset.widgetLock = settings.widgetLock ? "true" : "false";
     settings.dockMagnify = false;
     settings.dockIconSize = "normal";
@@ -1586,6 +1597,11 @@
     if (!Object.prototype.hasOwnProperty.call(defaultSettings, name)) return;
     settings[name] = value;
     applySettings(options);
+    if (/^desktop(?:System|ActiveApp|NowPlaying)Widget$/.test(name)) {
+      window.dispatchEvent(new CustomEvent("neo-status-widgets-change", {
+        detail: { name: name, enabled: Boolean(settings[name]) }
+      }));
+    }
   }
 
   function setCustomTabAppearance(title, icon) {
@@ -3027,7 +3043,7 @@
         document.head.appendChild(style);
       }
       var script = document.createElement("script");
-      script.src = "./neo-os-features.js?v=20260911-proxy-only-v3&hover=bridge-v1";
+      script.src = "./neo-os-features.js?v=20260912-status-widget-toggles-v1&hover=bridge-v1";
       script.async = true;
       script.onload = function () {
         if (!window.NEO_FEATURES) {
