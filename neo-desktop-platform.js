@@ -97,7 +97,8 @@
     const choices=new Map();
     const styles=[
       {id:'modern',label:'Modern',description:'The current NEO OS look'},
-      {id:'retro',label:'Retro',description:'Compact classic desktop controls'}
+      {id:'retro',label:'Retro',description:'Compact classic desktop controls'},
+      {id:'windows11',label:'Windows 11',description:'Centered taskbar and Fluent acrylic'}
     ];
     styles.forEach(style=>{
       const choice=button('',()=>shell.setSetting('interfaceStyle',style.id),grid);

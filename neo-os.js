@@ -122,7 +122,8 @@
   }
 
   function normalizeInterfaceStyle(value) {
-    return String(value || "").toLowerCase() === "retro" ? "retro" : "modern";
+    value = String(value || "").toLowerCase();
+    return value === "retro" || value === "windows11" ? value : "modern";
   }
 
   function normalizeCursorTheme(value) {
@@ -1396,7 +1397,7 @@
           var link = frameDocument.createElement("link");
           link.id = "neo-interface-styles";
           link.rel = "stylesheet";
-          link.href = new URL("./neo-interface-styles.css?v=20260907-launcher-picture-alignment-v12&settings=combined-v1", document.baseURI).href;
+          link.href = new URL("./neo-interface-styles.css?v=20260912-windows11-style-v1&settings=combined-v1", document.baseURI).href;
           frameDocument.head.appendChild(link);
         }
       }
@@ -8084,13 +8085,12 @@
         var nextInterfaceStyle = normalizeInterfaceStyle(interfaceStyleButton.getAttribute("data-interface-style-option"));
         if (nextInterfaceStyle !== settings.interfaceStyle) {
           setSetting("interfaceStyle", nextInterfaceStyle);
-          showToast(
-            nextInterfaceStyle === "retro" ? "Retro style enabled" : "Modern style restored",
-            nextInterfaceStyle === "retro"
-              ? "Windows, apps, widgets, menus, and the taskbar now use the classic desktop style."
-              : "The current NEO OS interface is active again.",
-            "settings"
-          );
+          var interfaceStyleToast = nextInterfaceStyle === "retro"
+            ? ["Retro style enabled", "Windows, apps, widgets, menus, and the taskbar now use the classic desktop style."]
+            : nextInterfaceStyle === "windows11"
+              ? ["Windows 11 style enabled", "The centered taskbar, Start menu, windows, controls, and flyouts now use the Windows 11 look."]
+              : ["Modern style restored", "The current NEO OS interface is active again."];
+          showToast(interfaceStyleToast[0], interfaceStyleToast[1], "settings");
         }
         return;
       }
