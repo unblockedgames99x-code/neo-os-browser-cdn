@@ -256,6 +256,30 @@ html[data-taskbar-position] .taskbar .dock-button.is-running::after {
   transform: none;
 }
 
+/* Keep the running mark centered on the artwork instead of the button.
+   Named buttons are wider, and Browser uses a slightly smaller optical icon. */
+html[data-taskbar-position="top"] .taskbar .dock-button,
+html[data-taskbar-position="bottom"] .taskbar .dock-button {
+  --running-app-art-half: 13.5px;
+}
+
+html[data-taskbar-position="top"] .taskbar .dock-button[data-app="browser"],
+html[data-taskbar-position="bottom"] .taskbar .dock-button[data-app="browser"] {
+  --running-app-art-half: 12px;
+}
+
+html[data-taskbar-app-names="false"][data-taskbar-position="top"] .taskbar .dock-button.is-running::after,
+html[data-taskbar-app-names="false"][data-taskbar-position="bottom"] .taskbar .dock-button.is-running::after {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+html[data-taskbar-app-names="true"][data-taskbar-position="top"] .taskbar .dock-button.is-running::after,
+html[data-taskbar-app-names="true"][data-taskbar-position="bottom"] .taskbar .dock-button.is-running::after {
+  left: calc(7px + var(--running-app-art-half));
+  transform: translateX(-50%);
+}
+
 html[data-taskbar-position="left"] .taskbar .dock-button.is-running::after,
 html[data-taskbar-position="right"] .taskbar .dock-button.is-running::after {
   top: 8px;
