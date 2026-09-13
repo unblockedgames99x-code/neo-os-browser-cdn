@@ -340,10 +340,6 @@
 
   function refreshMinimizedTray() {
     if (!minimizedTray || !api) return;
-    if (fullscreenActive()) {
-      minimizedTray.hidden = true;
-      return;
-    }
     var minimized = [];
     api.windows.forEach(function (win, id) {
       if (win && win.classList.contains("is-minimized")) minimized.push({ id: id, win: win });
@@ -511,11 +507,7 @@
   }
 
   function syncFullscreenVisibility() {
-    if (fullscreenActive()) {
-      hideNow();
-      if (minimizedTray) minimizedTray.hidden = true;
-      return;
-    }
+    if (fullscreenActive()) hideNow();
     refreshMinimizedTray();
   }
 
