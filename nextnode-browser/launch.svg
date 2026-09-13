@@ -22,6 +22,23 @@
         : '<!doctype html><html><head>' + injection + '</head><body>' + html + '</body></html>';
     }
 
+    function prepareProxyWorker() {
+      if (!('serviceWorker' in navigator)) return Promise.resolve();
+      var workerUrl = new URL('study/sf-sw.js', location.href).href;
+      var workerScope = new URL('study/', location.href).href;
+      return navigator.serviceWorker.register(workerUrl, { scope: workerScope })
+        .then(function (registration) {
+          var worker = registration.active || registration.waiting || registration.installing;
+          if (!worker || worker.state === 'activated') return registration;
+          return new Promise(function (resolve, reject) {
+            worker.addEventListener('statechange', function () {
+              if (worker.state === 'activated') resolve(registration);
+              if (worker.state === 'redundant') reject(new Error('Browser worker installation failed'));
+            });
+          });
+        });
+    }
+
     window.addEventListener('message', function (event) {
       if (!browserFrame) return;
       if (event.source === browserFrame.contentWindow) {
@@ -33,15 +50,18 @@
 
     window.addEventListener('load', function () {
       var host = document.getElementById('host');
-      fetch(new URL('index.html?build=browser-cdn-launch-v1', location.href).href, {
-        cache: 'no-store',
-        credentials: 'omit'
-      })
-        .then(function (response) {
+      Promise.all([
+        prepareProxyWorker(),
+        fetch(new URL('index.html?build=browser-cdn-launch-v2', location.href).href, {
+          cache: 'no-store',
+          credentials: 'omit'
+        }).then(function (response) {
           if (!response.ok) throw new Error('Browser response ' + response.status);
           return response.text();
         })
-        .then(function (source) {
+      ])
+        .then(function (response) {
+          var source = response[1];
           var frame = document.createElementNS('http://www.w3.org/1999/xhtml', 'iframe');
           browserFrame = frame;
           frame.setAttribute('id', 'neo-browser');
