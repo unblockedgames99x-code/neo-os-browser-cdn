@@ -299,8 +299,6 @@
 
   function settingsSearch(control) {
     if(!control||control.querySelector('[data-settings-search]'))return;
-    const sections=Array.from(control.querySelectorAll(':scope > .settings-section'));
-    const items=sections.flatMap(panel=>Array.from(panel.children));
     const search=el('div','control-settings-search');
     search.dataset.settingsSearch='';
     search.setAttribute('role','search');
@@ -324,6 +322,8 @@
       ...Array.from(item.querySelectorAll('[aria-label],[title]')).flatMap(node=>[node.getAttribute('aria-label'),node.getAttribute('title')])
     ].filter(Boolean).join(' '));
     function apply(){
+      const sections=Array.from(control.querySelectorAll(':scope > .settings-section'));
+      const items=sections.flatMap(panel=>Array.from(panel.children));
       const query=normalize(input.value),searching=Boolean(query);let matches=0;
       control.classList.toggle('is-settings-searching',searching);clear.hidden=!searching;
       items.forEach(item=>{

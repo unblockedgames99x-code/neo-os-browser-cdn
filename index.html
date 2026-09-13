@@ -107,6 +107,7 @@
     <link rel="stylesheet" href="./neo-taskbar-quick-settings.css?v=20260912-alignment-v2" />
     <link rel="stylesheet" href="./neo-interface-styles.css?v=20260913-kali-style-v1&amp;launcher=centered-v3&amp;settings=combined-v1&amp;widgets=no-scrollbars-v1&amp;previews=current-state-v1&amp;widget-background=transparent-v1" />
     <link rel="stylesheet" href="./neo-xeno-taskbar.css?v=20260913-xeno-search-clean-v2" />
+    <link rel="stylesheet" href="./neo-yukios-parity.css?v=20260913-library-v1" />
   </head>
   <body>
     <a class="skip-link" href="#neo-desktop">Skip to desktop</a>
@@ -463,8 +464,19 @@
 
         <div class="launcher-scroll-region">
           <section class="launcher-section pinned-section" data-launcher-home>
-            <h3 class="sr-only">Applications</h3>
+            <div class="launcher-section-title"><h3>Pinned</h3><span>Favorite applications</span></div>
             <div id="launcher-grid" class="pinned-app-grid"></div>
+          </section>
+
+          <section class="launcher-section launcher-recent-section" data-launcher-home>
+            <div class="launcher-section-title"><h3>Recent</h3><span>Continue where you left off</span></div>
+            <div id="launcher-recent" class="launcher-recent"></div>
+            <p id="launcher-recent-empty" class="launcher-empty">Apps you open will appear here.</p>
+          </section>
+
+          <section class="launcher-section launcher-category-section" data-launcher-home>
+            <div class="launcher-section-title"><h3>Categories</h3><span>Browse the full library</span></div>
+            <div id="launcher-categories" class="launcher-categories"></div>
           </section>
 
           <section class="launcher-section launcher-results" data-launcher-results hidden aria-live="polite">
@@ -1425,6 +1437,7 @@
     <script src="./neo-audio-spectrum-bridge.js?v=20260909-all-audio-v1" defer></script>
     <script src="./neo-frame-loader.js?v=20260913-direct-games-v1" defer></script>
     <script src="./neo-apps.js?v=20260913-direct-games-v1" defer></script>
+    <script src="./neo-yukios-parity.js?v=20260913-library-v1" defer></script>
     <script src="./neo-music-runtime.js?v=20260831-fast-full-stream-v5&amp;equalizer=live-v2" defer></script>
     <script src="./neo-bottom-visualizer.js?v=20260909-all-audio-v1" defer></script>
     <script src="./neo-wallpaper-engine.js?v=20260910-auto-resume-v2&amp;loading=failsafe-v1&amp;auto-performance=v2&amp;images=bundled-v1" defer></script>

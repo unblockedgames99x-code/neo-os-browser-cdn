@@ -1996,6 +1996,14 @@
   }
 
   function showToast(title, copy, icon) {
+    var notificationPreferences = {};
+    try { notificationPreferences = JSON.parse(localStorage.getItem("neo_extended_settings_v1") || "{}"); } catch (_error) {}
+    if (notificationPreferences.notifications === false || notificationPreferences.doNotDisturb === true) {
+      if (window.NEO_FEATURES && typeof window.NEO_FEATURES.recordNotification === "function") {
+        window.NEO_FEATURES.recordNotification(title, copy, icon);
+      }
+      return;
+    }
     if (!toastRegion) return;
     var toast = document.createElement("div");
     toast.className = "neo-toast";
@@ -2011,7 +2019,7 @@
     window.setTimeout(function () {
       toast.classList.add("is-leaving");
       window.setTimeout(function () { toast.remove(); }, 220);
-    }, 2800);
+    }, Math.max(2, Math.min(20, Number(notificationPreferences.notificationDuration) || 5)) * 1000);
     if (window.NEO_FEATURES && typeof window.NEO_FEATURES.recordNotification === "function") {
       window.NEO_FEATURES.recordNotification(title, copy, icon);
     }
@@ -2921,6 +2929,7 @@
     groups.forEach(function (items, category) {
       var group = document.createElement("article");
       group.className = "category-group";
+      group.dataset.launcherCategory = category;
       var icons = document.createElement("div");
       icons.className = "category-icons";
       items.slice(0, 4).forEach(function (app) {
@@ -2934,7 +2943,18 @@
       });
       var label = document.createElement("span");
       label.textContent = category;
-      group.append(icons, label);
+      var browse = document.createElement("button");
+      browse.type = "button";
+      browse.className = "launcher-category-browse";
+      browse.textContent = "View all";
+      browse.setAttribute("aria-label", "View all " + category + " applications");
+      browse.addEventListener("click", function () {
+        launcherSearch.value = category;
+        launcherSelectedIndex = 0;
+        filterLauncher(category);
+        launcherSearch.focus({ preventScroll: true });
+      });
+      group.append(icons, label, browse);
       launcherCategories.appendChild(group);
     });
   }
@@ -2942,16 +2962,15 @@
   function renderLauncher() {
     if (!launcherGrid) return;
     var available = launcherApps();
-    var ordered = available.filter(function (app) { return app.pinned; }).concat(
-      available.filter(function (app) { return !app.pinned; }).sort(function (left, right) {
-        return appAccessibleName(left).localeCompare(appAccessibleName(right));
-      })
-    );
+    var ordered = available.filter(function (app) { return app.pinned; });
+    if (!ordered.length) ordered = available.slice().sort(function (left, right) {
+      return appAccessibleName(left).localeCompare(appAccessibleName(right));
+    }).slice(0, 8);
     launcherGrid.textContent = "";
     ordered.forEach(function (app) { launcherGrid.appendChild(createPinnedApp(app)); });
     var toggle = launcher.querySelector("[data-launcher-toggle-all]");
     if (toggle) {
-      toggle.hidden = ordered.length <= 6;
+      toggle.hidden = true;
       toggle.setAttribute("aria-expanded", launcherShowAll ? "true" : "false");
       var label = toggle.querySelector("span");
       if (label) label.textContent = launcherShowAll ? "Show less" : "Show all";
@@ -3013,8 +3032,11 @@
       launcherSearch.value = "";
       launcherSelectedIndex = 0;
       filterLauncher("");
+      var launcherScroll = launcher.querySelector(".launcher-scroll-region");
+      if (launcherScroll) launcherScroll.scrollTop = 0;
       void launcher.offsetWidth;
       launcherMotionFrame = requestAnimationFrame(function () {
+        if (launcherScroll) launcherScroll.scrollTop = 0;
         launcher.classList.add("is-open");
         if (launcherDismissLayer) launcherDismissLayer.classList.add("is-open");
         if (isSmallScreen()) {

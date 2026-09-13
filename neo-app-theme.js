@@ -9,7 +9,12 @@
     'terracotta','tangerine','amber-haze','marigold','citron','olive-grove','clover',
     'fern-hollow','emerald','eucalyptus','aqua','glacier','azure','indigo-veil','violet',
     'amethyst-smoke','plum-velvet','fuchsia','orchid-smoke','rosewood','default','glass',
-    'acrylic','coral','copper','moss','teal','ocean','cobalt','lavender-night','sakura','slate','obsidian'
+    'acrylic','coral','copper','moss','teal','ocean','cobalt','lavender-night','sakura','slate','obsidian',
+    'neo-classic','cyber','arctic','crt','nordic','forest','high-contrast','vaporwave','gameboy','frutiger-aero',
+    'dracula','solarized-dark','solarized-light','github-light','github-dark','minimal-gray','paper','macos-fluent',
+    'windows-fluent','material-you','sepia','hatsune-miku','star-wars-dark','amber','mint','cream','neumorphism',
+    'claymorphism','brutalism','y2k','tokyo-night','catppuccin','aurora','aura','nier','eva-unit-01','eva-unit-02',
+    'matrix','amber-terminal','aurora-borealis','vice-city'
   ]);
   const root = document.documentElement;
   const interfaceStyleSheet = document.currentScript

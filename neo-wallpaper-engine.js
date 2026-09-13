@@ -79,6 +79,60 @@
     builtIn: true,
     fullMedia: true
   }];
+  var REMOTE_IMAGE_WALLPAPERS = (function () {
+    var origin = "https://yukios.pages.dev/static/wallpapers/";
+    var base = [
+      ["Mint Theme","mint.webp"],["Red Windows 10","redwin10.jpg"],
+      ["Yuki Gradient 1","wallpaper1.webp"],["Yuki Gradient 2","wallpaper2.webp"],["Yuki Gradient 3","wallpaper3.webp"],
+      ["Yuki Gradient 4","wallpaper4.webp"],["Yuki Gradient 5","wallpaper5.webp"],["Yuki Gradient 6","wallpaper6.webp"],
+      ["Yuki Gradient 7","wallpaper7.webp"],["Yuki Gradient 8","wallpaper8.webp"],["Yuki Gradient 9","wallpaper9.webp"],
+      ["Yuki Gradient 10","wallpaper10.webp"],["Yuki Gradient 11","wallpaper11.webp"],["Yuki Gradient 12","wallpaper12.png"],
+      ["Yuki Gradient 13","wallpaper13.png"],["Windows 7","win7.webp"],["Windows 10","win10.webp"],
+      ["Windows 11","win11.webp"],["Windows 11 Dark","win11dark.webp"],["Windows XP","xp.webp"],
+      ["Corndog","corndog.jpg"],["End 4","end_4.jpg"],["Kath","Kath.jpg"],["Meptl","Meptl.png"]
+    ];
+    var mac = [
+      "adwaitalock.webp","amberd.webp","amberl.webp","beachrockmacosmojavemountainskx.webp","blobsd.webp","droold.webp",
+      "elcapitanyosemitinationalparkmountainsosxelcapitanx.webp","gridd.webp","libadwaital.webp",
+      "macbookpromapplemacbookprostockabstractbackgroundx.webp","macosbigsurapplelayersfluidiccolorfulwwdcstockx.webp",
+      "macosmojavex.webp","macosmontereywwdcstockdarkmodekx.webp","macosmontereywwdcstockkx.webp","macossequoiax.webp",
+      "macossierramountainpeaksunseteveningstockkx.webp","macossurrealdigitalcompositionmacoscatalinamacoshighx.webp",
+      "macostahoex.webp","macosventuramacosmacosstockdarkmodekretinax.webp","macosxmountainsforesthillsfoggymorningstockkx.webp",
+      "osxleopardstockx.webp","osxleopardx.webp","osxliontwilightx.webp","yosemite.webp","pillsd.webp","pixelpusherd.webp","wp.webp"
+    ];
+    var chrome = [
+      "Earth-Light.jpg","Earth-Dark.jpg","Blues.jpg","Blues-Dark.jpg","Fire-Light.jpg","Fire-Dark.jpg","Greens.jpg","Greens-Dark.jpg",
+      "Reds.jpg","Reds-Dark.jpg","Water-Light.jpg","Water-Dark.jpg","Wind-Light.jpg","Wind-Dark.jpg","Yellows.jpg","Yellows-Dark.jpg","chromeos-default.jpg"
+    ];
+    function title(file) {
+      return file.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").replace(/\b\w/g, function (letter) { return letter.toUpperCase(); });
+    }
+    function record(name, file, folder, collection, index) {
+      var path = folder ? folder + "/" : "";
+      return {
+        id: "collection-" + collection + "-" + index,
+        name: name,
+        type: "image",
+        mediaType: "image",
+        sourceType: collection,
+        author: "Community collection",
+        description: collection + " wallpaper collection",
+        preview: origin + path + encodeURIComponent(file),
+        file: origin + path + encodeURIComponent(file),
+        mime: /\.png$/i.test(file) ? "image/png" : (/\.webp$/i.test(file) ? "image/webp" : "image/jpeg"),
+        size: 0,
+        width: 1920,
+        height: 1080,
+        createdAt: 0,
+        bundled: true,
+        remoteCollection: true,
+        fullMedia: true
+      };
+    }
+    return base.map(function (item, index) { return record(item[0], item[1], "", "Classic", index); })
+      .concat(mac.map(function (file, index) { return record(title(file), file, "mac-wallpapers", "macOS", index); }))
+      .concat(chrome.map(function (file, index) { return record(title(file), file, "chromeos-wallpapers", "ChromeOS", index); }));
+  })();
   var reactiveAudioState = {
     source: "",
     active: false,
@@ -542,6 +596,8 @@
     var value = String(id || "");
     var builtIn = builtInCanvasFor(value);
     if (builtIn) return builtIn;
+    var remote = REMOTE_IMAGE_WALLPAPERS.find(function (item) { return item.id === value; });
+    if (remote) return remote;
     var local = library.find(function (item) { return item.id === value; });
     if (hasUsableFullMedia(local)) return local;
     return bundledFor(value) || null;
@@ -556,7 +612,7 @@
   }
 
   function visibleLibrary() {
-    var records = BUILT_IN_CANVAS_WALLPAPERS.concat(bundledLibrary);
+    var records = BUILT_IN_CANVAS_WALLPAPERS.concat(REMOTE_IMAGE_WALLPAPERS, bundledLibrary);
     library.forEach(function (item) {
       var bundled = bundledFor(item);
       if (bundled) {
@@ -588,7 +644,7 @@
 
   function isBundled(id) {
     var value = String(id || "");
-    return value.indexOf("we-") === 0 || Boolean(builtInCanvasFor(value)) || Boolean(bundledFor(value));
+    return value.indexOf("we-") === 0 || Boolean(builtInCanvasFor(value)) || REMOTE_IMAGE_WALLPAPERS.some(function (item) { return item.id === value; }) || Boolean(bundledFor(value));
   }
 
   function finiteMediaNumber(value) {
