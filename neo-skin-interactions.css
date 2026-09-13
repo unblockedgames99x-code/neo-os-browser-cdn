@@ -63,6 +63,10 @@
   backdrop-filter: none !important;
 }
 
+.neo-skin[data-background-mode="transparent"] .skin-handle {
+  background: transparent !important;
+}
+
 .neo-skin[data-background-mode="color"] {
   background: var(--skin-background, var(--desktop-surface)) !important;
   -webkit-backdrop-filter: none !important;

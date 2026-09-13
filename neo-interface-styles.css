@@ -4134,6 +4134,14 @@ html[data-interface-style="kali"][data-neo-app]:not([data-neo-app="shell"]) :is(
   height: 0 !important;
 }
 
+/* A widget's explicit transparent surface wins over interface-style chrome. */
+html .neo-skin[data-background-mode="transparent"],
+html .neo-skin[data-background-mode="transparent"] .skin-handle {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
 /* Floating keeps the material on the shared dock, not around every icon.
    Named apps retain a restrained pill so their labels stay grouped. This is
    intentionally last so every interface theme follows the same behavior. */
