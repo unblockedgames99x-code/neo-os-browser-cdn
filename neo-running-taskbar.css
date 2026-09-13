@@ -181,6 +181,17 @@ html[data-taskbar-position] .taskbar .dock-button .spotify-vector {
   flex: 0 0 27px !important;
 }
 
+/* The circular Browser artwork has no transparent breathing room, so a
+   slightly smaller optical size keeps it aligned with the other dock icons. */
+html[data-taskbar-position] .taskbar .dock-button[data-app="browser"] .dock-app-art.app-icon-duckduckgo,
+html[data-taskbar-position] .taskbar .dock-button[data-app="browser"] .dock-app-art.app-icon-duckduckgo .app-image-icon {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  flex: 0 0 24px !important;
+}
+
 .taskbar .dock-app-name {
   min-width: 0;
   flex: 1 1 auto;
