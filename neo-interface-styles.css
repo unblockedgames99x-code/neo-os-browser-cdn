@@ -4177,6 +4177,32 @@ html[data-taskbar-style="current"][data-taskbar-app-names="true"] .taskbar .dock
   box-shadow: inset 0 1px color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 10%, transparent) !important;
 }
 
+/* The application launcher is a screen-level surface. Anchor its center to
+   the desktop itself so changing taskbar edge, taskbar style or interface
+   theme can never move it away from the middle. Mobile keeps its intentional
+   edge-to-edge layout. */
+@media (min-width: 701px) {
+  html[data-interface-style][data-taskbar-position] #neo-desktop #app-launcher {
+    position: fixed !important;
+    inset: auto !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: 50% !important;
+    transform-origin: center center !important;
+  }
+
+  html[data-interface-style][data-taskbar-position] #neo-desktop #app-launcher:not(.is-open) {
+    transform: translate(-50%, calc(-50% + 12px)) scale(.98) !important;
+    transform-origin: center center !important;
+  }
+
+  html[data-interface-style][data-taskbar-position] #neo-desktop #app-launcher.is-open {
+    transform: translate(-50%, -50%) scale(1) !important;
+    transform-origin: center center !important;
+  }
+}
+
 @media (forced-colors: active) {
   html[data-taskbar-style="current"] .taskbar-start-button:focus-visible,
   html[data-taskbar-style="current"] .taskbar .dock-button:focus-visible {
