@@ -51,9 +51,9 @@
     games: {
       id: "games",
       title: "Games",
-      subtitle: "4,292 games from the Greatest Greatest master list",
+      subtitle: "Thousands of games from the direct NEO game CDN",
       icon: "xbox-games",
-      route: "./neo-games/index.html?build=20260912-game-player-v2",
+      route: "./neo-games/index.html?build=20260913-direct-games-v1",
       keepAlive: false,
       width: 1180,
       height: 760,
