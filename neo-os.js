@@ -466,12 +466,14 @@
   };
   Object.assign(apps, window.NEO_EXTRA_APPS || {});
   restoreCustomApps(apps);
-  if (localOnly) {
+  if (localConfig && localConfig.browser) {
     apps.browser.route = localConfig.browser;
     apps.browser.subtitle = "Full NextNode web proxy";
     apps.browser.hideName = false;
     apps.browser.title = "Browser";
     apps.browser.accessibleName = "NEO Browser";
+  }
+  if (localOnly) {
     ["discord", "youtube-app", "geometry-dash", "neo-cloud", "report"].forEach(function (id) {
       if (!apps[id]) return;
       if (id === "report" && localConfig.support) {
@@ -3180,7 +3182,7 @@
   }
 
   function scheduleBrowsePrewarm() {
-    if (localOnly && localConfig && localConfig.browser) {
+    if (localConfig && localConfig.browser) {
       if (performanceActive() || browsePrewarmScheduled || navigator.onLine === false) return;
       var directConnection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
       if (directConnection && (directConnection.saveData || /(^|-)2g$/.test(directConnection.effectiveType || ""))) return;
