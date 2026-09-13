@@ -25,11 +25,16 @@
   const PREFERRED_WISP_RELAY = "wss://nextnode9124.b-cdn.net/w/";
   const WISP_RELAYS = [
     PREFERRED_WISP_RELAY,
+    "wss://probuildingsupplies.com/w/",
+    "wss://wisp.mercurywork.shop/",
+    "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/",
+    "wss://reeyukiwisp.onrender.com/",
     "wss://cdn.northstreetumc.org/adblock/",
     "wss://cdn.pcesc.org/adblock/",
     "wss://girlspreples.org/wi/",
     "wss://mages.io/wisp/",
   ];
+  const WISP_PREFERENCE_KEY = "neo:browser:wisp:v1";
   const WISP_RELAY_CACHE_KEY = `neo-wisp-relay:${ENGINE_VERSION}:nextnode-v1`;
   let runtimePromise = null;
   let stylesPromise = null;
@@ -139,17 +144,26 @@
     });
   }
 
+  function preferredWispRelay() {
+    try {
+      const selected = String(window.localStorage.getItem(WISP_PREFERENCE_KEY) || "").trim();
+      if (WISP_RELAYS.includes(selected)) return selected;
+    } catch (error) {}
+    return PREFERRED_WISP_RELAY;
+  }
+
   function selectWispRelay() {
     if (wispRelayPromise) return wispRelayPromise;
     wispRelayPromise = (async () => {
       let cached = "";
       try { cached = window.sessionStorage.getItem(WISP_RELAY_CACHE_KEY) || ""; } catch (error) {}
+      const preferred = preferredWispRelay();
       let selectedRelay = "";
       try {
-        await probeWispRelay(PREFERRED_WISP_RELAY, 1800);
-        selectedRelay = PREFERRED_WISP_RELAY;
+        await probeWispRelay(preferred, 1800);
+        selectedRelay = preferred;
       } catch (preferredError) {}
-      if (!selectedRelay && cached && cached !== PREFERRED_WISP_RELAY && WISP_RELAYS.includes(cached)) {
+      if (!selectedRelay && cached && cached !== preferred && WISP_RELAYS.includes(cached)) {
         try {
           await probeWispRelay(cached, 1400);
           selectedRelay = cached;
@@ -157,7 +171,7 @@
       }
       if (!selectedRelay) {
         const remaining = WISP_RELAYS.filter(
-          (relay) => relay !== PREFERRED_WISP_RELAY && relay !== cached,
+          (relay) => relay !== preferred && relay !== cached,
         );
         selectedRelay = await firstResponsiveWispRelay(remaining, 3800);
       }

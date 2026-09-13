@@ -13,7 +13,7 @@
     onlineApps: Object.freeze(["chat", "neo-cloud", "nowgg", "neo-ai", "discord", "youtube-app", "games", "movies", "geometry-dash"]),
     assetBase: base.href,
     music: new URL("music-v2/index.html?v=20260912-repeat-controls-v2&theme=system-v1&widgets=live-v1", base).href,
-    browser: new URL("nextnode-browser/index.html?v=20260913-duckduckgo-v1", base).href,
+    browser: new URL("nextnode-browser/index.html?v=20260913-yukios-wisp-v1", base).href,
     browserWarmAssets: Object.freeze([
       "study/sf-engine.js",
       "study/sf-ctl.js",
@@ -22,7 +22,14 @@
       "study/sf-engine.wasm"
     ].map(function (asset) { return new URL("nextnode-browser/" + asset, base).href; })),
     browserWisp: "wss://nextnode9124.b-cdn.net/w/",
-    appProxy: new URL("NEO-BROWSER/index.html?v=20260910-fast-browser-v2", base).href,
+    browserWispServers: Object.freeze([
+      Object.freeze({ name: "NextNode Wisp", url: "wss://nextnode9124.b-cdn.net/w/" }),
+      Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
+      Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" }),
+      Object.freeze({ name: "Reeyuki Wisp", url: "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/" }),
+      Object.freeze({ name: "Reeyuki Wisp 2", url: "wss://reeyukiwisp.onrender.com/" })
+    ]),
+    appProxy: new URL("NEO-BROWSER/index.html?v=20260913-yukios-wisp-v1", base).href,
     gamesCatalog: new URL("../games/index.json", base).href,
     gamesCovers: new URL("../games/covers.json", base).href,
     preview: previewBase.href,

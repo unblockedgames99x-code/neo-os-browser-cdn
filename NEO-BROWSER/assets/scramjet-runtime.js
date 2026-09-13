@@ -39,10 +39,18 @@
   );
   const NEXTNODE_PROXY_ORIGIN = "https://nextnode9124.b-cdn.net/";
   const NEXTNODE_WISP_RELAY = "wss://nextnode9124.b-cdn.net/w/";
+  const WISP_SERVERS = Object.freeze([
+    Object.freeze({ name: "NextNode Wisp", url: NEXTNODE_WISP_RELAY }),
+    Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
+    Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" }),
+    Object.freeze({ name: "Reeyuki Wisp", url: "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/" }),
+    Object.freeze({ name: "Reeyuki Wisp 2", url: "wss://reeyukiwisp.onrender.com/" }),
+  ]);
   const relayCacheKey = "neo:jet:last-relay:nextnode-v1";
+  const preferredRelayKey = "neo:browser:wisp:v1";
   const controllerReloadKey = "neo:jet:controller-reload:v3";
   const relayHosts = [
-    NEXTNODE_WISP_RELAY,
+    ...WISP_SERVERS.map((server) => server.url),
     "wss://support.pired.org/lively/",
     "wss://girlspreples.org/wi/",
     "cdn.northstreetumc.org",
@@ -152,6 +160,14 @@
     } catch {
       return "";
     }
+  }
+
+  function preferredRelay() {
+    try {
+      const saved = normalizeRelay(localStorage.getItem(preferredRelayKey));
+      if (relayCandidates().includes(saved)) return saved;
+    } catch {}
+    return NEXTNODE_WISP_RELAY;
   }
 
   function relayCandidates() {
@@ -552,7 +568,7 @@
   }
 
   async function selectTransport() {
-    const preferred = normalizeRelay(relayHosts[0]);
+    const preferred = preferredRelay();
     const cached = cachedRelay();
     let selected = await probeRelay(preferred, 1800);
     if (!selected && cached && cached !== preferred) selected = await probeRelay(cached, 1400);
@@ -789,8 +805,10 @@
     isProxyUrl,
     go,
     deactivate,
-    configuredRelay: () => selectedRelay || cachedRelay() || relayCandidates()[0] || "",
+    configuredRelay: () => selectedRelay || cachedRelay() || preferredRelay() || "",
     allowRelay: (value) => relayCandidates().includes(normalizeRelay(value)),
+    relayCandidates: () => relayCandidates(),
+    relayOptions: () => WISP_SERVERS.map((server) => ({ ...server })),
     get active() { return active; },
   });
 
