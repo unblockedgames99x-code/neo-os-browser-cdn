@@ -101,6 +101,40 @@
   window.NEO_IMPORTED_APP_COUNT = 96;
 
   var SETTINGS_KEY = "neo_extended_settings_v1";
+  var WISP_STORAGE_KEY = "neo:browser:wisp:v1";
+  var WISP_SERVERS = Object.freeze({
+    probuildings: "wss://probuildingsupplies.com/w/",
+    mercury: "wss://wisp.mercurywork.shop/",
+    reeyuki: "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/",
+    reeyuki2: "wss://reeyukiwisp.onrender.com/"
+  });
+  var LEGACY_WISP_IDS = Object.freeze({
+    auto: WISP_SERVERS.probuildings,
+    probuildings: WISP_SERVERS.probuildings,
+    mercury: WISP_SERVERS.mercury,
+    reeyuki: WISP_SERVERS.reeyuki,
+    reeyuki2: WISP_SERVERS.reeyuki2
+  });
+  function resolveWispServer(value) {
+    var text = String(value || "").trim();
+    if (LEGACY_WISP_IDS[text]) return LEGACY_WISP_IDS[text];
+    if (/^wss?:\/\//i.test(text)) return text.endsWith("/") ? text : text + "/";
+    return WISP_SERVERS.probuildings;
+  }
+  function syncWispServer(value, notifyOpenBrowsers) {
+    var url = resolveWispServer(value);
+    var previous = "";
+    try { previous = localStorage.getItem(WISP_STORAGE_KEY) || ""; } catch (_error) {}
+    if (previous === url) return url;
+    try { localStorage.setItem(WISP_STORAGE_KEY, url); } catch (_error) {}
+    if (notifyOpenBrowsers) {
+      document.querySelectorAll("iframe").forEach(function (frame) {
+        try { frame.contentWindow.postMessage({ type: "neo:wisp-server-change", url: url }, "*"); } catch (_error) {}
+      });
+      window.dispatchEvent(new CustomEvent("neo-wisp-server-change", { detail: { url: url } }));
+    }
+    return url;
+  }
   var defaults = {
     notifications: true, doNotDisturb: false, notificationDuration: 5, notificationPosition: "top-right",
     analytics: false, ads: false, achievements: true, friendActivity: false, recentFiles: true,
@@ -108,11 +142,16 @@
     launcherRecent: true, launcherCategories: true, startMenuWidth: 835, startMenuHeight: 720,
     gamingOverlay: true, gamingHotkey: "Shift+Tab", ruffleAutoplay: true, ruffleUnmute: false,
     ruffleScale: "showAll", ruffleUpgradeHttps: true, ruffleContextMenu: true,
-    networkMirror: "fastly", wispServer: "auto", transport: "epoxy", autostart: []
+    networkMirror: "fastly", wispServer: WISP_SERVERS.probuildings, transport: "epoxy", autostart: []
   };
 
   function readSettings() {
-    try { return Object.assign({}, defaults, JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}")); }
+    try {
+      var value = Object.assign({}, defaults, JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}"));
+      var browserWisp = localStorage.getItem(WISP_STORAGE_KEY);
+      value.wispServer = resolveWispServer(browserWisp || value.wispServer);
+      return value;
+    }
     catch (_error) { return Object.assign({}, defaults); }
   }
 
@@ -179,7 +218,7 @@
 
     control.appendChild(section("Network and browser", "Choose a CDN mirror, WISP endpoint, and Scramjet transport.",
       select("networkMirror", "CDN mirror", "Asset delivery provider", [["fastly","Fastly jsDelivr"],["global","Global jsDelivr"],["gcore","GCore jsDelivr"],["quantil","Quantil jsDelivr"]]) +
-      select("wispServer", "WISP server", "Proxy connection used by Scramjet", [["auto","Automatic (fastest healthy)"],["probuildings","Probuilding Wisp"],["mercury","Mercury Wisp"],["reeyuki","Reeyuki Wisp"],["reeyuki2","Reeyuki Wisp 2"]]) +
+      select("wispServer", "WISP server", "Proxy connection used by Scramjet", [[WISP_SERVERS.probuildings,"Probuilding Wisp"],[WISP_SERVERS.mercury,"Mercury Wisp"],[WISP_SERVERS.reeyuki,"Reeyuki Wisp"],[WISP_SERVERS.reeyuki2,"Reeyuki Wisp 2"]]) +
       select("transport", "Transport protocol", "Scramjet browser transport", [["epoxy","Epoxy (Wisp)"],["libcurl","Libcurl"],["bare","Bare fallback"]]), "network-parity-settings"));
 
     control.appendChild(section("Gaming and Flash", "Tune the gaming overlay and Ruffle compatibility defaults.",
@@ -210,6 +249,7 @@
       function update() {
         state[name] = input.type === "checkbox" ? input.checked : (input.type === "range" ? Number(input.value) : input.value);
         if (name === "ads") state.ads = false;
+        if (name === "wispServer") state.wispServer = syncWispServer(state.wispServer, true);
         var output = control.querySelector('[data-extended-output="' + name + '"]');
         if (output) output.textContent = input.value + (name === "notificationDuration" ? "s" : "px");
         writeSettings(state);

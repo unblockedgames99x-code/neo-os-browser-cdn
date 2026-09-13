@@ -35,6 +35,14 @@
   window.NEO_WISP_SERVERS = SERVERS;
   window.NEO_WISP = configuredWisp();
 
+  window.addEventListener("message", function (event) {
+    if (event.source !== parent || !event.data || event.data.type !== "neo:wisp-server-change") return;
+    var next = normalize(event.data.url);
+    if (!next || next === configuredWisp()) return;
+    try { localStorage.setItem(STORAGE_KEY, next); } catch (_error) {}
+    window.location.reload();
+  });
+
   function install() {
     var button = document.getElementById("b-wisp");
     var panel = document.getElementById("wisp-panel");
