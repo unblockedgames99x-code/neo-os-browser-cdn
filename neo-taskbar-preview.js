@@ -13,8 +13,8 @@
   var minimizedCardCache = new Map();
 
   function previewsEnabled() {
-    // The taskbar preview is a core window-management affordance, so it stays
-    // available in every performance mode.
+    // The compact hover close affordance stays available in every performance
+    // mode. Large hover previews are intentionally not rendered.
     return true;
   }
 
@@ -116,15 +116,12 @@
     viewport.textContent = "";
     var minimized = win.classList.contains("is-minimized");
     var stateText = minimized ? "Minimized" : "Running";
+    preview.classList.add("is-close-only");
+    preview.dataset.windowState = minimized ? "minimized" : "running";
     preview.querySelector("[data-taskbar-preview-status]").textContent = stateText;
     preview.querySelector("[data-taskbar-preview-title]").textContent = visibleTitle(app);
     preview.querySelector("[data-taskbar-preview-open]").setAttribute("aria-label", (minimized ? "Restore " : "Switch to ") + appName(app));
     preview.querySelector("[data-taskbar-preview-close]").setAttribute("aria-label", "Close " + appName(app));
-
-    // A static identity card is deliberate. Cloning a window forces the browser
-    // to duplicate and style every app node (including hidden media/iframes),
-    // which caused hover and drag jank even when those nodes were scrubbed later.
-    viewport.appendChild(staticPreview(button, app, stateText, win.dataset.appId, "hover"));
   }
 
   function renderMinimizedViewport(viewport, win, button, app, id) {
@@ -339,33 +336,11 @@
   }
 
   function refreshMinimizedTray() {
-    if (!minimizedTray || !api) return;
-    var minimized = [];
-    api.windows.forEach(function (win, id) {
-      if (win && win.classList.contains("is-minimized")) minimized.push({ id: id, win: win });
-    });
-    minimized.sort(function (left, right) {
-      return Number(right.win.style.zIndex || 0) - Number(left.win.style.zIndex || 0);
-    });
-    var visibleIds = new Set(minimized.map(function (entry) { return String(entry.id); }));
-    minimizedCardCache.forEach(function (card, id) {
-      if (visibleIds.has(id)) return;
-      card.remove();
-      minimizedCardCache.delete(id);
-      forgetCachedPreviews(id, "minimized");
-    });
-    minimized.forEach(function (entry, index) {
-      var id = String(entry.id);
-      var card = minimizedCardCache.get(id);
-      if (!card) {
-        card = createMinimizedCard(id, entry.win);
-        minimizedCardCache.set(id, card);
-      }
-      syncMinimizedCard(card, id, entry.win);
-      var current = minimizedTray.children[index] || null;
-      if (current !== card) minimizedTray.insertBefore(card, current);
-    });
-    minimizedTray.hidden = minimized.length === 0;
+    if (!minimizedTray) return;
+    minimizedCardCache.forEach(function (card) { card.remove(); });
+    minimizedCardCache.clear();
+    minimizedTray.replaceChildren();
+    minimizedTray.hidden = true;
   }
 
   function createMinimizedTray() {
@@ -480,7 +455,7 @@
     var node = document.createElement("section");
     node.className = "neo-taskbar-preview";
     node.hidden = true;
-    node.setAttribute("aria-label", "Window thumbnail");
+    node.setAttribute("aria-label", "Close running application");
     node.innerHTML =
       '<header class="neo-taskbar-preview-titlebar">' +
         '<span><strong data-taskbar-preview-title></strong><small data-taskbar-preview-status></small></span>' +
@@ -588,7 +563,6 @@
     window.addEventListener("neo-now-playing-change", function (event) {
       var detail = event.detail || {};
       nowPlayingState = detail.active === false ? null : detail;
-      requestAnimationFrame(refreshMinimizedTray);
     });
     refreshMinimizedTray();
   }
