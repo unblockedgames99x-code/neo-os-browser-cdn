@@ -1051,6 +1051,11 @@ html[data-interface-style="retro"] :is(.neo-taskbar-preview,.neo-minimized-card)
   transition: none !important;
 }
 
+html[data-interface-style="retro"] .neo-minimized-card,
+html[data-interface-style="retro"] .neo-minimized-card:is(:hover,:focus-within) {
+  padding: 0 !important;
+}
+
 html[data-interface-style="retro"] :is(.neo-taskbar-preview-titlebar,.neo-minimized-card-header) {
   height: 30px !important;
   min-height: 30px !important;
@@ -1163,6 +1168,11 @@ html[data-interface-style="retro"] :is(.neo-taskbar-preview-open,.neo-minimized-
   transform: none !important;
   filter: none !important;
   transition: none !important;
+}
+
+html[data-interface-style="retro"] .neo-minimized-card-open {
+  margin-top: 0 !important;
+  border: 0 !important;
 }
 
 html[data-interface-style="retro"] :is(.neo-taskbar-preview-viewport,.neo-minimized-card-viewport) {
