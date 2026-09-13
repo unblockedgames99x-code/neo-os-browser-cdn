@@ -184,7 +184,7 @@
   }
 
   var defaultSettings = {
-    designVersion: 23,
+    designVersion: 24,
     wallpaper: "we-steam-1403160205",
     wallpaperFavorites: [],
     wallpaperRecent: [],
@@ -227,6 +227,7 @@
     taskbarTransparency: 62,
     taskbarAccent: "#ffffff",
     reduceMotion: false,
+    animationSpeed: 100,
     performanceMode: "normal",
     autoPerformanceMode: false
   };
@@ -288,6 +289,9 @@
     savedSettings.desktopActiveAppWidget = false;
     savedSettings.desktopNowPlayingWidget = false;
   }
+  if (savedDesignVersion < 24) {
+    savedSettings.animationSpeed = 100;
+  }
   savedSettings.performanceMode = normalizePerformanceMode(savedSettings.performanceMode);
   savedSettings.taskbarPosition = normalizeTaskbarPosition(savedSettings.taskbarPosition);
   savedSettings.taskbarStyle = normalizeTaskbarStyle(savedSettings.taskbarStyle);
@@ -316,12 +320,16 @@
   savedSettings.taskbarTransparency = Number.isFinite(savedTaskbarTransparency)
     ? clamp(savedTaskbarTransparency, 0, 100)
     : 62;
+  var savedAnimationSpeed = Number(savedSettings.animationSpeed);
+  savedSettings.animationSpeed = Number.isFinite(savedAnimationSpeed)
+    ? clamp(Math.round(savedAnimationSpeed / 25) * 25, 50, 200)
+    : 100;
   delete savedSettings.performance;
   delete savedSettings.taskbarMaterial;
   delete savedSettings.taskbarOpacity;
   delete savedSettings.taskbarBlur;
   delete savedSettings.taskbarTintStrength;
-  savedSettings.designVersion = 23;
+  savedSettings.designVersion = 24;
   var settings = Object.assign({}, defaultSettings, savedSettings);
   var appliedTabAppearanceSignature = "";
   // Keep imported wallpapers and the local reactive scene. Remote workshop defaults
@@ -1537,6 +1545,10 @@
     settings.taskbarTransparency = Number.isFinite(Number(settings.taskbarTransparency))
       ? clamp(Number(settings.taskbarTransparency), 0, 100)
       : 62;
+    settings.animationSpeed = Number.isFinite(Number(settings.animationSpeed))
+      ? clamp(Math.round(Number(settings.animationSpeed) / 25) * 25, 50, 200)
+      : 100;
+    var animationDurationScale = 100 / settings.animationSpeed;
     var taskbarTintChannels = colorToRgb(settings.taskbarTint).split(", ").map(Number);
     var taskbarTintLuminance = taskbarTintChannels[0] * 0.299 + taskbarTintChannels[1] * 0.587 + taskbarTintChannels[2] * 0.114;
     var taskbarGradientChannels = colorToRgb(settings.taskbarGradientEnd).split(", ").map(Number);
@@ -1569,6 +1581,7 @@
     applyTabAppearance();
     root.dataset.taskbarTone = taskbarUsesLightSurface ? "light" : "dark";
     root.dataset.reduceMotion = wallpaperSettings.reduceMotion ? "true" : "false";
+    root.dataset.animationSpeed = String(settings.animationSpeed);
     root.dataset.performance = mode === "normal" ? "balanced" : "low";
     root.style.setProperty("--wallpaper-brightness", String(clamp(Number(settings.brightness), 45, 115) / 100));
     root.style.setProperty("--wallpaper-saturation", String(clamp(Number(settings.saturation), 0, 140) / 100));
@@ -1576,6 +1589,9 @@
     root.style.setProperty("--neo-taskbar-tint", colorToRgb(settings.taskbarTint));
     root.style.setProperty("--neo-taskbar-gradient-end", colorToRgb(settings.taskbarGradientEnd));
     root.style.setProperty("--neo-taskbar-opacity", String((100 - settings.taskbarTransparency) / 100));
+    root.style.setProperty("--neo-window-open-duration", Math.round(300 * animationDurationScale) + "ms");
+    root.style.setProperty("--neo-window-restore-duration", Math.round(260 * animationDurationScale) + "ms");
+    root.style.setProperty("--neo-window-close-duration", Math.round(210 * animationDurationScale) + "ms");
     root.style.setProperty("--neo-taskbar-foreground", taskbarUsesLightSurface ? "#111317" : "#ffffff");
     root.style.setProperty("--neo-accent", accent.visible);
     root.style.setProperty("--neo-accent-visible", accent.visible);
@@ -2842,7 +2858,9 @@
     }
     win.classList.add(className);
     win.addEventListener("animationend", handleAnimationEnd);
-    timer = window.setTimeout(function () { cleanup(true); }, fallbackDuration);
+    timer = window.setTimeout(function () {
+      cleanup(true);
+    }, Math.round(fallbackDuration * (100 / settings.animationSpeed)));
   }
 
   function createPinnedApp(app) {

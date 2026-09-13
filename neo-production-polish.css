@@ -1068,6 +1068,65 @@ html.neo-auto-hide-bars[data-window-bar-style="ultra"] .window-control .icon {
 
 .range-field { gap: 11px; padding: 14px 0; }
 .range-field output { color: var(--desktop-muted); font-size: 12px; }
+
+.animation-speed-setting {
+  display: grid;
+  gap: 8px;
+  padding: 8px 0 2px;
+}
+
+.animation-speed-heading,
+.animation-speed-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.animation-speed-copy strong {
+  color: var(--desktop-text);
+  font-size: 14px;
+  font-weight: 620;
+}
+
+.animation-speed-copy small,
+.animation-speed-endpoint,
+.animation-speed-value {
+  color: var(--desktop-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.animation-speed-scale {
+  display: grid;
+  grid-template-columns: auto minmax(150px, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.animation-speed-track {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  padding-top: 20px;
+}
+
+.animation-speed-track input[type="range"] {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.animation-speed-value {
+  position: absolute;
+  top: 0;
+  left: clamp(28px, var(--neo-range-progress, 33.333%), calc(100% - 28px));
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 620px) {
+  .animation-speed-scale { grid-template-columns: auto minmax(90px, 1fr) auto; gap: 8px; }
+}
+
 .toggle-row,
 .select-row { min-height: 62px; padding: 11px 0; }
 

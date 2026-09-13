@@ -16,6 +16,16 @@
   function select(parent, label, values, value, change) { const l = el('label', '', label), n = el('select'); values.forEach(v => { const o = el('option', '', v); o.value = v; n.append(o); }); n.value = value; n.onchange = () => change(n.value); l.append(n); parent.append(l); return n; }
   function updateSliderFill(input) { const min = Number(input.min) || 0, max = Number(input.max) || 100, value = Number(input.value); const progress = max > min ? Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100)) : 0; input.style.setProperty('--neo-range-progress', progress + '%'); }
   function slider(parent, label, min, max, value, change) { const l = el('label', '', label + ' '), o = el('output', '', value), n = el('input'); n.type = 'range'; n.min = min; n.max = max; n.value = value; n.setAttribute('aria-label', label); n.oninput = () => { o.value = n.value; updateSliderFill(n); change(+n.value); }; updateSliderFill(n); l.append(o,n); parent.append(l); return n; }
+  function animationSpeedControl(parent) {
+    const shell=window.NEO_SHELL,speeds=[50,75,100,150,200],labels=['Slow','Relaxed','Default','Fast','Very Fast'],setting=el('div','animation-speed-setting'),heading=el('div','animation-speed-heading'),copy=el('span','animation-speed-copy'),scale=el('div','animation-speed-scale'),track=el('span','animation-speed-track'),output=el('output','animation-speed-value'),input=el('input');
+    copy.append(el('strong','', 'Animation Speed'),el('small','', 'How fast windows animate'));
+    heading.append(copy);
+    const current=Number(shell.getSetting('animationSpeed'))||100,currentIndex=speeds.reduce((best,value,index)=>Math.abs(value-current)<Math.abs(speeds[best]-current)?index:best,0);
+    input.type='range';input.min='0';input.max=String(speeds.length-1);input.step='1';input.value=String(currentIndex);input.setAttribute('aria-label','Animation Speed');
+    function sync(){const index=Number(input.value),label=labels[index]||'Default',progress=(index/(speeds.length-1))*100;output.textContent=label;output.style.setProperty('--neo-range-progress',progress+'%');input.setAttribute('aria-valuetext',label);updateSliderFill(input);}
+    input.oninput=()=>{sync();shell.setSetting('animationSpeed',speeds[Number(input.value)]||100);};
+    sync();track.append(output,input);scale.append(el('span','animation-speed-endpoint','Slow'),track,el('span','animation-speed-endpoint','Very Fast'));setting.append(heading,scale);parent.append(setting);return input;
+  }
   function check(parent, label, value, change) { const l = el('label'), n = el('input'); n.type = 'checkbox'; n.checked = value; n.onchange = () => change(n.checked); l.append(n, document.createTextNode(' ' + label)); parent.append(l); return n; }
   function download(name, text) { const a = el('a'); const url = URL.createObjectURL(new Blob([text], {type:'text/plain'})); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
   function cleanName(name) { return String(name || '').trim().replace(/\\/g,'/').replace(/^\/+/, '').replace(/[^a-zA-Z0-9_ .\-/]/g,'').split('/').filter(s => s && s !== '.' && s !== '..').join('/').slice(0,160); }
@@ -276,6 +286,8 @@
     const bright = slider(sound,'Interface brightness',45,100,p.brightness,value=>B.set({brightness:value}));
     sound.append(el('p','desktop-note','Brightness dims this interface, not the Chromebook display. Master sound applies to local HTML audio and cooperative Web Audio apps.'));
     const motion = check(sound,'Reduce motion',p.reducedMotion,value=>{ B.set({reducedMotion:value}); window.NEO_SHELL.setSetting('reducedMotion',value); });
+    const animation = section(app,'Motion');
+    animationSpeedControl(animation);
     if(!options.integrated){
       const dock = section(app,'Taskbar and desktop');
       select(dock,'Taskbar placement', ['left','right','top','bottom'],window.NEO_SHELL.getSetting('taskbarPosition') || 'left',value=>window.NEO_SHELL.setSetting('taskbarPosition',value));
