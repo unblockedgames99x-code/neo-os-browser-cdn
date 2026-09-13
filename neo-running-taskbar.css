@@ -99,7 +99,8 @@ html[data-taskbar-position] .taskbar .dock-button {
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  gap: 8px !important;
+  column-gap: 10px !important;
+  row-gap: 0 !important;
   padding: 0 9px 0 7px !important;
   overflow: hidden !important;
   color: var(--neo-taskbar-foreground, #fff) !important;
@@ -173,6 +174,10 @@ html[data-taskbar-position] .taskbar .dock-button .spotify-vector {
 .taskbar .dock-app-name {
   min-width: 0;
   flex: 1 1 auto;
+  align-self: center;
+  display: block;
+  margin: 0 !important;
+  padding: 0 0 0 2px;
   overflow: hidden;
   color: inherit;
   font-size: 12px;
@@ -192,7 +197,8 @@ html[data-taskbar-app-names="false"][data-taskbar-position="right"] .taskbar .do
   max-width: 46px !important;
   flex-basis: 46px !important;
   justify-content: center !important;
-  gap: 0 !important;
+  column-gap: 0 !important;
+  row-gap: 0 !important;
   padding: 0 !important;
 }
 
@@ -289,7 +295,8 @@ html[data-interface-style="retro"][data-taskbar-position] .taskbar .dock-button 
   flex: 0 0 118px !important;
   display: flex !important;
   justify-content: flex-start !important;
-  gap: 6px !important;
+  column-gap: 6px !important;
+  row-gap: 0 !important;
   padding: 3px 7px !important;
   border-radius: 0 !important;
 }
