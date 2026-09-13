@@ -285,6 +285,50 @@
     window.addEventListener('neo-system-state',sync);
   }
 
+  function settingsSearch(control) {
+    if(!control||control.querySelector('[data-settings-search]'))return;
+    const sections=Array.from(control.querySelectorAll(':scope > .settings-section'));
+    const items=sections.flatMap(panel=>Array.from(panel.children));
+    const search=el('div','control-settings-search');
+    search.dataset.settingsSearch='';
+    search.setAttribute('role','search');
+    search.append(spriteIcon('i-search','control-settings-search-icon'));
+    const input=el('input');
+    input.type='search';input.autocomplete='off';input.spellcheck=false;input.placeholder='Search settings';
+    input.setAttribute('aria-label','Search settings');
+    const clear=button('',()=>{input.value='';apply();input.focus({preventScroll:true});});
+    clear.classList.add('control-settings-search-clear');clear.setAttribute('aria-label','Clear settings search');clear.hidden=true;
+    clear.append(spriteIcon('i-close'));
+    const status=el('span','sr-only');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+    search.append(input,clear,status);
+    const empty=el('div','settings-search-empty');empty.hidden=true;
+    empty.append(spriteIcon('i-search'),el('strong','','No settings found'),el('p','','Try a different word or phrase.'));
+    const heading=control.querySelector(':scope > .native-app-heading');
+    heading.insertAdjacentElement('afterend',search);search.insertAdjacentElement('afterend',empty);
+
+    const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+    const searchableText=item=>normalize([
+      item.textContent,
+      ...Array.from(item.querySelectorAll('[aria-label],[title]')).flatMap(node=>[node.getAttribute('aria-label'),node.getAttribute('title')])
+    ].filter(Boolean).join(' '));
+    function apply(){
+      const query=normalize(input.value),searching=Boolean(query);let matches=0;
+      control.classList.toggle('is-settings-searching',searching);clear.hidden=!searching;
+      items.forEach(item=>{
+        const match=!searching||searchableText(item).includes(query);
+        item.classList.toggle('is-settings-search-hidden',!match);
+        item.classList.toggle('is-settings-search-match',searching&&match);
+        if(searching&&match)matches+=1;
+      });
+      sections.forEach(panel=>panel.classList.toggle('is-settings-search-hidden',searching&&!Array.from(panel.children).some(item=>!item.classList.contains('is-settings-search-hidden'))));
+      empty.hidden=!searching||matches>0;
+      status.textContent=searching?(matches?matches+' matching '+(matches===1?'section':'sections'):'No matching settings'):'';
+    }
+    input.addEventListener('input',apply);input.addEventListener('search',apply);
+    input.addEventListener('keydown',event=>{if(event.key==='Escape'&&input.value){event.preventDefault();input.value='';apply();}});
+    control.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&!event.altKey&&event.key.toLowerCase()==='f'){event.preventDefault();input.focus({preventScroll:true});input.select();}});
+  }
+
   function skinGallery(body) {
     const shell=window.NEO_SHELL;
     const widgetInfo={
@@ -592,6 +636,6 @@
     // Existing closeWindow removes the app node. Flush editor drafts before removal.
     const layer=document.querySelector('#window-layer, .window-layer');if(layer)new MutationObserver(records=>records.forEach(r=>r.removedNodes.forEach(n=>{n.querySelectorAll?.('.window-body').forEach(b=>b._neoDesktopCleanup?.());}))).observe(layer,{childList:true});
   }
-  window.NEO_DESKTOP={mount(id,body){const handlers={skins:skinGallery,vscode:editor,terminal};if(!handlers[id])return false;handlers[id](body);return true;},enhance(id,body){if(id==='control'){body.querySelectorAll('.desktop-settings-shortcuts').forEach(shortcut=>shortcut.remove());const control=body.querySelector('.control-center'),taskbar=control&&control.querySelector('.taskbar-settings');if(control&&taskbar&&!control.querySelector('.integrated-personalization-settings')){const integrated=el('section','settings-section integrated-personalization-settings desktop-app');control.insertBefore(integrated,taskbar);personalizationControls(integrated,{integrated:true});}}},init};
+  window.NEO_DESKTOP={mount(id,body){const handlers={skins:skinGallery,vscode:editor,terminal};if(!handlers[id])return false;handlers[id](body);return true;},enhance(id,body){if(id==='control'){body.querySelectorAll('.desktop-settings-shortcuts').forEach(shortcut=>shortcut.remove());const control=body.querySelector('.control-center'),taskbar=control&&control.querySelector('.taskbar-settings');if(control&&taskbar&&!control.querySelector('.integrated-personalization-settings')){const integrated=el('section','settings-section integrated-personalization-settings desktop-app');control.insertBefore(integrated,taskbar);personalizationControls(integrated,{integrated:true});}settingsSearch(control);}},init};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else queueMicrotask(init);
 })();
