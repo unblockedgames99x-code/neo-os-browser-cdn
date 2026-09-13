@@ -882,8 +882,9 @@ html.neo-auto-hide-bars[data-window-bar-style="ultra"] .window-control .icon {
 .taskbar-surface-preview.is-glass {
   color: #fff;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .03) 48%, rgba(0, 0, 0, .12)),
-    rgba(var(--neo-taskbar-tint, 118, 124, 132), .56);
+    linear-gradient(145deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .018) 42%, rgba(0, 0, 0, .08)),
+    rgba(var(--neo-taskbar-tint, 118, 124, 132), calc(var(--neo-taskbar-opacity, .38) * .82));
+  border-color: rgba(255, 255, 255, .34);
   -webkit-backdrop-filter: blur(10px) saturate(1.35);
   backdrop-filter: blur(10px) saturate(1.35);
 }
