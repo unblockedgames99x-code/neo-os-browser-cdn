@@ -552,6 +552,13 @@ html.neo-auto-hide-bars[data-window-bar-style="ultra"] .neo-window.is-maximized 
   border-radius: 0;
 }
 
+/* A maximized app must meet the physical right edge. The shared seven-pixel
+   inset is useful on the other sides, but it exposed a wallpaper-colored seam
+   along the right side of every maximized window. */
+html[data-taskbar-position] .neo-window.is-maximized {
+  right: 0 !important;
+}
+
 html.neo-auto-hide-bars[data-window-bar-style="ultra"] .neo-window > .window-chrome,
 html.neo-auto-hide-bars[data-window-bar-style="ultra"] .neo-window.is-chrome-revealed > .window-chrome,
 html.neo-auto-hide-bars[data-window-bar-style="ultra"] .neo-window.is-dragging > .window-chrome,
