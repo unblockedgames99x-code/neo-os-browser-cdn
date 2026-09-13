@@ -13,7 +13,7 @@
     onlineApps: Object.freeze(["chat", "neo-cloud", "nowgg", "neo-ai", "discord", "youtube-app", "games", "movies", "geometry-dash"]),
     assetBase: base.href,
     music: new URL("music-v2/index.html?v=20260912-repeat-controls-v2&theme=system-v1&widgets=live-v1", base).href,
-    browser: new URL("nextnode-browser/index.html?v=20260913-nextnode-live-v4", base).href,
+    browser: new URL("nextnode-browser/index.html?v=20260913-duckduckgo-v1", base).href,
     browserWarmAssets: Object.freeze([
       "study/sf-engine.js",
       "study/sf-ctl.js",

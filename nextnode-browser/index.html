@@ -437,12 +437,12 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
       }
       var upstreamNormalize=window.normalizeInput;
       if(typeof upstreamNormalize!=='function')return;
-      window.NEO_SEARCH_PROVIDER='qwant';
+      window.NEO_SEARCH_PROVIDER='duckduckgo';
       window.normalizeInput=function(input){
         var value=String(input||'').trim();
         if(!value)return null;
         var looksLikeAddress=/^(?:[a-z][a-z0-9+.-]*:\/\/|localhost(?:[:/]|$)|(?:\d{1,3}\.){3}\d{1,3}(?:[:/]|$)|(?:[^.\s]+\.)+[^.\s]{2,}(?:[:/]|$))/i.test(value);
-        return looksLikeAddress?upstreamNormalize(value):'https://www.qwant.com/?q='+encodeURIComponent(value)+'&t=web';
+        return looksLikeAddress?upstreamNormalize(value):'https://html.duckduckgo.com/html/?q='+encodeURIComponent(value);
       };
     })();</script></body>
 </html>
