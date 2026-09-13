@@ -3974,17 +3974,13 @@ html[data-interface-style="kali"] :is(.native-app,.desktop-app,.feature-dialog) 
 html[data-interface-style="kali"] :is(.native-app,.desktop-app,.feature-dialog) :is(button,input,select,textarea) { border-radius: 4px !important; }
 html[data-interface-style="kali"] :is(.native-app,.desktop-app,.feature-dialog) :is(input,select,textarea) { color: var(--kali-text) !important; background: rgba(2,9,18,.9) !important; border: 1px solid var(--kali-line) !important; box-shadow: none !important; }
 html[data-interface-style="kali"] :is(.native-app,.desktop-app,.feature-dialog) :is(input,select,textarea):focus { border-color: var(--kali-cyan) !important; box-shadow: 0 0 0 2px rgba(0,213,255,.1) !important; outline: 0 !important; }
-html[data-interface-style="kali"] :is(.settings-section,.taskbar-option-group,.inspector-controls,.desktop-card,.interface-style-choice,.tab-appearance-choice,.theme-choice,.cursor-theme-choice,.auto-clicker-control-card,.auto-clicker-test-card) { background: var(--kali-panel-soft) !important; border-color: var(--kali-line) !important; border-radius: 5px !important; box-shadow: none !important; }
+html[data-interface-style="kali"] :is(.settings-section,.taskbar-option-group,.inspector-controls,.desktop-card,.interface-style-choice,.tab-appearance-choice,.theme-choice,.cursor-theme-choice) { background: var(--kali-panel-soft) !important; border-color: var(--kali-line) !important; border-radius: 5px !important; box-shadow: none !important; }
 html[data-interface-style="kali"] .desktop-app .interface-style-choice:is(:hover,.is-selected,[aria-pressed="true"]) { background: rgba(20,120,201,.22) !important; border-color: var(--kali-cyan) !important; }
 
 html[data-interface-style="kali"] .neo-window[data-app-id="terminal"] .desktop-terminal,
 html[data-interface-style="kali"] .neo-terminal { color: #d8fff5 !important; background: #01060c !important; font-family: "Cascadia Mono", "JetBrains Mono", Consolas, monospace !important; text-shadow: 0 0 10px rgba(69,224,168,.12); }
 html[data-interface-style="kali"] .neo-terminal :is(.terminal-prompt,.terminal-prefix) { color: var(--kali-green) !important; }
 html[data-interface-style="kali"] .neo-terminal :is(input,.terminal-input) { color: var(--kali-text) !important; caret-color: var(--kali-cyan) !important; }
-html[data-interface-style="kali"] .auto-clicker { --clicker-accent: var(--kali-cyan); background: radial-gradient(circle at 85% 0, rgba(0,213,255,.12), transparent 34%), var(--kali-bg) !important; }
-html[data-interface-style="kali"] .auto-clicker-toggle { color: #001019 !important; background: linear-gradient(90deg, var(--kali-cyan), #44a6ff) !important; border-color: var(--kali-cyan) !important; }
-html[data-interface-style="kali"] .app-icon-auto-click { color: var(--kali-cyan) !important; background: linear-gradient(145deg, #0c3352, #04121f) !important; border-color: rgba(0,213,255,.32) !important; }
-
 /* The same tokens travel into same-origin app frames through neo-app-theme.js. */
 html[data-interface-style="kali"][data-neo-app]:not([data-neo-app="shell"]) {
   --background: var(--kali-bg, #020711) !important;

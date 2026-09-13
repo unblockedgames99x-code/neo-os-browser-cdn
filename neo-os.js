@@ -3105,12 +3105,12 @@
       if (!document.querySelector('link[data-neo-features]')) {
         var style = document.createElement("link");
         style.rel = "stylesheet";
-        style.href = "./neo-os-features.css?v=20260913-auto-clicker-v1&hover=bridge-v1";
+        style.href = "./neo-os-features.css?v=20260913-app-cleanup-v1&hover=bridge-v1";
         style.dataset.neoFeatures = "";
         document.head.appendChild(style);
       }
       var script = document.createElement("script");
-      script.src = "./neo-os-features.js?v=20260913-auto-clicker-v1&hover=bridge-v1";
+      script.src = "./neo-os-features.js?v=20260913-app-cleanup-v1&hover=bridge-v1";
       script.async = true;
       script.onload = function () {
         if (!window.NEO_FEATURES) {
