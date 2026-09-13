@@ -173,7 +173,7 @@
     }
     cancel(frame);
 
-    if ((!isRunner() || /\/launch\.svg(?:[?#]|$)/i.test(sourceUrl)) && options.forceFetch !== true) {
+    if ((isConfiguredDirectSource(sourceUrl) || !isRunner() || /\/launch\.svg(?:[?#]|$)/i.test(sourceUrl)) && options.forceFetch !== true) {
       frame.removeAttribute("srcdoc");
       frame.src = sourceUrl;
       return Promise.resolve({ mode: "url", url: sourceUrl });
