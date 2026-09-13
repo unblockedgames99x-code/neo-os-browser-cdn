@@ -335,7 +335,7 @@
       subtitle: "Private web search",
       icon: "duckduckgo",
     route: "./NEO-BROWSER/index.html?v=20260912-proxy-ready-v2",
-      keepAlive: false,
+      keepAlive: true,
       width: 1080,
       height: 720,
       launcher: true,
@@ -1530,6 +1530,7 @@
     root.dataset.taskbarAppNames = settings.taskbarAppNames ? "true" : "false";
     root.dataset.windowBarStyle = settings.windowBarStyle;
     root.dataset.interfaceStyle = settings.interfaceStyle;
+    if (typeof window.__neoSyncInterfaceCss === "function") window.__neoSyncInterfaceCss();
     root.dataset.cursorTheme = settings.cursorTheme;
     if (settings.customCursorData) {
       root.style.setProperty("--neo-custom-cursor-arrow", customCursorDeclaration("auto"));
@@ -3179,6 +3180,38 @@
   }
 
   function scheduleBrowsePrewarm() {
+    if (localOnly && localConfig && localConfig.browser) {
+      if (performanceActive() || browsePrewarmScheduled || navigator.onLine === false) return;
+      var directConnection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      if (directConnection && (directConnection.saveData || /(^|-)2g$/.test(directConnection.effectiveType || ""))) return;
+      browsePrewarmScheduled = true;
+      var directIdleId = 0;
+      var directTimeoutId = 0;
+      function cleanupDirectTriggers() {
+        document.removeEventListener("pointerover", prefetchDirectBrowser);
+        document.removeEventListener("focusin", prefetchDirectBrowser);
+        document.removeEventListener("touchstart", prefetchDirectBrowser);
+        if (directIdleId && "cancelIdleCallback" in window) window.cancelIdleCallback(directIdleId);
+        if (directTimeoutId) window.clearTimeout(directTimeoutId);
+      }
+      function prefetchDirectBrowser(event) {
+        if (event && event.target && !event.target.closest('[data-app="browser"]')) return;
+        cleanupDirectTriggers();
+        if (document.querySelector("link[data-neo-browser-prefetch]")) return;
+        var hint = document.createElement("link");
+        hint.rel = "prefetch";
+        hint.href = apps.browser.route;
+        hint.fetchPriority = "low";
+        hint.dataset.neoBrowserPrefetch = "";
+        document.head.appendChild(hint);
+      }
+      document.addEventListener("pointerover", prefetchDirectBrowser, { passive: true });
+      document.addEventListener("focusin", prefetchDirectBrowser);
+      document.addEventListener("touchstart", prefetchDirectBrowser, { passive: true });
+      if ("requestIdleCallback" in window) directIdleId = window.requestIdleCallback(prefetchDirectBrowser, { timeout: 2800 });
+      else directTimeoutId = window.setTimeout(prefetchDirectBrowser, 1600);
+      return;
+    }
     if (localOnly) return;
     if (performanceActive() || browsePrewarmScheduled || window.NEO_BROWSER_ENGINE) return;
     if (!("serviceWorker" in navigator) || navigator.onLine === false) return;

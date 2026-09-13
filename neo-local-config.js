@@ -12,7 +12,8 @@
     onlineApps: Object.freeze(["chat", "neo-cloud", "nowgg", "neo-ai", "discord", "youtube-app", "games", "movies", "geometry-dash"]),
     assetBase: base.href,
     music: new URL("music-v2/index.html?v=20260912-repeat-controls-v2&theme=system-v1&widgets=live-v1", base).href,
-    browser: "https://nextnode9124.b-cdn.net/modules/browser/index.html",
+    browser: new URL("nextnode-browser/index.html?v=20260912-full-proxy-v1", base).href,
+    browserWisp: "wss://nextnode9124.b-cdn.net/w/",
     appProxy: new URL("NEO-BROWSER/index.html?v=20260910-fast-browser-v2", base).href,
     gamesCatalog: new URL("../games/index.json", base).href,
     gamesCovers: new URL("../games/covers.json", base).href,
@@ -25,16 +26,4 @@
     resolve: function (path) { return new URL(path, base).href; }
   });
   document.documentElement.dataset.localPreview = "true";
-  // Old proxy workers must not intercept local routes when revisiting this origin.
-  if ("serviceWorker" in navigator) navigator.serviceWorker.getRegistrations().then(function (items) {
-    return Promise.all(items.filter(function (item) {
-      var workerUrl = (item.active || item.waiting || item.installing || {}).scriptURL || "";
-      try {
-        var path = new URL(workerUrl).pathname;
-        return /\/(?:neo-os\/)?(?:browser-sw|service-worker)\.js$/.test(path);
-      } catch (error) {
-        return false;
-      }
-    }).map(function (item) { return item.unregister(); }));
-  }).catch(function () {});
 })();

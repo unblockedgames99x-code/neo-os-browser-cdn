@@ -14,6 +14,8 @@
       content="NEO OS, a fast personal workspace for chat, media, browsing, and creativity."
     />
     <meta name="color-scheme" content="dark" />
+    <link rel="dns-prefetch" href="//nextnode9124.b-cdn.net" />
+    <link rel="preconnect" href="https://nextnode9124.b-cdn.net" crossorigin />
     <script>
       (function () {
         var mode = "normal";
@@ -55,34 +57,6 @@
           probe.src = previewBase + "assets/neo-logo.svg?preview=" + Date.now();
         }
         tryPreview();
-      })();
-    </script>
-    <script>
-      (function () {
-        window.__neoProxyRecovery = Promise.resolve();
-        if (!("serviceWorker" in navigator)) return;
-        var expectedEngine = "neo-browse-v69";
-        var recoveryKey = "neo_proxy_scope_recovered_" + expectedEngine;
-        var expectedScope = new URL("./browse-v69/", document.baseURI).href;
-        window.__neoProxyRecovery = navigator.serviceWorker.getRegistrations().then(function (registrations) {
-          var stale = registrations.filter(function (registration) {
-            var workers = [registration.active, registration.waiting, registration.installing].filter(Boolean);
-            if (!workers.some(function (worker) { return worker.scriptURL.indexOf("/neo-os/browser-sw.js") !== -1; })) return false;
-            if (registration.scope !== expectedScope) return true;
-            return !workers.some(function (worker) {
-              try { return new URL(worker.scriptURL).searchParams.get("engine") === expectedEngine; } catch (error) { return false; }
-            });
-          });
-          if (!stale.length) {
-            sessionStorage.removeItem(recoveryKey);
-            return;
-          }
-          return Promise.all(stale.map(function (registration) { return registration.unregister(); })).then(function () {
-            if (!navigator.serviceWorker.controller || sessionStorage.getItem(recoveryKey) === "1") return;
-            sessionStorage.setItem(recoveryKey, "1");
-            window.location.reload();
-          });
-        }).catch(function () {});
       })();
     </script>
     <link rel="icon" href="./assets/neo-logo.svg" type="image/svg+xml" />

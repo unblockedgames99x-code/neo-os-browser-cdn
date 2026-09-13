@@ -18,6 +18,18 @@
     return allowedOrigins.indexOf(new URL(sourceUrl).origin) !== -1;
   }
 
+  function isConfiguredDirectSource(sourceUrl) {
+    try {
+      var configured = window.NEO_LOCAL_CONFIG && window.NEO_LOCAL_CONFIG.browser;
+      if (!configured) return false;
+      var source = new URL(sourceUrl, document.baseURI);
+      var browser = new URL(configured, document.baseURI);
+      return source.origin === browser.origin && source.pathname === browser.pathname;
+    } catch (_error) {
+      return false;
+    }
+  }
+
   function resolveUrl(route) {
     return new URL(String(route || ""), document.baseURI).href;
   }
@@ -151,7 +163,12 @@
   function load(frame, route, options) {
     options = options || {};
     var sourceUrl = resolveUrl(route);
-    if (window.NEO_LOCAL_CONFIG && window.NEO_LOCAL_CONFIG.enabled && !isAllowedLocalSource(sourceUrl)) {
+    if (
+      window.NEO_LOCAL_CONFIG &&
+      window.NEO_LOCAL_CONFIG.enabled &&
+      !isAllowedLocalSource(sourceUrl) &&
+      !isConfiguredDirectSource(sourceUrl)
+    ) {
       return Promise.reject(new Error("External pages are unavailable in local preview."));
     }
     cancel(frame);
