@@ -124,7 +124,7 @@
       title: "NEO AI",
       subtitle: "Three fast chat models with web and study tools",
       icon: "chatgpt",
-      route: "./neo-ai/index.html?build=20260912-three-models-v2",
+      route: "./neo-ai/index.html?build=20260912-default-20b-v1",
       keepAlive: true,
       width: 1120,
       height: 760,

@@ -157,7 +157,7 @@
   }
 
   var defaultSettings = {
-    designVersion: 20,
+    designVersion: 21,
     wallpaper: "we-steam-1403160205",
     wallpaperFavorites: [],
     wallpaperRecent: [],
@@ -183,6 +183,7 @@
     taskbarOutline: true,
     taskbarRunningApps: true,
     taskbarAppDragging: true,
+    taskbarAppNames: false,
     windowBarStyle: "ultra",
     interfaceStyle: "modern",
     cursorTheme: "system",
@@ -240,6 +241,9 @@
   }
   if (savedDesignVersion < 20) {
     savedSettings.windowBarStyle = "ultra";
+  }
+  if (savedDesignVersion < 21) {
+    savedSettings.taskbarAppNames = false;
   }
   savedSettings.performanceMode = normalizePerformanceMode(savedSettings.performanceMode);
   savedSettings.taskbarPosition = normalizeTaskbarPosition(savedSettings.taskbarPosition);
@@ -1418,6 +1422,7 @@
     var previousTaskbarPosition = normalizeTaskbarPosition(root.dataset.taskbarPosition);
     var previousTaskbarStyle = normalizeTaskbarStyle(root.dataset.taskbarStyle);
     var previousTaskbarRunningApps = root.dataset.taskbarRunningApps !== "false";
+    var previousTaskbarAppNames = root.dataset.taskbarAppNames === "true";
     var wallpaper = settings.wallpaper;
     var previousWallpaper = root.dataset.wallpaper || wallpaper || "we-steam-1403160205";
     var wallpaperSettings = Object.assign({}, settings, {
@@ -1471,6 +1476,7 @@
     root.dataset.taskbarOutline = settings.taskbarOutline ? "true" : "false";
     root.dataset.taskbarRunningApps = settings.taskbarRunningApps ? "true" : "false";
     root.dataset.taskbarAppDragging = settings.taskbarAppDragging ? "true" : "false";
+    root.dataset.taskbarAppNames = settings.taskbarAppNames ? "true" : "false";
     root.dataset.windowBarStyle = settings.windowBarStyle;
     root.dataset.interfaceStyle = settings.interfaceStyle;
     root.dataset.cursorTheme = settings.cursorTheme;
@@ -1541,14 +1547,14 @@
         detail: { theme: settings.cursorTheme, previousTheme: previousCursorTheme }
       }));
     }
-    if (previousTaskbarPosition !== settings.taskbarPosition || previousTaskbarStyle !== settings.taskbarStyle) {
+    if (previousTaskbarPosition !== settings.taskbarPosition || previousTaskbarStyle !== settings.taskbarStyle || previousTaskbarAppNames !== Boolean(settings.taskbarAppNames)) {
       window.requestAnimationFrame(function () {
         fitDockToViewport(document.getElementById("neo-dock"));
         layoutDesktopShortcuts();
         window.dispatchEvent(new CustomEvent("neo-taskbar-layout-change", {
           detail: {
-            previous: { position: previousTaskbarPosition, style: previousTaskbarStyle },
-            current: { position: settings.taskbarPosition, style: settings.taskbarStyle }
+            previous: { position: previousTaskbarPosition, style: previousTaskbarStyle, appNames: previousTaskbarAppNames },
+            current: { position: settings.taskbarPosition, style: settings.taskbarStyle, appNames: Boolean(settings.taskbarAppNames) }
           }
         }));
       });

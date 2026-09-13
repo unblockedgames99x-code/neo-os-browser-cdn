@@ -4,7 +4,8 @@
   if (window.NEO_AI_APP) return;
 
   var STORAGE_KEY = "neo_ai_workspace_v1";
-  var DEFAULT_MODEL_ID = "gpt-oss-120b";
+  var DEFAULT_MODEL_MIGRATION_KEY = "neo_ai_default_model_20b_v1";
+  var DEFAULT_MODEL_ID = "gpt-oss-20b";
   var AI_MODELS = [
     { id: "gpt-oss-120b", name: "GPT-OSS 120B", provider: "Serum", description: "High quality", vision: false, type: "text" },
     { id: "gpt-oss-20b", name: "GPT-OSS 20B (Fast)", provider: "Serum", description: "Fast responses", vision: false, type: "text" },
@@ -78,18 +79,27 @@
   function loadState() {
     try {
       var parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-      if (!parsed || !Array.isArray(parsed.chats)) return defaultState();
+      var needsDefaultModelMigration = localStorage.getItem(DEFAULT_MODEL_MIGRATION_KEY) !== "1";
+      if (!parsed || !Array.isArray(parsed.chats)) {
+        localStorage.setItem(DEFAULT_MODEL_MIGRATION_KEY, "1");
+        return defaultState();
+      }
       parsed.settings = Object.assign(defaultState().settings, parsed.settings || {});
       parsed.settings.cowork = Object.assign(defaultState().settings.cowork, parsed.settings.cowork || {});
       parsed.settings.media = Object.assign(defaultState().settings.media, parsed.settings.media || {});
       if (!AI_MODELS.some(function (model) { return model.id === parsed.settings.model; })) parsed.settings.model = DEFAULT_MODEL_ID;
+      if (needsDefaultModelMigration) parsed.settings.model = DEFAULT_MODEL_ID;
+      localStorage.setItem(DEFAULT_MODEL_MIGRATION_KEY, "1");
       if (!["auto", "low", "medium", "high"].includes(parsed.settings.reasoning)) parsed.settings.reasoning = "auto";
       if (!Array.isArray(parsed.settings.cowork.models)) parsed.settings.cowork.models = AUTO_COWORK_MODELS.slice();
       parsed.settings.cowork.models = parsed.settings.cowork.models.filter(function (modelId, index, items) { return COWORK_MODEL_IDS.includes(modelId) && items.indexOf(modelId) === index; }).slice(0, 5);
       if (!parsed.settings.cowork.models.length) parsed.settings.cowork.models = AUTO_COWORK_MODELS.slice();
       parsed.chats = parsed.chats.filter(function (chat) { return chat && typeof chat.id === "string" && Array.isArray(chat.messages); }).slice(0, MAX_STORED_CHATS);
       return parsed;
-    } catch (_error) { return defaultState(); }
+    } catch (_error) {
+      try { localStorage.setItem(DEFAULT_MODEL_MIGRATION_KEY, "1"); } catch (_ignored) {}
+      return defaultState();
+    }
   }
 
   var state = loadState();

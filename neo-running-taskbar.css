@@ -49,6 +49,12 @@ html[data-taskbar-position="right"] {
   --neo-taskbar-vertical-avoid: 154px;
 }
 
+html[data-taskbar-app-names="false"][data-taskbar-position="left"],
+html[data-taskbar-app-names="false"][data-taskbar-position="right"] {
+  --neo-taskbar-vertical-size: 66px;
+  --neo-taskbar-vertical-avoid: 86px;
+}
+
 html[data-taskbar-position="left"]:has(#neo-dock:empty),
 html[data-taskbar-position="right"]:has(#neo-dock:empty) {
   --neo-taskbar-vertical-size: 66px;
@@ -64,6 +70,11 @@ html[data-taskbar-running-apps="false"][data-taskbar-position="right"] {
 html[data-taskbar-style="typical"][data-taskbar-position="left"] .taskbar,
 html[data-taskbar-style="typical"][data-taskbar-position="right"] .taskbar {
   width: 132px !important;
+}
+
+html[data-taskbar-app-names="false"][data-taskbar-style="typical"][data-taskbar-position="left"] .taskbar,
+html[data-taskbar-app-names="false"][data-taskbar-style="typical"][data-taskbar-position="right"] .taskbar {
+  width: 72px !important;
 }
 
 html[data-taskbar-style="typical"][data-taskbar-position="left"]:has(#neo-dock:empty) .taskbar,
@@ -171,6 +182,32 @@ html[data-taskbar-position] .taskbar .dock-button .spotify-vector {
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+html[data-taskbar-app-names="false"] .taskbar .dock-button,
+html[data-taskbar-app-names="false"][data-taskbar-position="left"] .taskbar .dock-button,
+html[data-taskbar-app-names="false"][data-taskbar-position="right"] .taskbar .dock-button {
+  width: 46px !important;
+  min-width: 46px !important;
+  max-width: 46px !important;
+  flex-basis: 46px !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  padding: 0 !important;
+}
+
+html[data-taskbar-app-names="false"] .taskbar .dock-app-name {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+}
+
+html[data-taskbar-app-names="false"][data-taskbar-position="top"] .taskbar .dock-button.is-running::after,
+html[data-taskbar-app-names="false"][data-taskbar-position="bottom"] .taskbar .dock-button.is-running::after {
+  left: 15px;
 }
 
 html[data-taskbar-position] .taskbar .dock-button.is-minimized {
