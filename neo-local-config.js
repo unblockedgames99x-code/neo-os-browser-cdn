@@ -1,8 +1,7 @@
 (function () {
   "use strict";
-  // Local-first entry points. A later CDN migration changes configuredAssetBase / these routes,
-  // then deliberately updates the preview server CSP allowlist. No URL substitution
-  // or proxy is hidden inside the UI.
+  // Local-first entry points. The main Browser intentionally uses NextNode's complete
+  // hosted proxy build; installed app shortcuts keep the bundled NEO wrapper below.
   // Edit this relative path or absolute asset origin; routes and resolve() both use it.
   var configuredAssetBase = "./";
   var base = new URL(configuredAssetBase, document.currentScript.src);
@@ -13,7 +12,8 @@
     onlineApps: Object.freeze(["chat", "neo-cloud", "nowgg", "neo-ai", "discord", "youtube-app", "games", "movies", "geometry-dash"]),
     assetBase: base.href,
     music: new URL("music-v2/index.html?v=20260912-repeat-controls-v2&theme=system-v1&widgets=live-v1", base).href,
-    browser: new URL("NEO-BROWSER/index.html?v=20260910-fast-browser-v2", base).href,
+    browser: "https://nextnode9124.b-cdn.net/modules/browser/index.html",
+    appProxy: new URL("NEO-BROWSER/index.html?v=20260910-fast-browser-v2", base).href,
     gamesCatalog: new URL("../games/index.json", base).href,
     gamesCovers: new URL("../games/covers.json", base).href,
     preview: previewBase.href,

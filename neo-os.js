@@ -468,7 +468,7 @@
   restoreCustomApps(apps);
   if (localOnly) {
     apps.browser.route = localConfig.browser;
-    apps.browser.subtitle = "Fast private tabs with automatic relay fallback";
+    apps.browser.subtitle = "Full NextNode web proxy";
     apps.browser.hideName = false;
     apps.browser.title = "Browser";
     apps.browser.accessibleName = "NEO Browser";
@@ -560,7 +560,7 @@
   }
 
   function customAppRoute(url, mode) {
-    var browserRoute = localConfig && localConfig.browser ? localConfig.browser : "./NEO-BROWSER/index.html";
+    var browserRoute = localConfig && localConfig.appProxy ? localConfig.appProxy : "./NEO-BROWSER/index.html";
     try {
       var route = new URL(browserRoute, document.baseURI);
       route.searchParams.set("neo-app-mode", "1");
