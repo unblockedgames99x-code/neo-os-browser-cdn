@@ -3200,18 +3200,21 @@
         if (event && event.target && !event.target.closest('[data-app="browser"]')) return;
         cleanupDirectTriggers();
         if (document.querySelector("link[data-neo-browser-prefetch]")) return;
-        var hint = document.createElement("link");
-        hint.rel = "prefetch";
-        hint.href = apps.browser.route;
-        hint.fetchPriority = "low";
-        hint.dataset.neoBrowserPrefetch = "";
-        document.head.appendChild(hint);
+        var warmTargets = [apps.browser.route].concat(Array.isArray(localConfig.browserWarmAssets) ? localConfig.browserWarmAssets : []);
+        warmTargets.forEach(function (target, index) {
+          var hint = document.createElement("link");
+          hint.rel = "prefetch";
+          hint.href = target;
+          hint.fetchPriority = index === 0 ? "auto" : "low";
+          hint.dataset.neoBrowserPrefetch = "";
+          document.head.appendChild(hint);
+        });
       }
       document.addEventListener("pointerover", prefetchDirectBrowser, { passive: true });
       document.addEventListener("focusin", prefetchDirectBrowser);
       document.addEventListener("touchstart", prefetchDirectBrowser, { passive: true });
-      if ("requestIdleCallback" in window) directIdleId = window.requestIdleCallback(prefetchDirectBrowser, { timeout: 2800 });
-      else directTimeoutId = window.setTimeout(prefetchDirectBrowser, 1600);
+      if ("requestIdleCallback" in window) directIdleId = window.requestIdleCallback(prefetchDirectBrowser, { timeout: 1800 });
+      else directTimeoutId = window.setTimeout(prefetchDirectBrowser, 1000);
       return;
     }
     if (localOnly) return;

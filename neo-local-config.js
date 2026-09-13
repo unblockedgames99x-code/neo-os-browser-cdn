@@ -12,7 +12,14 @@
     onlineApps: Object.freeze(["chat", "neo-cloud", "nowgg", "neo-ai", "discord", "youtube-app", "games", "movies", "geometry-dash"]),
     assetBase: base.href,
     music: new URL("music-v2/index.html?v=20260912-repeat-controls-v2&theme=system-v1&widgets=live-v1", base).href,
-    browser: new URL("nextnode-browser/index.html?v=20260912-full-proxy-v1", base).href,
+    browser: new URL("nextnode-browser/index.html?v=20260913-nextnode-live-v3", base).href,
+    browserWarmAssets: Object.freeze([
+      "study/sf-engine.js",
+      "study/sf-ctl.js",
+      "study/sf-utils.js",
+      "study/libcurl.js",
+      "study/sf-engine.wasm"
+    ].map(function (asset) { return new URL("nextnode-browser/" + asset, base).href; })),
     browserWisp: "wss://nextnode9124.b-cdn.net/w/",
     appProxy: new URL("NEO-BROWSER/index.html?v=20260910-fast-browser-v2", base).href,
     gamesCatalog: new URL("../games/index.json", base).href,
