@@ -5,7 +5,7 @@ html[data-taskbar-position] {
   --neo-taskbar-vertical-size: 66px;
   --neo-taskbar-horizontal-avoid: calc(78px + env(safe-area-inset-bottom));
   --neo-taskbar-vertical-avoid: 86px;
-  --neo-taskbar-tint-strength: 0.38;
+  --neo-taskbar-opacity: 0.38;
   --neo-taskbar-gradient-angle: 110deg;
 }
 
@@ -144,7 +144,7 @@ html[data-taskbar-style="current"] .taskbar {
   isolation: isolate;
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.018) 42%, rgba(0, 0, 0, 0.08)),
-    rgba(var(--neo-taskbar-tint), calc(var(--neo-taskbar-tint-strength) * 0.82)) !important;
+    rgba(var(--neo-taskbar-tint), calc(var(--neo-taskbar-opacity) * 0.82)) !important;
   border: 1px solid rgba(255, 255, 255, 0.34) !important;
   border-radius: 18px !important;
   box-shadow:
@@ -228,7 +228,7 @@ html[data-taskbar-style="transparent"] .taskbar-start-button {
 }
 
 html[data-taskbar-style="typical"] .taskbar {
-  background: rgba(var(--neo-taskbar-tint), calc(0.68 + (var(--neo-taskbar-tint-strength) * 0.32))) !important;
+  background: rgba(var(--neo-taskbar-tint), calc(var(--neo-taskbar-opacity) * 0.9)) !important;
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.32) !important;

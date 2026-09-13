@@ -157,7 +157,7 @@
   }
 
   var defaultSettings = {
-    designVersion: 21,
+    designVersion: 22,
     wallpaper: "we-steam-1403160205",
     wallpaperFavorites: [],
     wallpaperRecent: [],
@@ -192,7 +192,7 @@
     customTabIcon: "",
     taskbarTint: "#767c84",
     taskbarGradientEnd: "#315f9b",
-    taskbarTintStrength: 38,
+    taskbarTransparency: 62,
     taskbarAccent: "#ffffff",
     reduceMotion: false,
     performanceMode: "normal",
@@ -245,6 +245,12 @@
   if (savedDesignVersion < 21) {
     savedSettings.taskbarAppNames = false;
   }
+  if (savedDesignVersion < 22) {
+    var legacyTaskbarTintStrength = Number(savedSettings.taskbarTintStrength);
+    savedSettings.taskbarTransparency = Number.isFinite(legacyTaskbarTintStrength)
+      ? 100 - clamp(legacyTaskbarTintStrength, 0, 100)
+      : 62;
+  }
   savedSettings.performanceMode = normalizePerformanceMode(savedSettings.performanceMode);
   savedSettings.taskbarPosition = normalizeTaskbarPosition(savedSettings.taskbarPosition);
   savedSettings.taskbarStyle = normalizeTaskbarStyle(savedSettings.taskbarStyle);
@@ -264,15 +270,16 @@
   savedSettings.taskbarGradientEnd = /^#[0-9a-f]{6}$/i.test(String(savedSettings.taskbarGradientEnd || ""))
     ? String(savedSettings.taskbarGradientEnd).toLowerCase()
     : "#315f9b";
-  var savedTaskbarTintStrength = Number(savedSettings.taskbarTintStrength);
-  savedSettings.taskbarTintStrength = Number.isFinite(savedTaskbarTintStrength)
-    ? clamp(savedTaskbarTintStrength, 0, 100)
-    : 38;
+  var savedTaskbarTransparency = Number(savedSettings.taskbarTransparency);
+  savedSettings.taskbarTransparency = Number.isFinite(savedTaskbarTransparency)
+    ? clamp(savedTaskbarTransparency, 0, 100)
+    : 62;
   delete savedSettings.performance;
   delete savedSettings.taskbarMaterial;
   delete savedSettings.taskbarOpacity;
   delete savedSettings.taskbarBlur;
-  savedSettings.designVersion = 20;
+  delete savedSettings.taskbarTintStrength;
+  savedSettings.designVersion = 22;
   var settings = Object.assign({}, defaultSettings, savedSettings);
   var appliedTabAppearanceSignature = "";
   // Keep imported wallpapers and the local reactive scene. Remote workshop defaults
@@ -1456,9 +1463,9 @@
     settings.taskbarGradientEnd = /^#[0-9a-f]{6}$/i.test(String(settings.taskbarGradientEnd || ""))
       ? String(settings.taskbarGradientEnd).toLowerCase()
       : "#315f9b";
-    settings.taskbarTintStrength = Number.isFinite(Number(settings.taskbarTintStrength))
-      ? clamp(Number(settings.taskbarTintStrength), 0, 100)
-      : 38;
+    settings.taskbarTransparency = Number.isFinite(Number(settings.taskbarTransparency))
+      ? clamp(Number(settings.taskbarTransparency), 0, 100)
+      : 62;
     var taskbarTintChannels = colorToRgb(settings.taskbarTint).split(", ").map(Number);
     var taskbarTintLuminance = taskbarTintChannels[0] * 0.299 + taskbarTintChannels[1] * 0.587 + taskbarTintChannels[2] * 0.114;
     var taskbarGradientChannels = colorToRgb(settings.taskbarGradientEnd).split(", ").map(Number);
@@ -1468,7 +1475,7 @@
       : taskbarTintLuminance;
     var taskbarUsesLightSurface = settings.taskbarStyle !== "transparent"
       && (settings.taskbarSurface === "glass"
-        ? taskbarTintLuminance >= 178 && (settings.taskbarStyle === "typical" || settings.taskbarTintStrength >= 55)
+        ? taskbarTintLuminance >= 178 && (settings.taskbarStyle === "typical" || settings.taskbarTransparency <= 45)
         : taskbarSurfaceLuminance >= 168);
     root.dataset.taskbarPosition = settings.taskbarPosition;
     root.dataset.taskbarStyle = settings.taskbarStyle;
@@ -1489,7 +1496,7 @@
     root.style.setProperty("--wallpaper-blur", clamp(Number(settings.blur), 0, 12) + "px");
     root.style.setProperty("--neo-taskbar-tint", colorToRgb(settings.taskbarTint));
     root.style.setProperty("--neo-taskbar-gradient-end", colorToRgb(settings.taskbarGradientEnd));
-    root.style.setProperty("--neo-taskbar-tint-strength", String(settings.taskbarTintStrength / 100));
+    root.style.setProperty("--neo-taskbar-opacity", String((100 - settings.taskbarTransparency) / 100));
     root.style.setProperty("--neo-taskbar-foreground", taskbarUsesLightSurface ? "#111317" : "#ffffff");
     root.style.setProperty("--neo-accent", accent.visible);
     root.style.setProperty("--neo-accent-visible", accent.visible);
