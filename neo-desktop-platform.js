@@ -153,23 +153,88 @@
       {id:'neo',label:'NEO',description:'Cyan glass',asset:'neo-arrow.svg'},
       {id:'neon',label:'Neon',description:'Pink glow',asset:'neon-arrow.svg'},
       {id:'pixel',label:'Pixel',description:'Retro block',asset:'pixel-arrow.svg'},
-      {id:'contrast',label:'Contrast',description:'Large and bright',asset:'contrast-arrow.svg'}
+      {id:'contrast',label:'Contrast',description:'Large and bright',asset:'contrast-arrow.svg'},
+      {id:'custom',label:'Imported',description:'Choose a local cursor'}
     ];
     const choices=new Map();
     themes.forEach(theme=>{
-      const choice=button('',()=>shell.setSetting('cursorTheme',theme.id),grid);
+      const choice=button('',()=>{
+        if(theme.id==='custom'&&!shell.getSetting('customCursorData')){picker.click();return;}
+        shell.setSetting('cursorTheme',theme.id);
+      },grid);
       choice.classList.add('cursor-theme-choice');
       choice.dataset.cursorThemeChoice=theme.id;
       choice.setAttribute('aria-label','Use '+theme.label+' cursor');
       const preview=el('span','cursor-theme-preview is-'+theme.id);
       preview.setAttribute('aria-hidden','true');
       if(theme.asset){const image=el('img');image.alt='';image.src='./assets/cursors/'+theme.asset;preview.append(image);}
+      else if(theme.id==='custom'){
+        const image=el('img','cursor-custom-image');image.alt='';image.hidden=true;
+        preview.append(image,el('span','cursor-custom-placeholder','+'));
+      }
       else preview.append(el('span','cursor-system-glyph','↖'));
       const copy=el('span','cursor-theme-copy');
       copy.append(el('strong','',theme.label),el('small','',theme.description));
       choice.append(preview,copy);
       choices.set(theme.id,choice);
     });
+
+    const actions=el('div','cursor-import-actions');
+    const importButton=button('Import cursor',()=>picker.click(),actions);
+    importButton.classList.add('button','primary');
+    const removeButton=button('Remove imported',()=>shell.clearCustomCursor(),actions);
+    removeButton.classList.add('button','cursor-import-remove');
+    const status=el('p','cursor-import-status');
+    const picker=el('input');
+    picker.type='file';
+    picker.accept='.png,.cur,.ico,image/png,image/x-icon,image/vnd.microsoft.icon';
+    picker.hidden=true;
+    picker.setAttribute('aria-label','Import a custom cursor');
+    actions.append(status,picker);
+    panel.append(actions);
+
+    function cursorMetadata(file,bytes){
+      const extension=(file.name.split('.').pop()||'').toLowerCase();
+      if(extension==='png'){
+        const signature=[137,80,78,71,13,10,26,10];
+        if(bytes.length<24||!signature.every((value,index)=>bytes[index]===value))throw new Error('That PNG file is not valid.');
+        const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+        return {width:view.getUint32(16),height:view.getUint32(20),mime:'image/png'};
+      }
+      if(extension==='cur'||extension==='ico'){
+        if(bytes.length<22||bytes[0]!==0||bytes[1]!==0||bytes[3]!==0||(bytes[2]!==1&&bytes[2]!==2)||bytes[4]===0&&bytes[5]===0)throw new Error('That cursor file is not valid.');
+        return {width:bytes[6]||256,height:bytes[7]||256,mime:'image/x-icon'};
+      }
+      throw new Error('Choose a PNG, CUR, or ICO file.');
+    }
+
+    function readAsDataUrl(file,mime){
+      return new Promise((resolve,reject)=>{
+        const reader=new FileReader();
+        reader.onload=()=>resolve(String(reader.result||'').replace(/^data:[^;,]+/,'data:'+mime));
+        reader.onerror=()=>reject(new Error('That cursor could not be read.'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    picker.onchange=async()=>{
+      const file=picker.files&&picker.files[0];
+      picker.value='';
+      if(!file)return;
+      if(file.size>256*1024){shell.notify('Cursor not imported','Choose a file no larger than 256 KB.','info');return;}
+      try{
+        status.textContent='Checking '+file.name+'…';
+        const bytes=new Uint8Array(await file.arrayBuffer());
+        const meta=cursorMetadata(file,bytes);
+        if(!meta.width||!meta.height||meta.width>128||meta.height>128)throw new Error('Cursor images must be 128 × 128 pixels or smaller.');
+        const data=await readAsDataUrl(file,meta.mime);
+        if(!shell.setCustomCursor(data,file.name))throw new Error('That cursor could not be saved.');
+      }catch(error){
+        shell.notify('Cursor not imported',error&&error.message?error.message:'Choose a valid cursor file.','info');
+        sync();
+      }
+    };
+
     function sync(){
       if(!panel.isConnected){window.removeEventListener('neo-cursor-theme-change',sync);return;}
       const selected=shell.getSetting('cursorTheme')||'system';
@@ -178,6 +243,20 @@
         choice.classList.toggle('is-selected',active);
         choice.setAttribute('aria-pressed',String(active));
       });
+      const data=shell.getSetting('customCursorData')||'';
+      const name=shell.getSetting('customCursorName')||'Imported cursor';
+      const customChoice=choices.get('custom');
+      const customImage=customChoice.querySelector('.cursor-custom-image');
+      const placeholder=customChoice.querySelector('.cursor-custom-placeholder');
+      const customDescription=customChoice.querySelector('.cursor-theme-copy small');
+      customImage.hidden=!data;
+      placeholder.hidden=Boolean(data);
+      if(data&&customImage.src!==data)customImage.src=data;
+      customDescription.textContent=data?name:'Choose a local cursor';
+      customChoice.setAttribute('aria-label',data?'Use imported cursor '+name:'Import a custom cursor');
+      importButton.textContent=data?'Replace cursor':'Import cursor';
+      removeButton.hidden=!data;
+      status.textContent=data?name+' · Hover the preview to test it':'PNG, CUR, or ICO · 256 KB max · 128 × 128 px max';
     }
     window.addEventListener('neo-cursor-theme-change',sync);sync();
   }

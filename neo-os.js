@@ -128,7 +128,22 @@
 
   function normalizeCursorTheme(value) {
     value = String(value || "").toLowerCase();
-    return value === "neo" || value === "neon" || value === "pixel" || value === "contrast" ? value : "system";
+    return value === "neo" || value === "neon" || value === "pixel" || value === "contrast" || value === "custom" ? value : "system";
+  }
+
+  var CUSTOM_CURSOR_MAX_BYTES = 256 * 1024;
+
+  function isValidCustomCursorData(value) {
+    value = String(value || "");
+    var match = value.match(/^data:image\/(?:png|x-icon|vnd\.microsoft\.icon);base64,([a-z0-9+/=]+)$/i);
+    if (!match) return false;
+    var padding = (match[1].match(/=*$/) || [""])[0].length;
+    return Math.floor(match[1].length * 3 / 4) - padding <= CUSTOM_CURSOR_MAX_BYTES;
+  }
+
+  function customCursorDeclaration(fallback) {
+    if (!isValidCustomCursorData(settings.customCursorData)) return fallback;
+    return 'url("' + settings.customCursorData + '") 0 0, ' + fallback;
   }
 
   // Tab presets use local assets only. Replace these paths with CDN URLs later
@@ -191,6 +206,8 @@
     windowBarStyle: "ultra",
     interfaceStyle: "modern",
     cursorTheme: "system",
+    customCursorData: "",
+    customCursorName: "",
     tabAppearance: "neo",
     customTabTitle: "My tab",
     customTabIcon: "",
@@ -267,7 +284,12 @@
   savedSettings.dockIconSize = normalizeDockIconSize(savedSettings.dockIconSize);
   savedSettings.windowBarStyle = normalizeWindowBarStyle(savedSettings.windowBarStyle);
   savedSettings.interfaceStyle = normalizeInterfaceStyle(savedSettings.interfaceStyle);
+  savedSettings.customCursorData = isValidCustomCursorData(savedSettings.customCursorData)
+    ? String(savedSettings.customCursorData)
+    : "";
+  savedSettings.customCursorName = String(savedSettings.customCursorName || "").trim().slice(0, 80);
   savedSettings.cursorTheme = normalizeCursorTheme(savedSettings.cursorTheme);
+  if (savedSettings.cursorTheme === "custom" && !savedSettings.customCursorData) savedSettings.cursorTheme = "system";
   savedSettings.tabAppearance = normalizeTabAppearance(savedSettings.tabAppearance);
   savedSettings.customTabTitle = String(savedSettings.customTabTitle || "My tab").trim().slice(0, 80) || "My tab";
   savedSettings.customTabIcon = isValidCustomTabIcon(savedSettings.customTabIcon)
@@ -1415,11 +1437,18 @@
       var frameRoot = frameDocument && frameDocument.documentElement;
       if (frameRoot) {
         frameRoot.dataset.cursorTheme = theme;
+        if (settings.customCursorData) {
+          frameRoot.style.setProperty("--neo-custom-cursor-arrow", customCursorDeclaration("auto"));
+          frameRoot.style.setProperty("--neo-custom-cursor-pointer", customCursorDeclaration("pointer"));
+        } else {
+          frameRoot.style.removeProperty("--neo-custom-cursor-arrow");
+          frameRoot.style.removeProperty("--neo-custom-cursor-pointer");
+        }
         if (frameDocument.head && !frameDocument.getElementById("neo-custom-cursors")) {
           var link = frameDocument.createElement("link");
           link.id = "neo-custom-cursors";
           link.rel = "stylesheet";
-          link.href = new URL("./neo-custom-cursors.css?v=20260909-custom-cursors-v1", document.baseURI).href;
+          link.href = new URL("./neo-custom-cursors.css?v=20260912-import-cursor-v1", document.baseURI).href;
           frameDocument.head.appendChild(link);
         }
       }
@@ -1467,7 +1496,10 @@
     settings.taskbarSurface = normalizeTaskbarSurface(settings.taskbarSurface);
     settings.windowBarStyle = normalizeWindowBarStyle(settings.windowBarStyle);
     settings.interfaceStyle = normalizeInterfaceStyle(settings.interfaceStyle);
+    settings.customCursorData = isValidCustomCursorData(settings.customCursorData) ? String(settings.customCursorData) : "";
+    settings.customCursorName = String(settings.customCursorName || "").trim().slice(0, 80);
     settings.cursorTheme = normalizeCursorTheme(settings.cursorTheme);
+    if (settings.cursorTheme === "custom" && !settings.customCursorData) settings.cursorTheme = "system";
     settings.tabAppearance = normalizeTabAppearance(settings.tabAppearance);
     settings.taskbarTint = /^#[0-9a-f]{6}$/i.test(String(settings.taskbarTint || ""))
       ? String(settings.taskbarTint).toLowerCase()
@@ -1499,6 +1531,13 @@
     root.dataset.windowBarStyle = settings.windowBarStyle;
     root.dataset.interfaceStyle = settings.interfaceStyle;
     root.dataset.cursorTheme = settings.cursorTheme;
+    if (settings.customCursorData) {
+      root.style.setProperty("--neo-custom-cursor-arrow", customCursorDeclaration("auto"));
+      root.style.setProperty("--neo-custom-cursor-pointer", customCursorDeclaration("pointer"));
+    } else {
+      root.style.removeProperty("--neo-custom-cursor-arrow");
+      root.style.removeProperty("--neo-custom-cursor-pointer");
+    }
     applyTabAppearance();
     root.dataset.taskbarTone = taskbarUsesLightSurface ? "light" : "dark";
     root.dataset.reduceMotion = wallpaperSettings.reduceMotion ? "true" : "false";
@@ -1561,9 +1600,9 @@
         detail: { style: settings.interfaceStyle, previousStyle: previousInterfaceStyle }
       }));
     }
-    if (previousCursorTheme !== settings.cursorTheme) {
+    if (previousCursorTheme !== settings.cursorTheme || options.cursorAssetChanged) {
       window.dispatchEvent(new CustomEvent("neo-cursor-theme-change", {
-        detail: { theme: settings.cursorTheme, previousTheme: previousCursorTheme }
+        detail: { theme: settings.cursorTheme, previousTheme: previousCursorTheme, customName: settings.customCursorName }
       }));
     }
     if (previousTaskbarPosition !== settings.taskbarPosition || previousTaskbarStyle !== settings.taskbarStyle || previousTaskbarAppNames !== Boolean(settings.taskbarAppNames)) {
@@ -1623,6 +1662,30 @@
     settings.tabAppearance = "custom";
     applySettings();
     return true;
+  }
+
+  function setCustomCursor(data, name) {
+    data = String(data || "");
+    if (!isValidCustomCursorData(data)) {
+      showToast("Cursor not imported", "Choose a PNG, CUR, or ICO file no larger than 256 KB.", "info");
+      return false;
+    }
+    settings.customCursorData = data;
+    settings.customCursorName = String(name || "Imported cursor").trim().slice(0, 80) || "Imported cursor";
+    settings.cursorTheme = "custom";
+    applySettings({ cursorAssetChanged: true });
+    showToast("Cursor imported", settings.customCursorName + " is now active.", "settings");
+    return true;
+  }
+
+  function clearCustomCursor() {
+    var hadCustomCursor = Boolean(settings.customCursorData);
+    settings.customCursorData = "";
+    settings.customCursorName = "";
+    if (settings.cursorTheme === "custom") settings.cursorTheme = "system";
+    applySettings({ cursorAssetChanged: true });
+    if (hadCustomCursor) showToast("Imported cursor removed", "The system cursor is active again.", "settings");
+    return hadCustomCursor;
   }
 
   function syncSettingControls(scope) {
@@ -8354,6 +8417,8 @@
         return tabAppearancePresets.map(function (preset) { return Object.assign({}, preset); });
       },
       setCustomTabAppearance: setCustomTabAppearance,
+      setCustomCursor: setCustomCursor,
+      clearCustomCursor: clearCustomCursor,
       resetLayout: resetLayout,
       refresh: restartShell,
       createFileItem: createFileItem,

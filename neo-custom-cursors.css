@@ -23,6 +23,11 @@ html[data-cursor-theme="contrast"] {
   --neo-cursor-pointer: url("./assets/cursors/contrast-pointer.svg") 14 6, pointer;
 }
 
+html[data-cursor-theme="custom"] {
+  --neo-cursor-arrow: var(--neo-custom-cursor-arrow, auto);
+  --neo-cursor-pointer: var(--neo-custom-cursor-pointer, pointer);
+}
+
 html[data-cursor-theme]:not([data-cursor-theme="system"]),
 html[data-cursor-theme]:not([data-cursor-theme="system"]) body {
   cursor: var(--neo-cursor-arrow);
@@ -120,6 +125,57 @@ html[data-cursor-theme]:not([data-cursor-theme="system"]) :where(
 .cursor-theme-preview.is-contrast img {
   width: 44px;
   height: 44px;
+}
+
+.cursor-theme-preview.is-custom {
+  background:
+    linear-gradient(45deg, color-mix(in srgb, var(--desktop-text) 7%, transparent) 25%, transparent 25% 75%, color-mix(in srgb, var(--desktop-text) 7%, transparent) 75%),
+    linear-gradient(45deg, color-mix(in srgb, var(--desktop-text) 7%, transparent) 25%, transparent 25% 75%, color-mix(in srgb, var(--desktop-text) 7%, transparent) 75%),
+    var(--desktop-bg);
+  background-position: 0 0, 8px 8px;
+  background-size: 16px 16px;
+  cursor: var(--neo-custom-cursor-arrow, pointer) !important;
+}
+
+.cursor-theme-preview.is-custom img {
+  width: 44px;
+  height: 44px;
+}
+
+.cursor-custom-placeholder {
+  position: relative;
+  z-index: 1;
+  color: var(--desktop-text);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.cursor-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cursor-import-actions button {
+  min-height: 36px;
+  padding: 0 14px;
+}
+
+.cursor-import-actions .cursor-import-remove {
+  color: var(--desktop-muted);
+  background: transparent;
+}
+
+.cursor-import-status {
+  flex: 1 1 260px;
+  min-width: min(260px, 100%);
+  margin: 0 0 0 4px !important;
+  color: var(--desktop-muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .cursor-system-glyph {
