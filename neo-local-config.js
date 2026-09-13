@@ -6,20 +6,22 @@
   var configuredAssetBase = "./";
   var base = new URL(configuredAssetBase, document.currentScript.src);
   var previewBase = new URL("http://127.0.0.1:3092/neo-os/");
+  var isSitesHost = /(?:^|\.)chatgpt\.site$/i.test(window.location.hostname);
+  var hostedBrowserRoot = new URL("https://fastly.jsdelivr.net/gh/unblockedgames99x-code/neo-os-browser-cdn@4c01590f878a32a9d1801b397d364a26f83e865d/nextnode-browser/");
   window.NEO_LOCAL_CONFIG = Object.freeze({
     enabled: true,
     externalIntegrations: false,
     onlineApps: Object.freeze(["chat", "neo-cloud", "nowgg", "neo-ai", "discord", "youtube-app", "games", "movies", "geometry-dash"]),
     assetBase: base.href,
     music: new URL("music-v2/index.html?v=20260912-repeat-controls-v2&theme=system-v1&widgets=live-v1", base).href,
-    browser: new URL("nextnode-browser/index.html?v=20260913-nextnode-live-v3", base).href,
+    browser: isSitesHost ? new URL("launch.svg?v=20260913-browser-cdn-launch-v3", hostedBrowserRoot).href : new URL("nextnode-browser/index.html?v=20260913-nextnode-live-v3", base).href,
     browserWarmAssets: Object.freeze([
       "study/sf-engine.js",
       "study/sf-ctl.js",
       "study/sf-utils.js",
       "study/libcurl.js",
       "study/sf-engine.wasm"
-    ].map(function (asset) { return new URL("nextnode-browser/" + asset, base).href; })),
+    ].map(function (asset) { return isSitesHost ? new URL(asset, hostedBrowserRoot).href : new URL("nextnode-browser/" + asset, base).href; })),
     browserWisp: "wss://nextnode9124.b-cdn.net/w/",
     appProxy: new URL("NEO-BROWSER/index.html?v=20260910-fast-browser-v2", base).href,
     gamesCatalog: new URL("../games/index.json", base).href,
