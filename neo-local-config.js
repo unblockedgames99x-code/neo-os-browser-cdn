@@ -7,7 +7,7 @@
   var base = new URL(configuredAssetBase, document.currentScript.src);
   var previewBase = new URL("http://127.0.0.1:3092/neo-os/");
   var isSitesHost = /(?:^|\.)chatgpt\.site$/i.test(window.location.hostname);
-  var hostedBrowserRoot = new URL("https://fastly.jsdelivr.net/gh/unblockedgames99x-code/neo-os-browser-cdn@396a3de5ccac2650cfab7f33aa9c5e3c36ca4e78/nextnode-browser/");
+  var hostedBrowserRoot = new URL("https://fastly.jsdelivr.net/gh/unblockedgames99x-code/neo-os-browser-cdn@cfe5196674de64378442dfb3aa10f135a3d049cb/nextnode-browser/");
   window.NEO_LOCAL_CONFIG = Object.freeze({
     enabled: true,
     externalIntegrations: false,

@@ -289,6 +289,97 @@ html[data-interface-style="modern"] .app-launcher .launcher-app[data-app="browse
   text-align: center !important;
 }
 
+/* Launcher alignment reliability -----------------------------------------
+   The edge-aware taskbar stylesheet reserves the correct desktop area, but
+   the launcher itself remains a compact surface. Keep it centered instead of
+   stretching its six columns over the entire available screen. */
+@media (min-width: 701px) {
+  html:not([data-interface-style="retro"]):not([data-interface-style="windows11"])[data-taskbar-position] .app-launcher {
+    top: auto !important;
+    right: auto !important;
+    bottom: calc(var(--neo-taskbar-horizontal-avoid, 0px) + 10px) !important;
+    left: 50% !important;
+    width: min(835px, calc(100vw - 32px)) !important;
+    height: min(720px, calc(100dvh - var(--topbar-height) - var(--neo-taskbar-horizontal-avoid, 0px) - 24px)) !important;
+    max-width: none !important;
+    max-height: none !important;
+    transform-origin: bottom center !important;
+  }
+
+  html:not([data-interface-style="retro"]):not([data-interface-style="windows11"])[data-taskbar-position="top"] .app-launcher {
+    top: calc(var(--topbar-height) + var(--neo-taskbar-horizontal-avoid) + 10px) !important;
+    bottom: auto !important;
+    transform-origin: top center !important;
+  }
+
+  html:not([data-interface-style="retro"]):not([data-interface-style="windows11"])[data-taskbar-position="left"] .app-launcher,
+  html:not([data-interface-style="retro"]):not([data-interface-style="windows11"])[data-taskbar-position="right"] .app-launcher {
+    top: calc(var(--topbar-height) + 10px) !important;
+    bottom: 10px !important;
+    width: min(835px, calc(100vw - var(--neo-taskbar-vertical-avoid) - 32px)) !important;
+    height: min(720px, calc(100dvh - var(--topbar-height) - 20px)) !important;
+    transform-origin: center center !important;
+  }
+
+  html:not([data-interface-style="retro"]):not([data-interface-style="windows11"])[data-taskbar-position="left"] .app-launcher {
+    left: calc(50% + 43px) !important;
+  }
+
+  html:not([data-interface-style="retro"]):not([data-interface-style="windows11"])[data-taskbar-position="right"] .app-launcher {
+    left: calc(50% - 43px) !important;
+  }
+
+  html:not([data-interface-style="retro"]):not([data-interface-style="windows11"])[data-taskbar-position] .app-launcher:not(.is-open) {
+    transform: translateX(-50%) translateY(12px) scale(.98) !important;
+  }
+
+  html:not([data-interface-style="retro"]):not([data-interface-style="windows11"])[data-taskbar-position="top"] .app-launcher:not(.is-open) {
+    transform: translateX(-50%) translateY(-12px) scale(.98) !important;
+  }
+
+  html:not([data-interface-style="retro"]):not([data-interface-style="windows11"])[data-taskbar-position] .app-launcher.is-open {
+    transform: translateX(-50%) translateY(0) scale(1) !important;
+  }
+}
+
+html:not([data-interface-style="retro"]) .app-launcher .pinned-app-grid {
+  grid-template-columns: repeat(6, minmax(0, 92px)) !important;
+  justify-content: center !important;
+  align-items: start !important;
+}
+
+html:not([data-interface-style="retro"]) .app-launcher .launcher-app {
+  width: 92px !important;
+  min-width: 0 !important;
+  justify-self: center !important;
+}
+
+html:not([data-interface-style="retro"]) .app-launcher .launcher-app > span:last-child {
+  width: 100% !important;
+  justify-self: center !important;
+  text-align: center !important;
+}
+
+@media (max-width: 760px) {
+  html:not([data-interface-style="retro"]) .app-launcher .pinned-app-grid {
+    grid-template-columns: repeat(4, minmax(0, 76px)) !important;
+  }
+
+  html:not([data-interface-style="retro"]) .app-launcher .launcher-app {
+    width: 76px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  html:not([data-interface-style="retro"]) .app-launcher .pinned-app-grid {
+    grid-template-columns: repeat(3, minmax(0, 82px)) !important;
+  }
+
+  html:not([data-interface-style="retro"]) .app-launcher .launcher-app {
+    width: 82px !important;
+  }
+}
+
 /* Retro design tokens ---------------------------------------------------- */
 html[data-interface-style="retro"] {
   --retro-panel: color-mix(in srgb, #cbc6aa 94%, var(--desktop-accent) 6%);
