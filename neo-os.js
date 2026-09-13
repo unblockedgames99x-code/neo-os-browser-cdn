@@ -5568,7 +5568,7 @@
     if (!frame || frame.closest(".neo-browser-runtime")) return;
     var windowHost = frame.closest(".neo-window");
     var app = windowHost && apps[windowHost.dataset.appId];
-    if (app && (app.id === "browser" || app.custom)) return;
+    if (app && (app.id === "browser" || app.id === "games" || app.custom)) return;
     try {
       var frameDocument = frame.contentDocument;
       if (!frameDocument || !frameDocument.documentElement || !frameDocument.head) return;

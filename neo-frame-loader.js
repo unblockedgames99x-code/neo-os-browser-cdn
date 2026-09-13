@@ -83,12 +83,13 @@
     if (
       isRunner() &&
       !/\/NEO-BROWSER\//i.test(sourceUrl) &&
+      !/\/neo-games\//i.test(sourceUrl) &&
       !/\/music-(?:local|v2)\//i.test(sourceUrl) &&
       !/\/games\/web-dashers\.html(?:[?#]|$)/i.test(sourceUrl)
     ) {
       networkRuntime = '<script src="' + escapeAttribute(resolveUrl("./neo-runner-network.js?v=20260831-fast-full-stream-v5")) + '"><\/script>';
     }
-    var linkProxyRuntime = /\/NEO-BROWSER\//i.test(sourceUrl)
+    var linkProxyRuntime = /\/(?:NEO-BROWSER|neo-games)\//i.test(sourceUrl)
       ? ""
       : '<script id="neo-link-proxy-runtime" src="' + escapeAttribute(resolveUrl("./neo-link-proxy.js?v=20260911-all-links-v1")) + '"><\/script>';
     var injection = (hasAssetBase ? "" : '<base href="' + escapeAttribute(baseUrl) + '" target="_self">') +
