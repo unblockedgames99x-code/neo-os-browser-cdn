@@ -19,9 +19,7 @@
   }
 
   function previewSnapshotsEnabled() {
-    // Live DOM snapshots are intentionally disabled. A future raster-only
-    // capture can opt in here without bringing subtree cloning back.
-    return false;
+    return true;
   }
 
   function clearTimers() {
@@ -55,6 +53,146 @@
       node.removeAttribute("data-app");
     });
     return copy;
+  }
+
+  function mediaPlaceholder(ownerDocument, label) {
+    var placeholder = ownerDocument.createElement("div");
+    placeholder.className = "neo-taskbar-preview-media";
+    placeholder.textContent = label || "Live content";
+    return placeholder;
+  }
+
+  function replaceWithImage(copy, source, dataUrl) {
+    if (!copy || !copy.parentNode || !dataUrl) return false;
+    var image = copy.ownerDocument.createElement("img");
+    image.className = copy.className || "";
+    image.alt = "";
+    image.src = dataUrl;
+    image.style.cssText = copy.getAttribute("style") || "";
+    image.style.width = "100%";
+    image.style.height = "100%";
+    image.style.objectFit = "cover";
+    if (source.width) image.width = source.width;
+    if (source.height) image.height = source.height;
+    copy.replaceWith(image);
+    return true;
+  }
+
+  function snapshotDocument(frameDocument, depth) {
+    if (!frameDocument || !frameDocument.documentElement) return "";
+    var root = frameDocument.documentElement.cloneNode(true);
+    syncLiveState(frameDocument.documentElement, root, Math.max(0, depth || 0));
+    root.querySelectorAll("script, noscript").forEach(function (node) { node.remove(); });
+    [root].concat(Array.from(root.querySelectorAll("*"))).forEach(function (node) {
+      Array.from(node.attributes || []).forEach(function (attribute) {
+        if (/^on/i.test(attribute.name)) node.removeAttribute(attribute.name);
+      });
+      if (node.matches && node.matches("input, textarea, select, button, a, audio, video")) node.tabIndex = -1;
+    });
+    var head = root.querySelector("head");
+    if (!head) {
+      head = root.ownerDocument.createElement("head");
+      root.prepend(head);
+    }
+    var base = root.ownerDocument.createElement("base");
+    base.href = frameDocument.baseURI || document.baseURI;
+    head.prepend(base);
+    var freeze = root.ownerDocument.createElement("style");
+    freeze.textContent = "*{pointer-events:none!important;animation-play-state:paused!important;caret-color:transparent!important}html,body{overflow:hidden!important}";
+    head.appendChild(freeze);
+    return "<!doctype html>" + root.outerHTML;
+  }
+
+  function syncLiveState(sourceRoot, cloneRoot, frameDepth) {
+    var sources = [sourceRoot].concat(Array.from(sourceRoot.querySelectorAll("*")));
+    var copies = [cloneRoot].concat(Array.from(cloneRoot.querySelectorAll("*")));
+    sources.forEach(function (source, index) {
+      var copy = copies[index];
+      if (!copy || !source.tagName) return;
+      var tag = source.tagName.toLowerCase();
+
+      if (tag === "input") {
+        if (source.type !== "file") {
+          copy.value = source.value;
+          copy.setAttribute("value", source.value);
+        }
+        copy.toggleAttribute("checked", Boolean(source.checked));
+      } else if (tag === "textarea") {
+        copy.value = source.value;
+        copy.textContent = source.value;
+      } else if (tag === "select") {
+        copy.value = source.value;
+        Array.from(copy.options || []).forEach(function (option, optionIndex) {
+          option.toggleAttribute("selected", optionIndex === source.selectedIndex);
+        });
+      } else if (tag === "details") {
+        copy.toggleAttribute("open", Boolean(source.open));
+      } else if (tag === "canvas") {
+        try { replaceWithImage(copy, source, source.toDataURL("image/png")); } catch (error) {}
+      } else if (tag === "video") {
+        try {
+          var canvas = source.ownerDocument.createElement("canvas");
+          canvas.width = Math.max(1, source.videoWidth || source.clientWidth || 320);
+          canvas.height = Math.max(1, source.videoHeight || source.clientHeight || 180);
+          canvas.getContext("2d").drawImage(source, 0, 0, canvas.width, canvas.height);
+          if (!replaceWithImage(copy, source, canvas.toDataURL("image/jpeg", 0.78)) && source.poster) {
+            replaceWithImage(copy, source, source.poster);
+          }
+        } catch (error) {
+          if (source.poster) replaceWithImage(copy, source, source.poster);
+        }
+      } else if (tag === "iframe") {
+        var sourceDocument = null;
+        try { sourceDocument = source.contentDocument; } catch (error) {}
+        var frameSource = frameDepth > 0 ? snapshotDocument(sourceDocument, frameDepth - 1) : "";
+        if (frameSource) {
+          copy.removeAttribute("src");
+          copy.removeAttribute("loading");
+          copy.setAttribute("sandbox", "");
+          copy.srcdoc = frameSource;
+        } else if (copy.parentNode) {
+          copy.replaceWith(mediaPlaceholder(copy.ownerDocument, "Current app content"));
+        }
+      }
+    });
+  }
+
+  function liveWindowSnapshot(win, viewport) {
+    if (!previewSnapshotsEnabled()) return null;
+    var width = Math.max(420, win.offsetWidth || parseFloat(win.style.width) || 1000);
+    var height = Math.max(300, win.offsetHeight || parseFloat(win.style.height) || 700);
+    var targetWidth = Math.max(240, Math.min(348, window.innerWidth - 36));
+    var targetHeight = targetWidth * 9 / 16;
+    var scale = Math.min(targetWidth / width, targetHeight / height);
+    var left = Math.max(0, (targetWidth - width * scale) / 2);
+    var top = Math.max(0, (targetHeight - height * scale) / 2);
+    var clone = win.cloneNode(true);
+    clone.classList.remove("is-minimized", "is-minimizing", "is-closing", "is-active", "is-dragging", "is-resizing", "is-maximized", "is-snapped", "is-tab-fullscreen");
+    clone.classList.add("is-open", "neo-taskbar-preview-clone");
+    clone.removeAttribute("inert");
+    clone.removeAttribute("aria-hidden");
+    syncLiveState(win, clone, 1);
+    clone.querySelectorAll("script, noscript").forEach(function (node) { node.remove(); });
+    [clone].concat(Array.from(clone.querySelectorAll("*"))).forEach(function (node) {
+      Array.from(node.attributes || []).forEach(function (attribute) {
+        if (/^on/i.test(attribute.name)) node.removeAttribute(attribute.name);
+      });
+    });
+
+    var styles = Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style'))
+      .map(function (node) { return node.outerHTML; })
+      .join("");
+    var baseHref = String(document.baseURI).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+    var stageStyle = "position:absolute;left:" + left + "px;top:" + top + "px;width:" + width + "px;height:" + height + "px;transform:scale(" + scale + ");transform-origin:top left";
+    var frameDocument = "<!doctype html><html data-performance-mode=\"" + (document.documentElement.dataset.performanceMode || "normal") + "\" data-interface-style=\"" + (document.documentElement.dataset.interfaceStyle || "modern") + "\"><head><base href=\"" + baseHref + "\">" + styles + "<style>html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#08090b;color-scheme:dark}*{pointer-events:none!important;animation-play-state:paused!important;caret-color:transparent!important}#neo-preview-stage>.neo-window{position:absolute!important;inset:0!important;width:" + width + "px!important;height:" + height + "px!important;min-width:0!important;min-height:0!important;display:grid!important;visibility:visible!important;opacity:1!important;transform:none!important;transition:none!important;resize:none!important;border-radius:6px!important}</style></head><body><div id=\"neo-preview-stage\" style=\"" + stageStyle + "\">" + clone.outerHTML + "</div></body></html>";
+    var frame = document.createElement("iframe");
+    frame.className = "neo-taskbar-preview-snapshot";
+    frame.title = "Current window preview";
+    frame.tabIndex = -1;
+    frame.setAttribute("sandbox", "");
+    frame.srcdoc = frameDocument;
+    viewport.dataset.previewType = "current-state";
+    return frame;
   }
 
   function fullscreenActive() {
@@ -116,12 +254,14 @@
     viewport.textContent = "";
     var minimized = win.classList.contains("is-minimized");
     var stateText = minimized ? "Minimized" : "Running";
-    preview.classList.add("is-close-only");
+    preview.classList.remove("is-close-only");
     preview.dataset.windowState = minimized ? "minimized" : "running";
     preview.querySelector("[data-taskbar-preview-status]").textContent = stateText;
     preview.querySelector("[data-taskbar-preview-title]").textContent = visibleTitle(app);
     preview.querySelector("[data-taskbar-preview-open]").setAttribute("aria-label", (minimized ? "Restore " : "Switch to ") + appName(app));
     preview.querySelector("[data-taskbar-preview-close]").setAttribute("aria-label", "Close " + appName(app));
+    var snapshot = liveWindowSnapshot(win, viewport);
+    viewport.appendChild(snapshot || staticPreview(button, app, stateText, win.dataset.appId, "hover"));
   }
 
   function renderMinimizedViewport(viewport, win, button, app, id) {
@@ -455,7 +595,7 @@
     var node = document.createElement("section");
     node.className = "neo-taskbar-preview";
     node.hidden = true;
-    node.setAttribute("aria-label", "Close running application");
+    node.setAttribute("aria-label", "Current window preview");
     node.innerHTML =
       '<header class="neo-taskbar-preview-titlebar">' +
         '<span><strong data-taskbar-preview-title></strong><small data-taskbar-preview-status></small></span>' +

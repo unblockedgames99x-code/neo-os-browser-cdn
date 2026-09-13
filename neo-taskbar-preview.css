@@ -350,6 +350,15 @@ html[data-fullscreen="true"] .neo-minimized-tray {
   background: #090909;
 }
 
+.neo-taskbar-preview-snapshot {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+  background: #08090b;
+  pointer-events: none;
+}
+
 .neo-minimized-card-viewport .neo-taskbar-preview-fallback,
 .neo-minimized-card-viewport .neo-taskbar-preview-media { font-size: 12px; }
 .neo-minimized-card-viewport .neo-taskbar-preview-fallback-icon,

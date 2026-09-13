@@ -407,7 +407,7 @@ html[data-reduce-motion="true"] .taskbar .dock-button.is-leaving {
   animation-duration: 1ms;
 }
 
-/* Fast theme-reactive hover preview. It renders shell artwork only, never a live iframe clone. */
+/* Fast theme-reactive hover preview for the current window snapshot. */
 .neo-taskbar-preview {
   width: min(340px, calc(100vw - 20px));
   padding: 6px;

@@ -4203,43 +4203,6 @@ html[data-taskbar-style="current"][data-taskbar-app-names="true"] .taskbar .dock
   }
 }
 
-/* Taskbar hover is an action, not a second window preview. Keep the existing
-   theme material, but collapse the surface to one accessible close control. */
-html[data-interface-style] .neo-taskbar-preview.is-close-only {
-  width: 40px !important;
-  min-width: 40px !important;
-  max-width: 40px !important;
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
-  padding: 4px !important;
-  overflow: hidden !important;
-}
-
-html[data-interface-style] .neo-taskbar-preview.is-close-only .neo-taskbar-preview-titlebar {
-  width: 32px !important;
-  height: 32px !important;
-  min-height: 32px !important;
-  display: grid !important;
-  place-items: center !important;
-  padding: 0 !important;
-  background: transparent !important;
-  border: 0 !important;
-}
-
-html[data-interface-style] .neo-taskbar-preview.is-close-only .neo-taskbar-preview-titlebar > span,
-html[data-interface-style] .neo-taskbar-preview.is-close-only .neo-taskbar-preview-open {
-  display: none !important;
-}
-
-html[data-interface-style] .neo-taskbar-preview.is-close-only [data-taskbar-preview-close] {
-  width: 32px !important;
-  height: 32px !important;
-  min-width: 32px !important;
-  min-height: 32px !important;
-  margin: 0 !important;
-}
-
 html[data-interface-style] .neo-minimized-tray {
   display: none !important;
 }
