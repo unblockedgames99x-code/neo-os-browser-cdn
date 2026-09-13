@@ -7,16 +7,26 @@
 <link href="./assets/remixicon/remixicon.css" rel="stylesheet">
 <style>
 :root {
-    --bg:        #0e0e14;
-    --chrome:    #18181f;
-    --surface:   #20202a;
-    --surface-2: #2a2a36;
-    --line:      rgba(255, 255, 255, 0.08);
-    --line-strong: rgba(255, 255, 255, 0.18);
-    --text:      #f3f3f5;
-    --text-dim:  rgba(243, 243, 245, 0.6);
-    --text-faint:rgba(243, 243, 245, 0.4);
-    --accent:    #ff8453;
+    color-scheme: dark;
+    --theme-bg:      #0a0c0f;
+    --theme-surface: #15191f;
+    --theme-text:    #f6f8fb;
+    --theme-muted:   #9da6b2;
+    --theme-line:    #2b323c;
+    --theme-accent:  #72d8ff;
+    --theme-accent-text: #061319;
+    --bg:        var(--theme-bg);
+    --chrome:    color-mix(in srgb, var(--theme-surface) 84%, var(--theme-bg));
+    --surface:   color-mix(in srgb, var(--theme-surface) 92%, var(--theme-bg));
+    --surface-2: color-mix(in srgb, var(--theme-surface) 82%, var(--theme-text) 18%);
+    --line:      color-mix(in srgb, var(--theme-line) 82%, transparent);
+    --line-strong: color-mix(in srgb, var(--theme-line) 62%, var(--theme-text) 38%);
+    --text:      var(--theme-text);
+    --text-dim:  color-mix(in srgb, var(--theme-muted) 88%, var(--theme-text) 12%);
+    --text-faint:color-mix(in srgb, var(--theme-muted) 70%, transparent);
+    --accent:    var(--theme-accent);
+    --accent-soft: color-mix(in srgb, var(--theme-accent) 18%, transparent);
+    --accent-faint: color-mix(in srgb, var(--theme-accent) 8%, transparent);
     --motion: cubic-bezier(0.22, 1, 0.36, 1);
 }
 * { box-sizing: border-box; }
@@ -55,7 +65,7 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
     display: flex; align-items: center; justify-content: center;
     transition: background 120ms, color 120ms;
 }
-.cbtn:hover { background: rgba(255, 255, 255, 0.06); color: var(--text); }
+.cbtn:hover { background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--text); }
 .cbtn:disabled { opacity: 0.32; pointer-events: none; }
 .cbtn i { font-size: 18px; }
 
@@ -89,18 +99,18 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
 .tabbar { flex: 0 0 auto; display: flex; align-items: flex-end; gap: 4px; height: 38px; padding: 6px 8px 0; background: var(--chrome); overflow-x: auto; }
 .tabbar::-webkit-scrollbar { height: 0; }
 .tab { display: flex; align-items: center; gap: 7px; height: 32px; min-width: 130px; max-width: 220px; padding: 0 8px 0 11px; border-radius: 9px 9px 0 0; background: transparent; color: var(--text-dim); cursor: pointer; position: relative; flex: 0 1 auto; transition: background 120ms, color 120ms; }
-.tab:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.tab:hover { background: color-mix(in srgb, var(--text) 5%, transparent); color: var(--text); }
 .tab.active { background: var(--surface-2); color: var(--text); }
-.tab .tfav { width: 16px; height: 16px; flex: 0 0 auto; border-radius: 4px; object-fit: cover; background: rgba(255,255,255,0.08); }
+.tab .tfav { width: 16px; height: 16px; flex: 0 0 auto; border-radius: 4px; object-fit: cover; background: color-mix(in srgb, var(--text) 8%, transparent); }
 .tab .tfav.letter { display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: var(--text-dim); }
 .tab .ttl { flex: 1; min-width: 0; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tab .tx { width: 18px; height: 18px; flex: 0 0 auto; border-radius: 5px; display: flex; align-items: center; justify-content: center; opacity: 0; color: var(--text-dim); }
 .tab:hover .tx, .tab.active .tx { opacity: 1; }
-.tab .tx:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+.tab .tx:hover { background: color-mix(in srgb, var(--text) 12%, transparent); color: var(--text); }
 .tab .tx i { font-size: 14px; }
 .tab-new { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 8px; color: var(--text-dim); display: flex; align-items: center; justify-content: center; }
-.tab-new:hover { background: rgba(255,255,255,0.06); color: var(--text); }
-.cbtn.on { background: var(--accent-soft, rgba(255,132,83,0.18)); color: var(--accent, #ff8453); }
+.tab-new:hover { background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--text); }
+.cbtn.on { background: var(--accent-soft); color: var(--accent); }
 
 /* =========================================================
    viewport
@@ -139,7 +149,7 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
     transition: filter 120ms, transform 120ms;
 }
 .blocked .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
-.blocked .btn.primary { background: var(--accent); color: #1a0a04; }
+.blocked .btn.primary { background: var(--accent); color: var(--theme-accent-text); }
 .blocked .btn.ghost { background: var(--surface); color: var(--text); }
 
 /* =========================================================
@@ -148,47 +158,57 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
 .new-tab {
     position: absolute; inset: 0;
     background:
-        radial-gradient(ellipse 60% 60% at 50% 0%, rgba(255, 132, 83, 0.07) 0%, transparent 60%),
-        linear-gradient(180deg, #15151c 0%, #08080c 100%);
+        radial-gradient(ellipse 60% 60% at 50% 0%, var(--accent-faint) 0%, transparent 60%),
+        linear-gradient(180deg, color-mix(in srgb, var(--surface) 82%, var(--bg)) 0%, var(--bg) 100%);
     color: var(--text);
     display: flex; flex-direction: column; align-items: center;
     padding: 12vh 24px 40px;
     overflow-y: auto;
 }
 .new-tab::-webkit-scrollbar { width: 8px; }
-.new-tab::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 4px; }
+.new-tab::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text) 12%, transparent); border-radius: 4px; }
 
+.nt-brand {
+    display: flex; align-items: center; justify-content: center; gap: 18px;
+    margin-bottom: 26px;
+}
+.nt-brand-mark {
+    width: 88px; height: 88px; flex: 0 0 auto;
+    object-fit: cover; border-radius: 18px;
+    background: #000;
+    box-shadow: 0 8px 30px color-mix(in srgb, var(--accent) 12%, transparent);
+}
 .nt-logo {
     font-size: 52px; font-weight: 800; letter-spacing: -0.04em;
-    margin-bottom: 26px;
+    margin: 0;
     text-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
 }
-.nt-logo .accent { color: var(--accent); }
+html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
 
 .nt-search {
     width: min(640px, 92%);
     display: flex; align-items: center; gap: 12px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: color-mix(in srgb, var(--text) 4%, var(--surface));
+    border: 1px solid var(--line);
     border-radius: 999px;
     padding: 14px 22px;
     transition: border-color 180ms, background 180ms, box-shadow 180ms;
     margin-bottom: 44px;
 }
-.nt-search:hover { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.14); }
+.nt-search:hover { background: color-mix(in srgb, var(--text) 7%, var(--surface)); border-color: var(--line-strong); }
 .nt-search:focus-within {
-    border-color: rgba(255, 132, 83, 0.5);
-    background: rgba(255, 132, 83, 0.04);
-    box-shadow: 0 0 0 3px rgba(255, 132, 83, 0.08), 0 8px 24px rgba(0, 0, 0, 0.3);
+    border-color: color-mix(in srgb, var(--accent) 58%, var(--line));
+    background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+    box-shadow: 0 0 0 3px var(--accent-faint), 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 .nt-search i { color: var(--text-dim); font-size: 18px; }
 .nt-search input { flex: 1; font-size: 15px; }
-.nt-search input::placeholder { color: rgba(255, 255, 255, 0.32); }
+.nt-search input::placeholder { color: var(--text-faint); }
 
 .nt-section-title {
     font-size: 11px; font-weight: 700;
     letter-spacing: 0.18em; text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--text-dim);
     margin-bottom: 16px;
     align-self: center;
     width: min(900px, 94%);
@@ -197,7 +217,7 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
 .nt-section-title::after {
     content: '';
     flex: 1; height: 1px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--line);
 }
 .nt-grid {
     display: grid;
@@ -209,8 +229,8 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
 .nt-tile {
     display: flex; flex-direction: column; align-items: center; gap: 10px;
     padding: 18px 10px 14px;
-    background: rgba(255, 255, 255, 0.025);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--text) 3%, var(--surface));
+    border: 1px solid var(--line);
     border-radius: 14px;
     cursor: pointer;
     transition: transform 200ms var(--motion), border-color 160ms, background 160ms, box-shadow 160ms;
@@ -218,13 +238,13 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
 }
 .nt-tile:hover {
     transform: translateY(-3px);
-    border-color: rgba(255, 255, 255, 0.14);
-    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--line-strong);
+    background: color-mix(in srgb, var(--text) 7%, var(--surface));
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
 }
 .nt-tile .fav {
     width: 48px; height: 48px; border-radius: 12px;
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--text) 8%, var(--surface));
     display: flex; align-items: center; justify-content: center;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
@@ -236,7 +256,7 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
 }
 .nt-tile .fav .letter {
     font-size: 18px; font-weight: 800; letter-spacing: -0.02em;
-    color: #fff;
+    color: var(--text);
 }
 .nt-tile .lbl {
     font-size: 12px; font-weight: 500;
@@ -255,18 +275,73 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
 .nt-tile:hover .del { display: flex; }
 .nt-tile.add {
     background: transparent;
-    border: 1.5px dashed rgba(255, 255, 255, 0.14);
+    border: 1.5px dashed var(--line-strong);
 }
-.nt-tile.add:hover { border-color: rgba(255, 132, 83, 0.4); background: rgba(255, 132, 83, 0.04); }
+.nt-tile.add:hover { border-color: color-mix(in srgb, var(--accent) 46%, var(--line)); background: var(--accent-faint); }
 .nt-tile.add .fav {
     background: transparent;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--text-faint);
     box-shadow: none;
 }
 .nt-tile.add .fav i { font-size: 22px; }
+@media (max-width: 560px) {
+    .new-tab { padding-top: 8vh; }
+    .nt-brand { flex-direction: column; gap: 10px; }
+    .nt-brand-mark { width: 76px; height: 76px; border-radius: 16px; }
+    .nt-logo { font-size: 40px; }
+}
 </style>
 
-<link rel="preconnect" href="https://nextnode9124.b-cdn.net" crossorigin><link rel="preload" href="./study/sf-engine.js" as="script"><link rel="preload" href="./study/sf-ctl.js" as="script"><link rel="preload" href="./study/sf-utils.js" as="script"><link rel="preload" href="./study/libcurl.js" as="script"><link rel="preload" href="./study/sf-engine.wasm" as="fetch" type="application/wasm" crossorigin></head>
+<link rel="preconnect" href="https://nextnode9124.b-cdn.net" crossorigin><link rel="preload" href="./study/sf-engine.js" as="script"><link rel="preload" href="./study/sf-ctl.js" as="script"><link rel="preload" href="./study/sf-utils.js" as="script"><link rel="preload" href="./study/libcurl.js" as="script"><link rel="preload" href="./study/sf-engine.wasm" as="fetch" type="application/wasm" crossorigin>
+<script>
+(function () {
+    'use strict';
+    var root = document.documentElement;
+    var keys = ['bg', 'surface', 'text', 'muted', 'line', 'accent'];
+
+    function validColor(value) {
+        return typeof value === 'string' && value.length < 96 && CSS.supports('color', value);
+    }
+
+    function accentText(accent) {
+        var match = String(accent || '').trim().match(/^#([0-9a-f]{6})$/i);
+        if (!match) return '#061319';
+        var value = parseInt(match[1], 16);
+        var red = value >> 16;
+        var green = value >> 8 & 255;
+        var blue = value & 255;
+        return red * 0.299 + green * 0.587 + blue * 0.114 > 156 ? '#071014' : '#ffffff';
+    }
+
+    function applyTheme(theme, palette) {
+        if (!palette || typeof palette !== 'object') return;
+        keys.forEach(function (key) {
+            if (validColor(palette[key])) root.style.setProperty('--theme-' + key, palette[key]);
+        });
+        if (validColor(palette.accent)) root.style.setProperty('--theme-accent-text', accentText(palette.accent));
+        root.dataset.neoTheme = typeof theme === 'string' ? theme : 'graphite';
+        root.style.colorScheme = root.dataset.neoTheme === 'frost' ? 'light' : 'dark';
+    }
+
+    window.addEventListener('message', function (event) {
+        if (event.source !== parent || event.data?.type !== 'neo-browser-theme') return;
+        applyTheme(event.data.theme, event.data.palette);
+    });
+
+    try {
+        if (parent !== window && parent.document) {
+            var parentRoot = parent.document.documentElement;
+            var styles = parent.getComputedStyle(parentRoot);
+            var palette = {};
+            keys.forEach(function (key) { palette[key] = styles.getPropertyValue('--desktop-' + key).trim(); });
+            applyTheme(parentRoot.dataset.neoTheme, palette);
+        }
+    } catch (_) {}
+
+    if (parent !== window) parent.postMessage({type: 'neo-browser-theme-request'}, '*');
+})();
+</script>
+</head>
 <body>
 <div class="app">
     
@@ -304,7 +379,10 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
         </div>
         
         <div class="new-tab" id="new-tab">
-            <div class="nt-logo">Browser</div>
+            <div class="nt-brand">
+                <img class="nt-brand-mark" src="./assets/neo-os-logo.png" alt="NEO OS">
+                <div class="nt-logo">Browser</div>
+            </div>
             <div class="nt-search">
                 <i class="ri-search-line"></i>
                 <input id="nt-input" placeholder="Search or paste a URL" autocomplete="off">

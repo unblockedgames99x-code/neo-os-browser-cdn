@@ -22,7 +22,8 @@
   const palette=()=>{const colors=config.themes[state.theme];return Object.fromEntries(['bg','surface','text','muted','line','accent'].map((key,i)=>[key,colors[i]]));};
   function sendPreferences(target){if(!target)return;try{target.postMessage({type:'neo-system-preferences',state:{...state},palette:palette()},messageTargetOrigin);}catch(_) {}}
   const isFullProxyFrame=frame=>Boolean(frame.closest?.('.neo-window[data-app-id="browser"]')||/\/nextnode-browser\//i.test(frame.src||''));
-  function sendFramePreferences(frame){if(!isFullProxyFrame(frame))sendPreferences(frame.contentWindow);}
+  function sendBrowserTheme(target){if(!target)return;try{target.postMessage({type:'neo-browser-theme',theme:state.theme,palette:palette()},'*');}catch(_) {}}
+  function sendFramePreferences(frame){if(isFullProxyFrame(frame))sendBrowserTheme(frame.contentWindow);else sendPreferences(frame.contentWindow);}
   function syncFrames(){document.querySelectorAll('iframe').forEach(sendFramePreferences);}
   function apply(){
     state.theme=legacyThemes[state.theme]||state.theme;if(!config.themes[state.theme])state.theme='oled';state.volume=clamp(state.volume,0,100);state.brightness=clamp(state.brightness,45,100);
@@ -39,6 +40,6 @@
   function ready(){scan(document);new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(node=>{scan(node);if(node.matches?.('iframe'))node.addEventListener('load',()=>sendFramePreferences(node));node.querySelectorAll?.('iframe').forEach(frame=>frame.addEventListener('load',()=>sendFramePreferences(frame)));}))).observe(document.documentElement,{childList:true,subtree:true});document.querySelectorAll('iframe').forEach(frame=>frame.addEventListener('load',()=>sendFramePreferences(frame)));syncFrames();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
   window.addEventListener('storage',e=>{if(e.key===config.storageKey){try{state={...defaults,...JSON.parse(e.newValue||'{}')};apply();}catch(_){}}});
-  window.addEventListener('message',e=>{if(!trustedMessageOrigin(e.origin))return;if(e.data?.type==='neo-system-preferences-request'){const owned=Array.from(document.querySelectorAll('iframe')).some(frame=>frame.contentWindow===e.source);if(owned)sendPreferences(e.source);return;}if(e.source!==parent||e.data?.type!=='neo-system-preferences')return;state={...state,...e.data.state};apply();});
+  window.addEventListener('message',e=>{const ownedFrame=()=>Array.from(document.querySelectorAll('iframe')).find(frame=>frame.contentWindow===e.source);if(e.data?.type==='neo-browser-theme-request'){const frame=ownedFrame();if(frame&&isFullProxyFrame(frame))sendBrowserTheme(e.source);return;}if(!trustedMessageOrigin(e.origin))return;if(e.data?.type==='neo-system-preferences-request'){const frame=ownedFrame();if(frame)sendPreferences(e.source);return;}if(e.source!==parent||e.data?.type!=='neo-system-preferences')return;state={...state,...e.data.state};apply();});
   window.NEO_SYSTEM_BRIDGE={set,get:()=>({...state}),effectiveVolume:m=>volumeDescriptor.get.call(m),effectiveMuted:m=>muteDescriptor.get.call(m),audioSources:()=>media.size};apply();
 })();
