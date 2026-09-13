@@ -98,6 +98,7 @@
     <link rel="stylesheet" href="./neo-command-palette.css?v=20260912-command-palette-v1" />
     <link rel="stylesheet" href="./neo-taskbar-quick-settings.css?v=20260912-alignment-v2" />
     <link rel="stylesheet" href="./neo-interface-styles.css?v=20260913-kali-style-v1&amp;launcher=alignment-v2&amp;settings=combined-v1&amp;widgets=no-scrollbars-v1" />
+    <link rel="stylesheet" href="./neo-xeno-taskbar.css?v=20260913-xeno-navigation-v1" />
   </head>
   <body>
     <a class="skip-link" href="#neo-desktop">Skip to desktop</a>
@@ -465,6 +466,23 @@
           </section>
         </div>
 
+      </section>
+
+      <button id="xeno-command-dismiss" class="xeno-command-dismiss" type="button" tabindex="-1" aria-label="Close XENO navigation" hidden></button>
+
+      <section id="xeno-command-center" class="xeno-command-center" role="dialog" aria-modal="true" aria-labelledby="xeno-command-title" aria-hidden="true" data-mode="search" hidden>
+        <header class="xeno-command-searchbar">
+          <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+          <label class="sr-only" for="xeno-command-search">Search installed applications</label>
+          <input id="xeno-command-search" type="search" autocomplete="off" spellcheck="false" placeholder="Search applications" />
+          <kbd data-xeno-command-key>SPACE</kbd>
+        </header>
+        <div class="xeno-command-heading">
+          <h2 id="xeno-command-title" data-xeno-command-title>APPS</h2>
+          <span data-xeno-command-hint>↑↓ Navigate · Enter Open · Esc Close</span>
+        </div>
+        <div id="xeno-command-results" class="xeno-command-results" role="listbox" aria-label="Installed applications"></div>
+        <p id="xeno-command-empty" class="xeno-command-empty" hidden>No applications match your search.</p>
       </section>
 
       <nav class="taskbar" aria-label="System taskbar">
@@ -1193,6 +1211,7 @@
               <button type="button" data-taskbar-style-option="current" aria-pressed="true"><span class="taskbar-style-preview is-current" aria-hidden="true"></span><span><strong>Floating</strong><small>Compact rounded dock</small></span></button>
               <button type="button" data-taskbar-style-option="transparent" aria-pressed="false"><span class="taskbar-style-preview is-transparent" aria-hidden="true"></span><span><strong>Transparent</strong><small>Icons only</small></span></button>
               <button type="button" data-taskbar-style-option="typical" aria-pressed="false"><span class="taskbar-style-preview is-typical" aria-hidden="true"></span><span><strong>Typical</strong><small>Full edge bar</small></span></button>
+              <button type="button" data-taskbar-style-option="xeno" aria-pressed="false"><span class="taskbar-style-preview is-xeno" aria-hidden="true"></span><span><strong>XENO</strong><small>Running apps · Space search · Ctrl menu</small></span></button>
             </div>
           </div>
           <div class="taskbar-option-group">
@@ -1410,7 +1429,7 @@
     <script src="./neo-chat-experience.js" defer></script>
     <script src="./neo-desktop-platform.js?v=20260913-import-cursor-v1&amp;styles=kali-v1&amp;tab=custom-url-v1&amp;themes=expanded-v1&amp;rainmeter=controls-v1&amp;editor=proxy-links-v2&amp;settings=combined-v1" defer></script>
     <script src="./neo-leave-guard.js?v=20260907-anti-close-v1" defer></script>
-    <script src="./neo-os.js?v=20260913-import-cursor-v1&amp;styles=kali-v1&amp;apps=cleanup-v1&amp;taskbar=app-names-v2&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=motion-v1&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;artwork=stable-cover-v2&amp;rainmeter=thin-weekday-v1&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;window-bar=maximized-ultra-v1&amp;proxy=resource-v1&amp;games=pin-shortcut-v1&amp;taskbar-glass=transparency-v1" defer></script>
+    <script src="./neo-os.js?v=20260913-import-cursor-v1&amp;styles=kali-v1&amp;apps=cleanup-v1&amp;taskbar=app-names-v2&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=motion-v1&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;artwork=stable-cover-v2&amp;rainmeter=thin-weekday-v1&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;window-bar=maximized-ultra-v1&amp;proxy=resource-v1&amp;games=pin-shortcut-v1&amp;taskbar-glass=transparency-v1&amp;xeno=navigation-v1" defer></script>
     <script src="./neo-command-palette.js?v=20260912-command-palette-v1" defer></script>
     <script src="./neo-taskbar-quick-settings.js?v=20260910-quick-settings-v1" defer></script>
     <script src="./neo-backup.js?v=20260830-backup-v1" defer></script>

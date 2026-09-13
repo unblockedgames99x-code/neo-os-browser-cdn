@@ -40,6 +40,13 @@
   var launcherResultList = document.getElementById("launcher-result-list");
   var launcherResultCount = document.getElementById("launcher-result-count");
   var launcherSearchEmpty = document.getElementById("launcher-search-empty");
+  var xenoCommand = document.getElementById("xeno-command-center");
+  var xenoCommandDismiss = document.getElementById("xeno-command-dismiss");
+  var xenoCommandSearch = document.getElementById("xeno-command-search");
+  var xenoCommandResults = document.getElementById("xeno-command-results");
+  var xenoCommandEmpty = document.getElementById("xeno-command-empty");
+  var xenoCommandTitle = document.querySelector("[data-xeno-command-title]");
+  var xenoCommandKey = document.querySelector("[data-xeno-command-key]");
   var toastRegion = document.getElementById("toast-region");
   var widgetLayer = document.getElementById("widget-layer");
   var desktopShortcutLayer = document.getElementById("desktop-shortcuts");
@@ -82,6 +89,10 @@
   var launcherMotionTimer = 0;
   var launcherShowAll = false;
   var launcherSelectedIndex = 0;
+  var xenoCommandSelectedIndex = 0;
+  var xenoCommandReturnFocus = null;
+  var xenoCommandMotionFrame = 0;
+  var xenoCommandMotionTimer = 0;
   var ctrlTapCandidate = false;
   var searchTimer = 0;
   var featureRuntimePromise = null;
@@ -104,7 +115,7 @@
 
   function normalizeTaskbarStyle(value) {
     value = String(value || "").toLowerCase();
-    return value === "transparent" || value === "typical" ? value : "current";
+    return value === "transparent" || value === "typical" || value === "xeno" ? value : "current";
   }
 
   function normalizeTaskbarSurface(value) {
@@ -1609,6 +1620,11 @@
       }));
     }
     if (previousTaskbarPosition !== settings.taskbarPosition || previousTaskbarStyle !== settings.taskbarStyle || previousTaskbarAppNames !== Boolean(settings.taskbarAppNames)) {
+      if (previousTaskbarStyle !== settings.taskbarStyle) {
+        if (settings.taskbarStyle !== "xeno") setXenoCommandOpen(false);
+        else setLauncherOpen(false);
+        renderDock();
+      }
       window.requestAnimationFrame(function () {
         fitDockToViewport(document.getElementById("neo-dock"));
         layoutDesktopShortcuts();
@@ -1752,9 +1768,9 @@
     });
     host.querySelectorAll("[data-taskbar-options-summary]").forEach(function (summary) {
       var position = settings.taskbarPosition.charAt(0).toUpperCase() + settings.taskbarPosition.slice(1);
-      var style = settings.taskbarStyle === "current" ? "Floating" : settings.taskbarStyle === "typical" ? "Full edge" : "Transparent";
+      var style = settings.taskbarStyle === "current" ? "Floating" : settings.taskbarStyle === "typical" ? "Full edge" : settings.taskbarStyle === "xeno" ? "XENO" : "Transparent";
       var surface = settings.taskbarSurface.charAt(0).toUpperCase() + settings.taskbarSurface.slice(1);
-      summary.textContent = position + " · " + style + " · " + surface;
+      summary.textContent = settings.taskbarStyle === "xeno" ? "Bottom center · XENO · Theme adaptive" : position + " · " + style + " · " + surface;
     });
     var mode = performanceMode();
     host.querySelectorAll("[data-performance-mode-button]").forEach(function (button) {
@@ -1974,11 +1990,13 @@
   function syncDockButton(button, app) {
     var win = openWindows.get(app.id);
     var minimized = Boolean(win && win.classList.contains("is-minimized"));
-    button.draggable = Boolean(settings.taskbarRunningApps && settings.taskbarAppDragging);
+    var canShowRunningApps = settings.taskbarStyle === "xeno" || settings.taskbarRunningApps;
+    button.draggable = Boolean(canShowRunningApps && settings.taskbarAppDragging);
     button.classList.toggle("is-running", Boolean(win));
     button.classList.toggle("is-minimized", minimized);
+    button.classList.toggle("is-active", Boolean(win && win.classList.contains("is-active") && !minimized));
     button.setAttribute("aria-label", (minimized ? "Restore " : win ? "Switch to " : "Open ") + appAccessibleName(app));
-    button.setAttribute("aria-description", settings.taskbarRunningApps && settings.taskbarAppDragging ? "Drag to reorder taskbar apps" : "Taskbar app");
+    button.setAttribute("aria-description", canShowRunningApps && settings.taskbarAppDragging ? "Drag to reorder taskbar apps" : "Taskbar app");
     var label = button.querySelector(".dock-app-name");
     if (label) label.textContent = app.title;
   }
@@ -2004,7 +2022,11 @@
 
   function taskbarAppIds() {
     var visibleIds = [];
-    if (performanceMode() === "ultimate") {
+    if (settings.taskbarStyle === "xeno") {
+      openWindows.forEach(function (_, id) {
+        if (apps[id] && visibleIds.indexOf(id) === -1) visibleIds.push(id);
+      });
+    } else if (performanceMode() === "ultimate") {
       if (apps.control && apps.control.installed) visibleIds.push("control");
     } else {
       normalizePinnedAppOrder().forEach(function (id) {
@@ -2046,6 +2068,7 @@
     taskbar.style.removeProperty("--vertical-dock-hit");
     taskbar.style.removeProperty("--vertical-dock-art");
     taskbar.style.removeProperty("--vertical-dock-gap");
+    if (settings.taskbarStyle === "xeno") return;
     if (settings.taskbarPosition !== "left" && settings.taskbarPosition !== "right") return;
 
     var count = dock.querySelectorAll(".dock-button:not(.is-leaving)").length;
@@ -2077,7 +2100,7 @@
     if (!dock) return;
     var previousScrollLeft = dock.scrollLeft;
     var previousScrollTop = dock.scrollTop;
-    var visibleIds = settings.taskbarRunningApps ? taskbarAppIds() : [];
+    var visibleIds = settings.taskbarStyle === "xeno" || settings.taskbarRunningApps ? taskbarAppIds() : [];
     var visibleSet = new Set(visibleIds);
     Array.from(dock.querySelectorAll(".dock-button[data-app]")).forEach(function (button) {
       var id = button.dataset.app;
@@ -2143,7 +2166,7 @@
     dock.dataset.dragBound = "true";
     dock.addEventListener("dragstart", function (event) {
       var button = event.target.closest(".dock-button[data-app]");
-      if (!button || !settings.taskbarRunningApps || !settings.taskbarAppDragging) {
+      if (!button || (settings.taskbarStyle !== "xeno" && !settings.taskbarRunningApps) || !settings.taskbarAppDragging) {
         event.preventDefault();
         return;
       }
@@ -2156,14 +2179,14 @@
       }
     });
     dock.addEventListener("dragover", function (event) {
-      if (!runningTaskbarDragId || !settings.taskbarRunningApps || !settings.taskbarAppDragging) return;
+      if (!runningTaskbarDragId || (settings.taskbarStyle !== "xeno" && !settings.taskbarRunningApps) || !settings.taskbarAppDragging) return;
       var button = event.target.closest(".dock-button[data-app]");
       if (!button || button.dataset.app === runningTaskbarDragId) return;
       event.preventDefault();
       if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
       clearRunningTaskbarDropMarkers(dock);
       var rect = button.getBoundingClientRect();
-      var vertical = settings.taskbarPosition === "left" || settings.taskbarPosition === "right";
+      var vertical = settings.taskbarStyle !== "xeno" && (settings.taskbarPosition === "left" || settings.taskbarPosition === "right");
       var placeAfter = vertical ? event.clientY >= rect.top + rect.height / 2 : event.clientX >= rect.left + rect.width / 2;
       button.classList.add(placeAfter ? "is-drop-after" : "is-drop-before");
     });
@@ -2172,7 +2195,7 @@
       if (!button || !runningTaskbarDragId) return;
       event.preventDefault();
       var rect = button.getBoundingClientRect();
-      var vertical = settings.taskbarPosition === "left" || settings.taskbarPosition === "right";
+      var vertical = settings.taskbarStyle !== "xeno" && (settings.taskbarPosition === "left" || settings.taskbarPosition === "right");
       var placeAfter = vertical ? event.clientY >= rect.top + rect.height / 2 : event.clientX >= rect.left + rect.width / 2;
       moveRunningTaskbarApp(runningTaskbarDragId, button.dataset.app, placeAfter);
       clearRunningTaskbarDropMarkers(dock);
@@ -2184,8 +2207,8 @@
       dock.querySelectorAll(".is-dragging").forEach(function (button) { button.classList.remove("is-dragging"); });
     });
     dock.addEventListener("keydown", function (event) {
-      if (!settings.taskbarRunningApps || !settings.taskbarAppDragging || !event.altKey || !event.shiftKey) return;
-      var vertical = settings.taskbarPosition === "left" || settings.taskbarPosition === "right";
+      if ((settings.taskbarStyle !== "xeno" && !settings.taskbarRunningApps) || !settings.taskbarAppDragging || !event.altKey || !event.shiftKey) return;
+      var vertical = settings.taskbarStyle !== "xeno" && (settings.taskbarPosition === "left" || settings.taskbarPosition === "right");
       var direction = vertical
         ? (event.key === "ArrowUp" ? -1 : (event.key === "ArrowDown" ? 1 : 0))
         : (event.key === "ArrowLeft" ? -1 : (event.key === "ArrowRight" ? 1 : 0));
@@ -2707,7 +2730,7 @@
   function launcherMatchScore(app, rawQuery) {
     var query = normalizeSearchValue(rawQuery);
     if (!query) return app.pinned ? 20 : 10;
-    var values = [app.title, app.subtitle].concat(app.aliases || []).map(normalizeSearchValue).filter(Boolean);
+    var values = [app.title, app.subtitle, app.category].concat(app.aliases || []).map(normalizeSearchValue).filter(Boolean);
     var best = 0;
     values.forEach(function (value) {
       if (value === query) best = Math.max(best, 120);
@@ -2940,6 +2963,7 @@
     window.cancelAnimationFrame(launcherMotionFrame);
     window.clearTimeout(launcherMotionTimer);
     if (open) {
+      setXenoCommandOpen(false);
       if (!launcherIsOpen()) launcherReturnFocus = returnFocus || document.activeElement;
       root.classList.add("neo-launcher-open");
       syncLauncherButtons(true);
@@ -3021,6 +3045,205 @@
       button.classList.toggle("is-selected", selected);
       button.setAttribute("aria-selected", selected ? "true" : "false");
     });
+  }
+
+  function xenoCommandIsOpen() {
+    return Boolean(xenoCommand && !xenoCommand.hidden && !xenoCommand.classList.contains("is-closing"));
+  }
+
+  function createXenoCommandItem(app, index) {
+    var button = document.createElement("button");
+    button.className = "xeno-command-item";
+    button.type = "button";
+    button.dataset.app = app.id;
+    button.dataset.xenoCommandItem = "";
+    button.dataset.xenoCommandIndex = String(index);
+    button.setAttribute("role", "option");
+    button.setAttribute("aria-label", (openWindows.has(app.id) ? "Switch to " : "Open ") + appAccessibleName(app));
+    button.appendChild(createLauncherIcon(app, "xeno-command-icon"));
+    var copy = document.createElement("span");
+    copy.className = "xeno-command-copy";
+    var title = document.createElement("strong");
+    title.textContent = app.title;
+    var detail = document.createElement("small");
+    detail.textContent = app.subtitle || app.category || "Application";
+    copy.append(title, detail);
+    var state = document.createElement("span");
+    state.className = "xeno-command-state";
+    var runningWindow = openWindows.get(app.id);
+    if (runningWindow) {
+      button.classList.add("is-running");
+      if (runningWindow.classList.contains("is-minimized")) button.classList.add("is-minimized");
+      if (runningWindow.classList.contains("is-active")) button.classList.add("is-active");
+      state.textContent = runningWindow.classList.contains("is-minimized") ? "RESTORE" : "OPEN";
+    } else {
+      state.textContent = "↵";
+      state.setAttribute("aria-hidden", "true");
+    }
+    button.append(copy, state);
+    return button;
+  }
+
+  function xenoCommandApps(query) {
+    var available = launcherApps();
+    if (normalizeSearchValue(query)) return searchLauncherApps(query);
+    return available.slice().sort(function (left, right) {
+      return String(left.category || "Applications").localeCompare(String(right.category || "Applications"))
+        || left.title.localeCompare(right.title);
+    });
+  }
+
+  function syncXenoCommandSelection(scroll) {
+    if (!xenoCommandResults) return;
+    var buttons = Array.from(xenoCommandResults.querySelectorAll("[data-xeno-command-item]"));
+    if (!buttons.length) {
+      xenoCommandSelectedIndex = 0;
+      return;
+    }
+    xenoCommandSelectedIndex = clamp(xenoCommandSelectedIndex, 0, buttons.length - 1);
+    buttons.forEach(function (button, index) {
+      var selected = index === xenoCommandSelectedIndex;
+      button.classList.toggle("is-selected", selected);
+      button.setAttribute("aria-selected", selected ? "true" : "false");
+    });
+    if (scroll) buttons[xenoCommandSelectedIndex].scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+
+  function renderXenoCommand() {
+    if (!xenoCommand || !xenoCommandResults) return;
+    var mode = xenoCommand.dataset.mode === "apps" ? "apps" : "search";
+    var query = xenoCommandSearch ? xenoCommandSearch.value : "";
+    var matches = xenoCommandApps(query);
+    xenoCommandResults.textContent = "";
+    if (mode === "apps") {
+      var groups = new Map();
+      matches.forEach(function (app) {
+        var category = app.category || "Applications";
+        if (!groups.has(category)) groups.set(category, []);
+        groups.get(category).push(app);
+      });
+      var index = 0;
+      groups.forEach(function (items, category) {
+        var group = document.createElement("section");
+        group.className = "xeno-command-group";
+        group.setAttribute("aria-label", category);
+        var heading = document.createElement("h3");
+        heading.textContent = category;
+        var list = document.createElement("div");
+        list.className = "xeno-command-grid";
+        items.forEach(function (app) { list.appendChild(createXenoCommandItem(app, index++)); });
+        group.append(heading, list);
+        xenoCommandResults.appendChild(group);
+      });
+    } else {
+      matches.slice(0, 28).forEach(function (app, index) {
+        xenoCommandResults.appendChild(createXenoCommandItem(app, index));
+      });
+    }
+    if (xenoCommandEmpty) xenoCommandEmpty.hidden = matches.length > 0;
+    syncXenoCommandSelection(false);
+  }
+
+  function moveXenoCommandSelection(direction) {
+    var buttons = xenoCommandResults ? Array.from(xenoCommandResults.querySelectorAll("[data-xeno-command-item]")) : [];
+    if (!buttons.length) return;
+    xenoCommandSelectedIndex = (xenoCommandSelectedIndex + direction + buttons.length) % buttons.length;
+    syncXenoCommandSelection(true);
+  }
+
+  function finishXenoCommandClose() {
+    if (!xenoCommand) return;
+    xenoCommand.classList.remove("is-open", "is-opening", "is-closing");
+    xenoCommand.hidden = true;
+    if (xenoCommandDismiss) {
+      xenoCommandDismiss.classList.remove("is-open", "is-opening", "is-closing");
+      xenoCommandDismiss.hidden = true;
+    }
+    root.classList.remove("neo-xeno-command-open");
+  }
+
+  function setXenoCommandOpen(open, mode, returnFocus) {
+    if (!xenoCommand) return;
+    window.cancelAnimationFrame(xenoCommandMotionFrame);
+    window.clearTimeout(xenoCommandMotionTimer);
+    if (open) {
+      if (settings.taskbarStyle !== "xeno") return;
+      setLauncherOpen(false);
+      if (!xenoCommandIsOpen()) xenoCommandReturnFocus = returnFocus || document.activeElement;
+      xenoCommand.dataset.mode = mode === "apps" ? "apps" : "search";
+      if (xenoCommandTitle) xenoCommandTitle.textContent = mode === "apps" ? "ALL APPLICATIONS" : "APPS";
+      if (xenoCommandKey) xenoCommandKey.textContent = mode === "apps" ? "CTRL" : "SPACE";
+      if (xenoCommandSearch) {
+        xenoCommandSearch.value = "";
+        xenoCommandSearch.placeholder = mode === "apps" ? "Filter applications" : "Search apps, media, tools…";
+      }
+      xenoCommandSelectedIndex = 0;
+      renderXenoCommand();
+      root.classList.add("neo-xeno-command-open");
+      xenoCommand.hidden = false;
+      xenoCommand.removeAttribute("inert");
+      xenoCommand.setAttribute("aria-hidden", "false");
+      xenoCommand.classList.remove("is-open", "is-closing");
+      xenoCommand.classList.add("is-opening");
+      if (xenoCommandDismiss) {
+        xenoCommandDismiss.hidden = false;
+        xenoCommandDismiss.classList.remove("is-open", "is-closing");
+        xenoCommandDismiss.classList.add("is-opening");
+      }
+      void xenoCommand.offsetWidth;
+      xenoCommandMotionFrame = requestAnimationFrame(function () {
+        xenoCommand.classList.add("is-open");
+        if (xenoCommandDismiss) xenoCommandDismiss.classList.add("is-open");
+        if (xenoCommandSearch) xenoCommandSearch.focus({ preventScroll: true });
+      });
+      xenoCommandMotionTimer = window.setTimeout(function () {
+        xenoCommand.classList.remove("is-opening");
+        if (xenoCommandDismiss) xenoCommandDismiss.classList.remove("is-opening");
+      }, 260);
+      return;
+    }
+    if (xenoCommand.hidden || xenoCommand.classList.contains("is-closing")) {
+      root.classList.remove("neo-xeno-command-open");
+      return;
+    }
+    xenoCommand.setAttribute("aria-hidden", "true");
+    xenoCommand.setAttribute("inert", "");
+    xenoCommand.classList.remove("is-open", "is-opening");
+    xenoCommand.classList.add("is-closing");
+    if (xenoCommandDismiss) {
+      xenoCommandDismiss.classList.remove("is-open", "is-opening");
+      xenoCommandDismiss.classList.add("is-closing");
+    }
+    if (xenoCommandReturnFocus && document.contains(xenoCommandReturnFocus)) xenoCommandReturnFocus.focus({ preventScroll: true });
+    xenoCommandReturnFocus = null;
+    if (effectiveReducedMotion()) finishXenoCommandClose();
+    else xenoCommandMotionTimer = window.setTimeout(finishXenoCommandClose, 220);
+  }
+
+  function xenoDesktopShortcutAllowed(target) {
+    var element = target && target.nodeType === 1 ? target : document.activeElement;
+    if (!element || !element.closest) return false;
+    var blocked = "input, textarea, select, option, button, a, audio, video, iframe, [contenteditable]:not([contenteditable='false']), [role='textbox'], .neo-window, .app-launcher, .xeno-command-center, .desktop-context-menu, .context-submenu, .notification-center, .taskbar-quick-settings";
+    if (element.closest(blocked)) return false;
+    var active = document.activeElement;
+    if (active && active !== document.body && active !== root && active.closest && active.closest(blocked)) return false;
+    return true;
+  }
+
+  function trapXenoCommandFocus(event) {
+    if (!xenoCommand) return;
+    var focusable = Array.from(xenoCommand.querySelectorAll("button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex='-1'])"))
+      .filter(function (node) { return node.offsetParent !== null; });
+    if (!focusable.length) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   function createWindow(app) {
@@ -5188,6 +5411,7 @@
       return null;
     }
     if (id === "youtube-app") pauseMusicForVideoFocus();
+    setXenoCommandOpen(false);
     setLauncherOpen(false);
     if (app.launcher) recordRecentApp(id);
     var existing = openWindows.get(id);
@@ -5393,6 +5617,7 @@
       renderActiveWidget(app);
       if (id === "stream") showStreamNowPlaying();
     }
+    if (settings.taskbarStyle === "xeno") renderDock();
   }
 
   function activateTopWindow() {
@@ -8136,6 +8361,10 @@
         if (window.NEO_FEATURES && typeof window.NEO_FEATURES.closeOverlays === "function") window.NEO_FEATURES.closeOverlays();
         return;
       }
+      if (event.target.closest("#xeno-command-dismiss")) {
+        setXenoCommandOpen(false);
+        return;
+      }
       var appButton = event.target.closest("[data-app]");
       if (appButton) {
         event.preventDefault();
@@ -8145,7 +8374,12 @@
       }
       var launcherButton = event.target.closest("[data-open-launcher]");
       if (launcherButton) {
-        setLauncherOpen(!launcherIsOpen(), launcherButton);
+        if (settings.taskbarStyle === "xeno") {
+          var toggleXenoApps = xenoCommandIsOpen() && xenoCommand.dataset.mode === "apps";
+          setXenoCommandOpen(!toggleXenoApps, "apps", launcherButton);
+        } else {
+          setLauncherOpen(!launcherIsOpen(), launcherButton);
+        }
         return;
       }
       var launcherToggle = event.target.closest("[data-launcher-toggle-all]");
@@ -8211,7 +8445,7 @@
         var style = normalizeTaskbarStyle(taskbarStyle.getAttribute("data-taskbar-style-option"));
         if (style !== settings.taskbarStyle) {
           setSetting("taskbarStyle", style);
-          showToast("Taskbar style changed", style === "current" ? "The floating dock layout is active." : style === "transparent" ? "Only the taskbar icons remain visible." : "The taskbar now fills the selected edge.", "settings");
+          showToast("Taskbar style changed", style === "current" ? "The floating dock layout is active." : style === "transparent" ? "Only the taskbar icons remain visible." : style === "xeno" ? "Running apps now use XENO pills. Press Space to search or Ctrl for all apps." : "The taskbar now fills the selected edge.", "settings");
         }
         return;
       }
@@ -8285,6 +8519,11 @@
         filterLauncher(input.value);
         return;
       }
+      if (input === xenoCommandSearch) {
+        xenoCommandSelectedIndex = 0;
+        renderXenoCommand();
+        return;
+      }
       var settingName = input.getAttribute && input.getAttribute("data-setting");
       if (!settingName || input.type === "checkbox" || input.tagName === "SELECT") return;
       var value = input.type === "range" ? Number(input.value) : input.value;
@@ -8305,10 +8544,17 @@
 
     document.addEventListener("keydown", function (event) {
       if (event.key === "Control") {
-        if (!event.repeat && !event.altKey && !event.metaKey && !event.shiftKey) ctrlTapCandidate = true;
+        if (!event.repeat && !event.altKey && !event.metaKey && !event.shiftKey) {
+          ctrlTapCandidate = settings.taskbarStyle !== "xeno" || xenoDesktopShortcutAllowed(event.target);
+        }
         return;
       }
       if (ctrlTapCandidate) ctrlTapCandidate = false;
+      if (event.key === "Escape" && xenoCommandIsOpen()) {
+        event.preventDefault();
+        setXenoCommandOpen(false);
+        return;
+      }
       if (event.key === "Escape" && connectionPanel && !connectionPanel.hidden) {
         event.preventDefault();
         setConnectionPanelOpen(false);
@@ -8350,9 +8596,46 @@
         }
         return;
       }
+      if (xenoCommandIsOpen() && xenoCommand.contains(event.target)) {
+        if (event.key === "ArrowDown" || (event.target !== xenoCommandSearch && event.key === "ArrowRight")) {
+          event.preventDefault();
+          moveXenoCommandSelection(1);
+          return;
+        }
+        if (event.key === "ArrowUp" || (event.target !== xenoCommandSearch && event.key === "ArrowLeft")) {
+          event.preventDefault();
+          moveXenoCommandSelection(-1);
+          return;
+        }
+        if (event.target !== xenoCommandSearch && (event.key === "Home" || event.key === "End")) {
+          event.preventDefault();
+          var items = xenoCommandResults ? xenoCommandResults.querySelectorAll("[data-xeno-command-item]") : [];
+          xenoCommandSelectedIndex = event.key === "Home" ? 0 : Math.max(0, items.length - 1);
+          syncXenoCommandSelection(true);
+          return;
+        }
+        if (event.key === "Enter") {
+          var xenoSelected = xenoCommandResults && xenoCommandResults.querySelector('[data-xeno-command-item][aria-selected="true"]');
+          if (xenoSelected) {
+            event.preventDefault();
+            openApp(xenoSelected.dataset.app);
+          }
+          return;
+        }
+        if (event.key === "Tab") trapXenoCommandFocus(event);
+      }
+      if (!event.defaultPrevented && settings.taskbarStyle === "xeno" && event.code === "Space" && !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && !event.repeat && !event.isComposing && xenoDesktopShortcutAllowed(event.target)) {
+        event.preventDefault();
+        setXenoCommandOpen(true, "search", document.activeElement);
+        return;
+      }
       if ((event.ctrlKey || event.metaKey) && event.code === "Space" && !event.target.closest("iframe, input, textarea, select")) {
         event.preventDefault();
-        setLauncherOpen(!launcherIsOpen(), document.activeElement);
+        if (settings.taskbarStyle === "xeno") {
+          setXenoCommandOpen(true, "apps", document.activeElement);
+        } else {
+          setLauncherOpen(!launcherIsOpen(), document.activeElement);
+        }
       }
       if (launcherIsOpen() && event.key === "Tab") trapLauncherFocus(event);
     });
@@ -8361,13 +8644,24 @@
       if (event.key !== "Control") return;
       if (ctrlTapCandidate) {
         event.preventDefault();
-        setLauncherOpen(!launcherIsOpen(), document.activeElement);
+        if (settings.taskbarStyle === "xeno") {
+          var toggleXenoApps = xenoCommandIsOpen() && xenoCommand.dataset.mode === "apps";
+          setXenoCommandOpen(!toggleXenoApps, "apps", document.activeElement);
+        } else {
+          setLauncherOpen(!launcherIsOpen(), document.activeElement);
+        }
       }
       ctrlTapCandidate = false;
     });
 
     document.addEventListener("pointerdown", function () { ctrlTapCandidate = false; }, { passive: true });
     document.addEventListener("pointerover", function (event) {
+      var xenoItem = event.target.closest("[data-xeno-command-index]");
+      if (xenoItem) {
+        xenoCommandSelectedIndex = Number(xenoItem.dataset.xenoCommandIndex) || 0;
+        syncXenoCommandSelection(false);
+        return;
+      }
       var result = event.target.closest("[data-launcher-result-index]");
       if (!result) return;
       launcherSelectedIndex = Number(result.dataset.launcherResultIndex) || 0;
@@ -8376,7 +8670,7 @@
     window.addEventListener("blur", function () { ctrlTapCandidate = false; });
 
     document.addEventListener("contextmenu", function (event) {
-      if (!event.target.closest("#neo-desktop") || event.target.closest(".neo-window, .taskbar, .app-launcher, button, input, textarea, select")) return;
+      if (!event.target.closest("#neo-desktop") || event.target.closest(".neo-window, .taskbar, .app-launcher, .xeno-command-center, button, input, textarea, select")) return;
       event.preventDefault();
       loadFeatureRuntime().then(function (runtime) { runtime.openDesktopMenu(event.clientX, event.clientY); });
     });
