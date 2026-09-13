@@ -539,6 +539,11 @@ html.neo-auto-hide-bars[data-window-bar-style="ultra"] .neo-window:has(> .window
   grid-template-rows: 32px minmax(0, 1fr) !important;
 }
 
+html.neo-auto-hide-bars[data-window-bar-style="ultra"] .neo-window:not(.is-youtube-popout) {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+
 html.neo-auto-hide-bars[data-window-bar-style="ultra"] .neo-window[data-app-id="youtube-app"].is-youtube-popout {
   grid-template-rows: minmax(0, 1fr) !important;
 }
