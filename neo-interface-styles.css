@@ -4097,3 +4097,29 @@ html[data-interface-style="kali"][data-neo-app]:not([data-neo-app="shell"]) :is(
 @media (prefers-reduced-motion: reduce) {
   html[data-interface-style="kali"] :is(.neo-window,.app-launcher,.taskbar,.desktop-context-menu,.neo-taskbar-preview) { transition: none !important; animation: none !important; }
 }
+
+/* Widgets keep touch, wheel and keyboard scrolling without drawing scrollbars.
+   This stays last so global liquid, retro and Kali scrollbar themes cannot
+   re-enable chrome inside desktop widgets or the Widgets management app. */
+#widget-layer,
+#widget-layer *,
+.neo-skin,
+.neo-skin *,
+.neo-window[data-app-id="skins"] > .window-body,
+.neo-window[data-app-id="skins"] .widget-manager,
+.neo-window[data-app-id="skins"] .widget-manager * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+#widget-layer::-webkit-scrollbar,
+#widget-layer *::-webkit-scrollbar,
+.neo-skin::-webkit-scrollbar,
+.neo-skin *::-webkit-scrollbar,
+.neo-window[data-app-id="skins"] > .window-body::-webkit-scrollbar,
+.neo-window[data-app-id="skins"] .widget-manager::-webkit-scrollbar,
+.neo-window[data-app-id="skins"] .widget-manager *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
