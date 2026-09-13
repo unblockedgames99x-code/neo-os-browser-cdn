@@ -4123,3 +4123,45 @@ html[data-interface-style="kali"][data-neo-app]:not([data-neo-app="shell"]) :is(
   width: 0 !important;
   height: 0 !important;
 }
+
+/* Floating keeps the material on the shared dock, not around every icon.
+   Named apps retain a restrained pill so their labels stay grouped. This is
+   intentionally last so every interface theme follows the same behavior. */
+html[data-taskbar-style="current"] .taskbar-start-button,
+html[data-taskbar-style="current"][data-taskbar-app-names="false"] .taskbar .dock-button {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+html[data-taskbar-style="current"] .taskbar-start-button:is(:hover, :focus-visible),
+html[data-taskbar-style="current"][data-taskbar-app-names="false"] .taskbar .dock-button:is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 8%, transparent) !important;
+  border-color: color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 10%, transparent) !important;
+  box-shadow: inset 0 1px color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 7%, transparent) !important;
+}
+
+html[data-taskbar-style="current"][data-taskbar-app-names="true"] .taskbar .dock-button {
+  background: color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 5.5%, transparent) !important;
+  border-color: color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 8%, transparent) !important;
+  box-shadow: inset 0 1px color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 6%, transparent) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+html[data-taskbar-style="current"][data-taskbar-app-names="true"] .taskbar .dock-button:is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 10%, transparent) !important;
+  border-color: color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 14%, transparent) !important;
+  box-shadow: inset 0 1px color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 10%, transparent) !important;
+}
+
+@media (forced-colors: active) {
+  html[data-taskbar-style="current"] .taskbar-start-button:focus-visible,
+  html[data-taskbar-style="current"] .taskbar .dock-button:focus-visible {
+    border-color: Highlight !important;
+  }
+}
