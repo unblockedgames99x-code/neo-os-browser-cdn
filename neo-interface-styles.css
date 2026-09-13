@@ -3476,6 +3476,18 @@ html[data-interface-style="windows11"] .app-launcher[hidden] {
   transform: translateX(-50%) translateY(12px) scale(.98) !important;
 }
 
+/* Launcher motion has taskbar-position selectors with higher specificity.
+   Keep the Windows 11 start menu centered through every motion state. */
+html[data-interface-style="windows11"][data-taskbar-position] .app-launcher:not(.is-open) {
+  transform: translateX(-50%) translateY(12px) scale(.98) !important;
+  transform-origin: bottom center !important;
+}
+
+html[data-interface-style="windows11"][data-taskbar-position] .app-launcher.is-open {
+  transform: translateX(-50%) translateY(0) scale(1) !important;
+  transform-origin: bottom center !important;
+}
+
 html[data-interface-style="windows11"] .app-launcher::before { display: none !important; }
 
 html[data-interface-style="windows11"] .app-launcher .launcher-search {

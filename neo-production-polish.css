@@ -708,6 +708,7 @@ html.neo-auto-hide-bars[data-window-bar-style="ultra"] .window-control .icon {
   width: 100%;
   max-width: 960px;
   height: auto;
+  margin: 0 auto 14px;
   overflow: visible;
   padding: 20px;
   background: color-mix(in srgb, var(--desktop-surface) 88%, transparent);

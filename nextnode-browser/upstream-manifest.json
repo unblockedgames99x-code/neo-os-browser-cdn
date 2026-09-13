@@ -1,11 +1,11 @@
 {
   "upstream": "https://nextnode9124.b-cdn.net/",
-  "syncedAt": "2026-09-13T04:35:08.824Z",
+  "syncedAt": "2026-09-13T05:00:13.413Z",
   "files": [
     {
       "path": "index.html",
-      "bytes": 76542,
-      "sha256": "14763a26c64daf1bff360ba752d706ec2b9de24db468f0482c869bb3b3aaf76d",
+      "bytes": 76754,
+      "sha256": "b9ba1cba68cc3ff77de0dfe5ab88532e2c663a8d711518360bfbd214624c7fa4",
       "upstream": "https://nextnode9124.b-cdn.net/modules/browser/index.html"
     },
     {
@@ -25,12 +25,6 @@
       "bytes": 474800,
       "sha256": "6df3805da066f2dbaeaa547b4ca83fa5c7c10ca8b6ba4357b0897bf3cc3b9a1f",
       "upstream": "https://nextnode9124.b-cdn.net/browser-vendor/eruda.min.js"
-    },
-    {
-      "path": "core/smartpop.js",
-      "bytes": 9358,
-      "sha256": "cab0aed4f54094698bd612fb6cc08c040d2a7c8e4cb41c57153c5e0362e26f0e",
-      "upstream": "https://nextnode9124.b-cdn.net/core/smartpop.js"
     },
     {
       "path": "study/libcurl.js",

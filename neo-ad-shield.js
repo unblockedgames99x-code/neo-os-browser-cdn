@@ -63,7 +63,7 @@
   var blockedUrlPattern = /(?:\/pagead(?:\/|\?|$)|\/ads?(?:\/|\?|=|&|\.|_|-)|\/core\/analytics\.js(?:\?|$)|\/_o\/(?:e|u)(?:\?|$)|adsbygoogle|googleads|googletagservices|securepubads|prebid|popunder|vast(?:\.xml|\/)|[?&](?:ad_|ads?|adunit|bannerid|clickid|placement|popunder|slot|zoneid)=)/i;
   var adTokenPattern = /(?:^|[-_\s])(?:ad|ads|advert|advertisement|adslot|adunit|banner-ad|commercial|paid-content|promoted|sponsor|sponsored)(?:$|[-_\s])/i;
   var urlAttributes = ["src", "href", "data", "action", "formaction", "poster"];
-  var installedWindows = typeof WeakSet === "function" ? new WeakSet() : null;
+  var installedDocuments = typeof WeakMap === "function" ? new WeakMap() : null;
 
   function hostMatches(hostname) {
     var host = String(hostname || "").toLowerCase().replace(/^www\./, "");
@@ -112,12 +112,11 @@
   function install(target) {
     target = target || scope;
     if (!target || !target.document) return false;
-    if (installedWindows && installedWindows.has(target)) return true;
-    if (target.__neoAdShieldInstalled) return true;
-    try { target.__neoAdShieldInstalled = true; } catch (_error) {}
-    if (installedWindows) installedWindows.add(target);
-
     var doc = target.document;
+    if (installedDocuments && installedDocuments.get(target) === doc) return true;
+    if (target.__neoAdShieldDocument === doc) return true;
+    try { target.__neoAdShieldDocument = doc; } catch (_error) {}
+    if (installedDocuments) installedDocuments.set(target, doc);
     var base = function () {
       try { return doc.baseURI || target.location.href; } catch (_error) { return "https://neo.invalid/"; }
     };
