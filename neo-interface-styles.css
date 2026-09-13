@@ -1,5 +1,5 @@
 /* Interface styles are intentionally separate from themes. Modern inherits
-   the existing NEO OS presentation unchanged; Retro and Windows 11 activate
+   the existing NEO OS presentation unchanged; Retro, Windows 11, and Kali activate
    only when the persisted interface-style setting selects them. */
 
 /* Styles chooser --------------------------------------------------------- */
@@ -10,7 +10,7 @@
 
 .interface-style-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
 }
 
@@ -195,6 +195,61 @@
   background: repeating-linear-gradient(90deg, #60cdff 0 5px, transparent 5px 8px);
   border-radius: 1px;
   transform: translateX(-50%);
+}
+
+.interface-style-preview.is-kali {
+  background:
+    radial-gradient(circle at 76% 18%, rgba(0, 214, 255, .2), transparent 30%),
+    linear-gradient(145deg, #071324, #020711 74%);
+  border-color: rgba(0, 213, 255, .44);
+  border-radius: 5px;
+}
+
+.interface-style-preview.is-kali .interface-preview-pane {
+  inset: 13px 18px 15px;
+  background: rgba(4, 13, 26, .94);
+  border: 1px solid rgba(0, 213, 255, .42);
+  border-radius: 4px;
+  box-shadow: 0 8px 22px rgba(0,0,0,.5), 0 0 18px rgba(0,190,255,.12);
+}
+
+.interface-style-preview.is-kali .interface-preview-title {
+  z-index: 2;
+  top: 14px;
+  right: 19px;
+  left: 19px;
+  height: 11px;
+  background: linear-gradient(90deg, #1264ac, #0a294c);
+  border-bottom: 1px solid rgba(0,213,255,.5);
+  border-radius: 3px 3px 0 0;
+}
+
+.interface-style-preview.is-kali .interface-preview-sidebar {
+  z-index: 2;
+  top: 30px;
+  bottom: 22px;
+  left: 25px;
+  width: 28%;
+  background: repeating-linear-gradient(180deg, rgba(0,213,255,.45) 0 2px, transparent 2px 9px);
+}
+
+.interface-style-preview.is-kali .interface-preview-taskbar {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 9px;
+  background: #030b15;
+  border-top: 1px solid #00cfff;
+}
+
+.interface-style-preview.is-kali .interface-preview-taskbar::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 8px;
+  width: 48px;
+  height: 4px;
+  background: repeating-linear-gradient(90deg, #00d5ff 0 6px, transparent 6px 10px);
 }
 
 .interface-style-copy {
@@ -3752,4 +3807,206 @@ html[data-interface-style="windows11"][data-neo-app]:not([data-neo-app="shell"])
 
 @media (max-width: 420px) {
   html[data-interface-style="windows11"] .app-launcher :is(.pinned-app-grid,.search-result-list) { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+}
+
+/* Kali Linux workstation ------------------------------------------------ */
+html[data-interface-style="kali"] {
+  --kali-bg: #020711;
+  --kali-panel: rgba(5, 15, 29, .94);
+  --kali-panel-strong: #071526;
+  --kali-panel-soft: rgba(11, 31, 53, .78);
+  --kali-line: rgba(44, 180, 232, .28);
+  --kali-line-strong: rgba(0, 213, 255, .62);
+  --kali-text: #e7f7ff;
+  --kali-muted: #8ba9bb;
+  --kali-cyan: #00d5ff;
+  --kali-blue: #1478c9;
+  --kali-indigo: #5637d4;
+  --kali-green: #45e0a8;
+  --desktop-accent: #00cfff;
+  --desktop-bg: #020711;
+  --desktop-surface: #071526;
+  --desktop-text: #e7f7ff;
+  --desktop-muted: #8ba9bb;
+  --desktop-line: rgba(44, 180, 232, .24);
+  color-scheme: dark;
+}
+
+html[data-interface-style="kali"] body,
+html[data-interface-style="kali"] button,
+html[data-interface-style="kali"] input,
+html[data-interface-style="kali"] select,
+html[data-interface-style="kali"] textarea {
+  font-family: Inter, "Segoe UI", system-ui, sans-serif !important;
+}
+
+html[data-interface-style="kali"] body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(0,213,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,213,255,.025) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+html[data-interface-style="kali"] :focus-visible {
+  outline: 2px solid var(--kali-cyan) !important;
+  outline-offset: 2px !important;
+}
+
+html[data-interface-style="kali"] * {
+  scrollbar-color: rgba(0, 213, 255, .56) rgba(3, 12, 23, .72);
+}
+
+html[data-interface-style="kali"] ::-webkit-scrollbar { width: 9px; height: 9px; }
+html[data-interface-style="kali"] ::-webkit-scrollbar-track { background: rgba(3, 12, 23, .72); }
+html[data-interface-style="kali"] ::-webkit-scrollbar-thumb { background: linear-gradient(var(--kali-cyan), var(--kali-blue)); border: 2px solid #06111e; border-radius: 1px; }
+
+/* Shell bar and windows */
+html[data-interface-style="kali"][data-neo-app="shell"] .topbar {
+  color: var(--kali-text) !important;
+  background: linear-gradient(180deg, rgba(6,17,31,.98), rgba(2,9,18,.96)) !important;
+  border-bottom: 1px solid var(--kali-line-strong) !important;
+  box-shadow: 0 5px 22px rgba(0,0,0,.42), inset 0 -1px rgba(0,213,255,.08) !important;
+  backdrop-filter: blur(18px) saturate(125%) !important;
+}
+
+html[data-interface-style="kali"] .topbar :is(.topbar-brand,.topbar-date,.icon-button) { color: var(--kali-text) !important; }
+html[data-interface-style="kali"] .topbar :is(.topbar-brand,.topbar-date,.icon-button):hover { color: #fff !important; background: rgba(0,213,255,.1) !important; }
+
+html[data-interface-style="kali"] .neo-window,
+html[data-interface-style="kali"].neo-auto-hide-bars[data-window-bar-style] .neo-window,
+html[data-interface-style="kali"].neo-auto-hide-bars[data-window-bar-style] .neo-window.is-chrome-revealed {
+  overflow: hidden !important;
+  color: var(--kali-text) !important;
+  background: var(--kali-panel) !important;
+  border: 1px solid var(--kali-line) !important;
+  border-radius: 7px !important;
+  box-shadow: 0 20px 62px rgba(0,0,0,.56), 0 0 0 1px rgba(0,0,0,.42) !important;
+  backdrop-filter: blur(20px) saturate(120%) !important;
+}
+
+html[data-interface-style="kali"] .neo-window.is-active {
+  border-color: var(--kali-line-strong) !important;
+  box-shadow: 0 24px 70px rgba(0,0,0,.62), 0 0 24px rgba(0,174,255,.11) !important;
+}
+
+html[data-interface-style="kali"] .neo-window.is-maximized,
+html[data-interface-style="kali"].neo-auto-hide-bars[data-window-bar-style] .neo-window.is-maximized { border-radius: 0 !important; }
+
+html[data-interface-style="kali"] .neo-window > .window-chrome,
+html[data-interface-style="kali"].neo-auto-hide-bars[data-window-bar-style] .neo-window > .window-chrome,
+html[data-interface-style="kali"].neo-auto-hide-bars[data-window-bar-style] .neo-window.is-chrome-revealed > .window-chrome {
+  height: 34px !important;
+  color: var(--kali-text) !important;
+  background: linear-gradient(90deg, #0b3157, #081b32 62%, #061220) !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--kali-line-strong) !important;
+  border-radius: 0 !important;
+  box-shadow: inset 0 -1px rgba(0,213,255,.08) !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+html[data-interface-style="kali"] .window-app-icon { width: 34px !important; height: 34px !important; color: var(--kali-cyan) !important; background: rgba(0,0,0,.2) !important; border-right: 1px solid rgba(0,213,255,.2) !important; border-radius: 0 !important; }
+html[data-interface-style="kali"] .window-app-icon :is(.icon,img,.app-image-icon) { width: 17px !important; height: 17px !important; }
+html[data-interface-style="kali"] .window-title { color: var(--kali-text) !important; }
+html[data-interface-style="kali"] .window-title strong { color: var(--kali-text) !important; font-size: 12px !important; font-weight: 700 !important; letter-spacing: .01em !important; }
+html[data-interface-style="kali"] .window-title small { color: var(--kali-muted) !important; }
+html[data-interface-style="kali"] .window-controls { height: 34px !important; gap: 0 !important; }
+html[data-interface-style="kali"] .window-control { width: 39px !important; height: 34px !important; color: #a7c2d1 !important; background: transparent !important; border: 0 !important; border-left: 1px solid rgba(0,213,255,.07) !important; border-radius: 0 !important; }
+html[data-interface-style="kali"] .window-control:hover { color: #fff !important; background: rgba(0,213,255,.13) !important; }
+html[data-interface-style="kali"] .window-control.close:hover { color: #fff !important; background: #b3264c !important; }
+html[data-interface-style="kali"] .window-control .icon { width: 14px !important; height: 14px !important; }
+html[data-interface-style="kali"] .neo-window > .window-body { color: var(--kali-text) !important; background: var(--kali-bg) !important; }
+html[data-interface-style="kali"] .window-body iframe { background: var(--kali-bg) !important; }
+
+/* Kali panel, launcher and taskbar */
+html[data-interface-style="kali"] :is(.app-launcher,.desktop-context-menu,.context-submenu,.notification-center,.taskbar-quick-settings,.connection-panel,.neo-taskbar-menu,.feature-dialog) {
+  color: var(--kali-text) !important;
+  background: linear-gradient(155deg, rgba(8,24,42,.97), rgba(2,9,18,.98)) !important;
+  border: 1px solid var(--kali-line) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,.58), inset 0 1px rgba(0,213,255,.05) !important;
+  backdrop-filter: blur(22px) saturate(120%) !important;
+}
+
+html[data-interface-style="kali"] .app-launcher::before { background: linear-gradient(90deg, var(--kali-cyan), var(--kali-indigo)) !important; opacity: .92 !important; }
+html[data-interface-style="kali"] .app-launcher .launcher-search { background: rgba(0,6,13,.74) !important; border: 1px solid var(--kali-line) !important; border-bottom-color: var(--kali-line-strong) !important; border-radius: 4px !important; box-shadow: none !important; }
+html[data-interface-style="kali"] .app-launcher .launcher-search:focus-within { border-color: var(--kali-cyan) !important; box-shadow: 0 0 0 2px rgba(0,213,255,.12) !important; }
+html[data-interface-style="kali"] .app-launcher .launcher-search input { color: var(--kali-text) !important; background: transparent !important; }
+html[data-interface-style="kali"] .app-launcher :is(.launcher-app,.search-result-item) { color: var(--kali-text) !important; background: transparent !important; border: 1px solid transparent !important; border-radius: 5px !important; }
+html[data-interface-style="kali"] .app-launcher :is(.launcher-app,.search-result-item):hover { background: rgba(0,213,255,.075) !important; border-color: rgba(0,213,255,.2) !important; transform: none !important; }
+html[data-interface-style="kali"] .app-launcher .launcher-app-icon { background: linear-gradient(145deg, rgba(19,57,89,.9), rgba(4,15,28,.95)) !important; border: 1px solid rgba(0,213,255,.18) !important; border-radius: 5px !important; box-shadow: none !important; }
+
+html[data-interface-style="kali"][data-taskbar-position] .taskbar {
+  color: var(--kali-text) !important;
+  background: linear-gradient(180deg, rgba(5,17,31,.96), rgba(2,8,16,.98)) !important;
+  border: 1px solid rgba(0,213,255,.26) !important;
+  border-radius: 5px !important;
+  box-shadow: 0 10px 35px rgba(0,0,0,.48), inset 0 1px rgba(0,213,255,.08) !important;
+  backdrop-filter: blur(18px) saturate(120%) !important;
+}
+html[data-interface-style="kali"][data-taskbar-position="bottom"] .taskbar { border-bottom: 2px solid var(--kali-cyan) !important; }
+html[data-interface-style="kali"][data-taskbar-position="top"] .taskbar { border-top: 2px solid var(--kali-cyan) !important; }
+html[data-interface-style="kali"][data-taskbar-position="left"] .taskbar { border-left: 2px solid var(--kali-cyan) !important; }
+html[data-interface-style="kali"][data-taskbar-position="right"] .taskbar { border-right: 2px solid var(--kali-cyan) !important; }
+html[data-interface-style="kali"] .taskbar :is(.taskbar-start-button,.dock-button,.tray-button) { color: #bdd4df !important; background: transparent !important; border-color: transparent !important; border-radius: 4px !important; box-shadow: none !important; }
+html[data-interface-style="kali"] .taskbar :is(.taskbar-start-button,.dock-button,.tray-button):hover { color: #fff !important; background: rgba(0,213,255,.1) !important; border-color: rgba(0,213,255,.2) !important; }
+html[data-interface-style="kali"] .taskbar .dock-button.is-running::after { background: var(--kali-cyan) !important; box-shadow: 0 0 7px var(--kali-cyan) !important; }
+html[data-interface-style="kali"] .taskbar .dock-button.is-active { background: rgba(0,213,255,.13) !important; border-color: rgba(0,213,255,.28) !important; }
+
+/* Menus, previews and widgets */
+html[data-interface-style="kali"] :is(.desktop-context-menu,.context-submenu,.neo-taskbar-menu) button { color: #bfd2dc !important; background: transparent !important; border-radius: 3px !important; }
+html[data-interface-style="kali"] :is(.desktop-context-menu,.context-submenu,.neo-taskbar-menu) button:is(:hover,:focus-visible,[aria-expanded="true"]) { color: #fff !important; background: linear-gradient(90deg, rgba(20,120,201,.34), rgba(0,213,255,.08)) !important; }
+html[data-interface-style="kali"] .desktop-context-menu .context-separator { background: var(--kali-line) !important; }
+html[data-interface-style="kali"] :is(.neo-taskbar-preview,.neo-minimized-card) { color: var(--kali-text) !important; background: var(--kali-panel) !important; border: 1px solid var(--kali-line) !important; border-radius: 5px !important; box-shadow: 0 16px 44px rgba(0,0,0,.5) !important; backdrop-filter: blur(18px) !important; }
+html[data-interface-style="kali"] :is(.neo-taskbar-preview-titlebar,.neo-minimized-card-header) { background: linear-gradient(90deg, #0b3157, #07182b) !important; border-bottom: 1px solid var(--kali-line-strong) !important; }
+html[data-interface-style="kali"] #widget-layer > .neo-widget { color: var(--kali-text) !important; background: linear-gradient(150deg, rgba(7,22,39,.93), rgba(2,9,18,.95)) !important; border: 1px solid var(--kali-line) !important; border-radius: 5px !important; box-shadow: 0 12px 36px rgba(0,0,0,.44) !important; }
+
+/* Local apps and settings */
+html[data-interface-style="kali"] :is(.native-app,.desktop-app,.feature-dialog) { color: var(--kali-text) !important; background: var(--kali-bg) !important; }
+html[data-interface-style="kali"] :is(.native-app,.desktop-app,.feature-dialog) :is(h1,h2,h3,h4,strong,label) { color: var(--kali-text) !important; }
+html[data-interface-style="kali"] :is(.native-app,.desktop-app,.feature-dialog) :is(p,small,.eyebrow,.desktop-note) { color: var(--kali-muted) !important; }
+html[data-interface-style="kali"] :is(.native-app,.desktop-app,.feature-dialog) :is(button,input,select,textarea) { border-radius: 4px !important; }
+html[data-interface-style="kali"] :is(.native-app,.desktop-app,.feature-dialog) :is(input,select,textarea) { color: var(--kali-text) !important; background: rgba(2,9,18,.9) !important; border: 1px solid var(--kali-line) !important; box-shadow: none !important; }
+html[data-interface-style="kali"] :is(.native-app,.desktop-app,.feature-dialog) :is(input,select,textarea):focus { border-color: var(--kali-cyan) !important; box-shadow: 0 0 0 2px rgba(0,213,255,.1) !important; outline: 0 !important; }
+html[data-interface-style="kali"] :is(.settings-section,.taskbar-option-group,.inspector-controls,.desktop-card,.interface-style-choice,.tab-appearance-choice,.theme-choice,.cursor-theme-choice,.auto-clicker-control-card,.auto-clicker-test-card) { background: var(--kali-panel-soft) !important; border-color: var(--kali-line) !important; border-radius: 5px !important; box-shadow: none !important; }
+html[data-interface-style="kali"] .desktop-app .interface-style-choice:is(:hover,.is-selected,[aria-pressed="true"]) { background: rgba(20,120,201,.22) !important; border-color: var(--kali-cyan) !important; }
+
+html[data-interface-style="kali"] .neo-window[data-app-id="terminal"] .desktop-terminal,
+html[data-interface-style="kali"] .neo-terminal { color: #d8fff5 !important; background: #01060c !important; font-family: "Cascadia Mono", "JetBrains Mono", Consolas, monospace !important; text-shadow: 0 0 10px rgba(69,224,168,.12); }
+html[data-interface-style="kali"] .neo-terminal :is(.terminal-prompt,.terminal-prefix) { color: var(--kali-green) !important; }
+html[data-interface-style="kali"] .neo-terminal :is(input,.terminal-input) { color: var(--kali-text) !important; caret-color: var(--kali-cyan) !important; }
+html[data-interface-style="kali"] .auto-clicker { --clicker-accent: var(--kali-cyan); background: radial-gradient(circle at 85% 0, rgba(0,213,255,.12), transparent 34%), var(--kali-bg) !important; }
+html[data-interface-style="kali"] .auto-clicker-toggle { color: #001019 !important; background: linear-gradient(90deg, var(--kali-cyan), #44a6ff) !important; border-color: var(--kali-cyan) !important; }
+html[data-interface-style="kali"] .app-icon-auto-click { color: var(--kali-cyan) !important; background: linear-gradient(145deg, #0c3352, #04121f) !important; border-color: rgba(0,213,255,.32) !important; }
+
+/* The same tokens travel into same-origin app frames through neo-app-theme.js. */
+html[data-interface-style="kali"][data-neo-app]:not([data-neo-app="shell"]) {
+  --background: var(--kali-bg, #020711) !important;
+  --background-secondary: var(--kali-panel-strong, #071526) !important;
+  --bg-secondary: var(--kali-panel-strong, #071526) !important;
+  --card: var(--kali-panel-soft, rgba(11,31,53,.78)) !important;
+  --panel: var(--kali-panel-strong, #071526) !important;
+  --surface: var(--kali-panel-strong, #071526) !important;
+  --surface-2: var(--kali-panel-soft, rgba(11,31,53,.78)) !important;
+  --border: var(--kali-line, rgba(44,180,232,.28)) !important;
+  --accent: var(--kali-cyan, #00d5ff) !important;
+  color-scheme: dark;
+}
+html[data-interface-style="kali"][data-neo-app]:not([data-neo-app="shell"]) body,
+html[data-interface-style="kali"][data-neo-app]:not([data-neo-app="shell"]) :is(#root,#app,.app,.app-container,.app-shell,.cloud-shell) { color: var(--kali-text, #e7f7ff) !important; background-color: var(--kali-bg, #020711) !important; }
+html[data-interface-style="kali"][data-neo-app]:not([data-neo-app="shell"]) :is(.card,.panel,.modal-content,.dialog,.queue-panel,.settings-card) { background-color: var(--kali-panel-strong, #071526) !important; border-color: var(--kali-line, rgba(44,180,232,.28)) !important; border-radius: 5px !important; box-shadow: 0 12px 36px rgba(0,0,0,.34) !important; }
+
+@media (max-width: 700px) {
+  html[data-interface-style="kali"] .app-launcher { border-radius: 4px !important; }
+  html[data-interface-style="kali"] .neo-window.is-maximized { border-radius: 0 !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-interface-style="kali"] :is(.neo-window,.app-launcher,.taskbar,.desktop-context-menu,.neo-taskbar-preview) { transition: none !important; animation: none !important; }
 }

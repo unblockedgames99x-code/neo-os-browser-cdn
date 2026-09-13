@@ -13,8 +13,8 @@
   ]);
   const root = document.documentElement;
   const interfaceStyleSheet = document.currentScript
-    ? new URL('neo-interface-styles.css?v=20260912-windows11-style-v1', document.currentScript.src).href
-    : new URL('../neo-interface-styles.css?v=20260912-windows11-style-v1', document.baseURI).href;
+    ? new URL('neo-interface-styles.css?v=20260913-kali-style-v1', document.currentScript.src).href
+    : new URL('../neo-interface-styles.css?v=20260913-kali-style-v1', document.baseURI).href;
   const messageTargetOrigin = location.origin === 'null' ? '*' : location.origin;
   const trustedMessageOrigin = origin => location.origin === 'null' ? origin === 'null' : origin === location.origin;
   let activeState = {};
@@ -57,7 +57,7 @@
 
   function normalizedInterfaceStyle(value) {
     value = String(value || '').toLowerCase();
-    return value === 'retro' || value === 'windows11' ? value : 'modern';
+    return value === 'retro' || value === 'windows11' || value === 'kali' ? value : 'modern';
   }
 
   function normalizedPerformanceMode(value) {

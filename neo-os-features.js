@@ -1783,6 +1783,250 @@
     render();
   }
 
+  function mountAutoClicker(body) {
+    var speedKey = "neo_os_auto_clicker_speed_v1";
+    var savedSpeed = Number(readJson(speedKey, 8));
+    var initialSpeed = Number.isFinite(savedSpeed) ? Math.max(1, Math.min(50, Math.round(savedSpeed))) : 8;
+    body.innerHTML = '<section class="neo-utility auto-clicker" data-auto-clicker>' +
+      '<header class="auto-clicker-heading"><div><span class="eyebrow">LOCAL AUTOMATION</span><h2>Auto Clicker</h2><p>Pick a spot inside NEO OS, choose a speed, then start. F8 toggles clicking.</p></div><span class="auto-clicker-state" data-auto-clicker-state>READY</span></header>' +
+      '<div class="auto-clicker-layout"><div class="auto-clicker-control-card">' +
+      '<div class="auto-clicker-target"><span class="auto-clicker-target-icon">' + icon("auto-click") + '</span><div><small>TARGET</small><strong data-auto-clicker-target>No target selected</strong></div></div>' +
+      '<button class="auto-clicker-pick" type="button" data-auto-clicker-pick>' + icon("pin") + '<span>Pick target</span><kbd>F6</kbd></button>' +
+      '<label class="auto-clicker-speed"><span><strong>Clicks per second</strong><output data-auto-clicker-speed-output>' + initialSpeed + ' CPS</output></span><input type="range" min="1" max="50" step="1" value="' + initialSpeed + '" data-auto-clicker-speed aria-label="Clicks per second" /></label>' +
+      '<div class="auto-clicker-speed-presets" aria-label="Speed presets"><button type="button" data-auto-clicker-preset="5">5</button><button type="button" data-auto-clicker-preset="10">10</button><button type="button" data-auto-clicker-preset="20">20</button><button type="button" data-auto-clicker-preset="50">50</button></div>' +
+      '<button class="auto-clicker-toggle" type="button" data-auto-clicker-toggle disabled><span class="auto-clicker-toggle-icon">' + icon("play") + '</span><span data-auto-clicker-toggle-label>Start clicking</span><kbd>F8</kbd></button>' +
+      '<button class="auto-clicker-clear" type="button" data-auto-clicker-clear disabled>Clear target</button></div>' +
+      '<aside class="auto-clicker-test-card"><div><span class="eyebrow">TEST AREA</span><h3>Try it here first</h3><p>Pick the pad, start the clicker, and watch the counter rise.</p></div><button type="button" class="auto-clicker-test-pad" data-autoclick-test><span class="auto-clicker-rings" aria-hidden="true"></span><strong>Click target</strong><small data-autoclick-test-count>0 test clicks</small></button><dl><div><dt>Total clicks</dt><dd data-auto-clicker-count>0</dd></div><div><dt>Interval</dt><dd data-auto-clicker-interval>' + Math.round(1000 / initialSpeed) + ' ms</dd></div></dl></aside></div>' +
+      '<p class="auto-clicker-status" data-auto-clicker-status role="status" aria-live="polite">Choose <strong>Pick target</strong>, then click any control or game area inside NEO OS.</p></section>';
+
+    var root = body.querySelector("[data-auto-clicker]");
+    var speed = root.querySelector("[data-auto-clicker-speed]");
+    var speedOutput = root.querySelector("[data-auto-clicker-speed-output]");
+    var intervalOutput = root.querySelector("[data-auto-clicker-interval]");
+    var targetOutput = root.querySelector("[data-auto-clicker-target]");
+    var countOutput = root.querySelector("[data-auto-clicker-count]");
+    var stateOutput = root.querySelector("[data-auto-clicker-state]");
+    var statusOutput = root.querySelector("[data-auto-clicker-status]");
+    var pickButton = root.querySelector("[data-auto-clicker-pick]");
+    var toggleButton = root.querySelector("[data-auto-clicker-toggle]");
+    var toggleLabel = root.querySelector("[data-auto-clicker-toggle-label]");
+    var toggleIcon = root.querySelector(".auto-clicker-toggle-icon");
+    var clearButton = root.querySelector("[data-auto-clicker-clear]");
+    var testPad = root.querySelector("[data-autoclick-test]");
+    var testCountOutput = root.querySelector("[data-autoclick-test-count]");
+    var target = null;
+    var timer = 0;
+    var clickCount = 0;
+    var testCount = 0;
+    var picker = null;
+    var marker = null;
+
+    function setStatus(message, tone) {
+      statusOutput.textContent = message;
+      statusOutput.dataset.tone = tone || "neutral";
+    }
+
+    function describeTarget(element) {
+      if (element === testPad) return "Auto Clicker test pad";
+      var text = element.getAttribute && (element.getAttribute("aria-label") || element.getAttribute("title"));
+      if (!text) text = String(element.textContent || "").replace(/\s+/g, " ").trim().slice(0, 42);
+      return text || element.tagName.toLowerCase();
+    }
+
+    function removeMarker() {
+      if (marker && marker.parentNode) marker.parentNode.removeChild(marker);
+      marker = null;
+    }
+
+    function showMarker(selection) {
+      removeMarker();
+      var doc = selection.element.ownerDocument;
+      marker = doc.createElement("span");
+      marker.className = "neo-auto-click-marker";
+      marker.setAttribute("aria-hidden", "true");
+      marker.style.left = selection.clientX + "px";
+      marker.style.top = selection.clientY + "px";
+      (doc.body || doc.documentElement).appendChild(marker);
+      window.setTimeout(function () { if (marker) marker.classList.add("is-settled"); }, 20);
+    }
+
+    function resolveTarget(doc, clientX, clientY) {
+      var element = doc.elementFromPoint(clientX, clientY);
+      if (!element) return null;
+      if (element.tagName === "IFRAME") {
+        var rect = element.getBoundingClientRect();
+        try {
+          var childDoc = element.contentDocument;
+          if (!childDoc || !childDoc.documentElement) return { blocked: true };
+          return resolveTarget(childDoc, clientX - rect.left, clientY - rect.top);
+        } catch (error) {
+          return { blocked: true };
+        }
+      }
+      return { element: element, clientX: clientX, clientY: clientY };
+    }
+
+    function stopPicking(message) {
+      if (picker && picker.parentNode) picker.parentNode.removeChild(picker);
+      picker = null;
+      pickButton.classList.remove("is-picking");
+      if (message) setStatus(message);
+    }
+
+    function pickTarget() {
+      stopClicking();
+      stopPicking();
+      picker = document.createElement("div");
+      picker.className = "neo-auto-click-picker";
+      picker.innerHTML = '<div><span>' + icon("auto-click") + '</span><strong>Choose a click target</strong><small>Click a local app, game area, or the test pad · Esc to cancel</small></div>';
+      document.body.appendChild(picker);
+      pickButton.classList.add("is-picking");
+      stateOutput.textContent = "PICKING";
+      setStatus("Target picker active. Click the exact spot you want repeated.", "active");
+      picker.addEventListener("pointerdown", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        picker.style.pointerEvents = "none";
+        var selection = resolveTarget(document, event.clientX, event.clientY);
+        picker.style.pointerEvents = "auto";
+        if (!selection) {
+          stopPicking("No clickable target was found there. Try another spot.");
+          stateOutput.textContent = "READY";
+          return;
+        }
+        if (selection.blocked) {
+          stopPicking("That page is protected by browser security. Choose a NEO app or same-origin page.");
+          stateOutput.textContent = "BLOCKED";
+          return;
+        }
+        if (root.contains(selection.element) && selection.element !== testPad && !testPad.contains(selection.element)) {
+          stopPicking("Choose a target outside the Auto Clicker controls, or use the test pad.");
+          stateOutput.textContent = "READY";
+          return;
+        }
+        var rect = selection.element.getBoundingClientRect();
+        target = {
+          element: selection.element,
+          xRatio: rect.width ? Math.max(0, Math.min(1, (selection.clientX - rect.left) / rect.width)) : .5,
+          yRatio: rect.height ? Math.max(0, Math.min(1, (selection.clientY - rect.top) / rect.height)) : .5
+        };
+        targetOutput.textContent = describeTarget(selection.element);
+        toggleButton.disabled = false;
+        clearButton.disabled = false;
+        showMarker(selection);
+        stopPicking("Target selected. Press Start clicking or F8.");
+        stateOutput.textContent = "ARMED";
+      }, { once: true });
+    }
+
+    function dispatchClick() {
+      if (!target || !target.element || !target.element.isConnected) {
+        stopClicking("The selected target closed or moved away. Pick it again.");
+        clearTarget();
+        return;
+      }
+      var element = target.element;
+      var rect = element.getBoundingClientRect();
+      var clientX = rect.left + rect.width * target.xRatio;
+      var clientY = rect.top + rect.height * target.yRatio;
+      var view = element.ownerDocument.defaultView || window;
+      var base = { bubbles: true, cancelable: true, composed: true, view: view, clientX: clientX, clientY: clientY, button: 0, buttons: 1 };
+      try {
+        if (view.PointerEvent) element.dispatchEvent(new view.PointerEvent("pointerdown", Object.assign({ pointerId: 1, pointerType: "mouse", isPrimary: true }, base)));
+        element.dispatchEvent(new view.MouseEvent("mousedown", base));
+        if (view.PointerEvent) element.dispatchEvent(new view.PointerEvent("pointerup", Object.assign({ pointerId: 1, pointerType: "mouse", isPrimary: true, buttons: 0 }, base)));
+        element.dispatchEvent(new view.MouseEvent("mouseup", Object.assign({}, base, { buttons: 0 })));
+        element.dispatchEvent(new view.MouseEvent("click", Object.assign({}, base, { buttons: 0 })));
+        clickCount += 1;
+        countOutput.textContent = String(clickCount);
+      } catch (error) {
+        stopClicking("This target stopped accepting clicks. Pick another target.");
+      }
+    }
+
+    function updateSpeed(value) {
+      var cps = Math.max(1, Math.min(50, Math.round(Number(value) || 1)));
+      speed.value = String(cps);
+      speedOutput.textContent = cps + " CPS";
+      intervalOutput.textContent = Math.round(1000 / cps) + " ms";
+      writeJson(speedKey, cps);
+      if (timer) {
+        window.clearInterval(timer);
+        timer = window.setInterval(dispatchClick, 1000 / cps);
+      }
+    }
+
+    function startClicking() {
+      if (timer || !target) return;
+      if (!target.element.isConnected) { clearTarget(); return; }
+      var cps = Number(speed.value);
+      timer = window.setInterval(dispatchClick, 1000 / cps);
+      root.classList.add("is-running");
+      toggleButton.setAttribute("aria-pressed", "true");
+      toggleLabel.textContent = "Stop clicking";
+      toggleIcon.innerHTML = icon("pause");
+      stateOutput.textContent = "RUNNING";
+      setStatus("Clicking " + describeTarget(target.element) + " at " + cps + " clicks per second.", "active");
+      dispatchClick();
+    }
+
+    function stopClicking(message) {
+      if (timer) window.clearInterval(timer);
+      timer = 0;
+      root.classList.remove("is-running");
+      toggleButton.setAttribute("aria-pressed", "false");
+      toggleLabel.textContent = "Start clicking";
+      toggleIcon.innerHTML = icon("play");
+      if (target) stateOutput.textContent = "ARMED";
+      if (message) setStatus(message);
+      else if (target) setStatus("Stopped. Your target is still selected.");
+    }
+
+    function clearTarget() {
+      stopClicking();
+      target = null;
+      removeMarker();
+      targetOutput.textContent = "No target selected";
+      toggleButton.disabled = true;
+      clearButton.disabled = true;
+      stateOutput.textContent = "READY";
+      setStatus("Choose Pick target, then click any control or game area inside NEO OS.");
+    }
+
+    testPad.addEventListener("click", function () {
+      testCount += 1;
+      testCountOutput.textContent = testCount + (testCount === 1 ? " test click" : " test clicks");
+      testPad.classList.remove("is-hit");
+      void testPad.offsetWidth;
+      testPad.classList.add("is-hit");
+    });
+    pickButton.addEventListener("click", pickTarget);
+    toggleButton.addEventListener("click", function () { if (timer) stopClicking(); else startClicking(); });
+    clearButton.addEventListener("click", clearTarget);
+    speed.addEventListener("input", function () { updateSpeed(speed.value); });
+    root.querySelectorAll("[data-auto-clicker-preset]").forEach(function (button) {
+      button.addEventListener("click", function () { updateSpeed(button.dataset.autoClickerPreset); });
+    });
+    function onKey(event) {
+      if (!body.isConnected) return;
+      if (event.key === "F8") { event.preventDefault(); if (timer) stopClicking(); else startClicking(); }
+      else if (event.key === "F6") { event.preventDefault(); pickTarget(); }
+      else if (event.key === "Escape") {
+        if (picker) { event.preventDefault(); stopPicking("Target selection cancelled."); stateOutput.textContent = target ? "ARMED" : "READY"; }
+        else if (timer) { event.preventDefault(); stopClicking(); }
+      }
+    }
+    window.addEventListener("keydown", onKey, true);
+    var hostWindow = body.closest(".neo-window");
+    if (hostWindow) hostWindow._neoExtraCleanup = function () {
+      stopClicking();
+      stopPicking();
+      removeMarker();
+      window.removeEventListener("keydown", onKey, true);
+    };
+    updateSpeed(initialSpeed);
+  }
+
   function mountPaint(body) {
     body.innerHTML = '<section class="neo-utility neo-paint" data-paint><header><div><span class="eyebrow">LOCAL CANVAS</span><h2>Paint</h2></div><div class="paint-tools"><label><span>Color</span><input type="color" value="#ffffff" data-paint-color /></label><label><span>Size</span><input type="range" min="1" max="44" value="6" data-paint-size /></label><button type="button" data-paint-erase aria-pressed="false">' + icon("trash") + '<span>Eraser</span></button><button type="button" data-paint-clear>' + icon("refresh") + '<span>Clear</span></button><button class="is-primary" type="button" data-paint-save>' + icon("download") + '<span>Save</span></button></div></header><div class="paint-canvas-wrap"><canvas data-paint-canvas aria-label="Drawing canvas"></canvas></div></section>';
     var root = body.querySelector("[data-paint]");
@@ -1964,6 +2208,7 @@
     else if (id === "terminal") mountTerminal(body);
     else if (id === "notes") mountNotes(body);
     else if (id === "calculator") mountCalculator(body);
+    else if (id === "auto-clicker") mountAutoClicker(body);
     else if (id === "paint") mountPaint(body);
     else if (id === "clock") mountClock(body);
     else if (id === "photos") mountPhotos(body);

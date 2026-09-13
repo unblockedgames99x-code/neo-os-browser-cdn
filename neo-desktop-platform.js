@@ -98,7 +98,8 @@
     const styles=[
       {id:'modern',label:'Modern',description:'The current NEO OS look'},
       {id:'retro',label:'Retro',description:'Compact classic desktop controls'},
-      {id:'windows11',label:'Windows 11',description:'Centered taskbar and Fluent acrylic'}
+      {id:'windows11',label:'Windows 11',description:'Centered taskbar and Fluent acrylic'},
+      {id:'kali',label:'Kali Linux',description:'Dark security workstation interface'}
     ];
     styles.forEach(style=>{
       const choice=button('',()=>shell.setSetting('interfaceStyle',style.id),grid);
@@ -221,7 +222,7 @@
       const file=picker.files&&picker.files[0];
       picker.value='';
       if(!file)return;
-      if(file.size>256*1024){shell.notify('Cursor not imported','Choose a file no larger than 256 KB.','info');return;}
+      if(file.size>2*1024*1024){shell.notify('Cursor not imported','Choose a file no larger than 2 MB.','info');return;}
       try{
         status.textContent='Checking '+file.name+'…';
         const bytes=new Uint8Array(await file.arrayBuffer());

@@ -175,6 +175,20 @@
       category: "Utilities",
       aliases: ["calculator", "math", "numbers"]
     },
+    "auto-clicker": {
+      id: "auto-clicker",
+      title: "Auto Clicker",
+      subtitle: "Repeat clicks at a selected spot",
+      icon: "auto-click",
+      lazy: true,
+      width: 620,
+      height: 560,
+      launcher: true,
+      pinned: false,
+      core: true,
+      category: "Utilities",
+      aliases: ["auto clicker", "autoclicker", "auto click", "rapid click", "clicker", "cps"]
+    },
     paint: {
       id: "paint",
       title: "Paint",

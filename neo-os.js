@@ -123,7 +123,7 @@
 
   function normalizeInterfaceStyle(value) {
     value = String(value || "").toLowerCase();
-    return value === "retro" || value === "windows11" ? value : "modern";
+    return value === "retro" || value === "windows11" || value === "kali" ? value : "modern";
   }
 
   function normalizeCursorTheme(value) {
@@ -131,7 +131,7 @@
     return value === "neo" || value === "neon" || value === "pixel" || value === "contrast" || value === "custom" ? value : "system";
   }
 
-  var CUSTOM_CURSOR_MAX_BYTES = 256 * 1024;
+  var CUSTOM_CURSOR_MAX_BYTES = 2 * 1024 * 1024;
 
   function isValidCustomCursorData(value) {
     value = String(value || "");
@@ -437,7 +437,7 @@
       pinned: true,
       core: true,
       category: "System",
-      aliases: ["settings", "preferences", "appearance", "styles", "modern", "retro", "cursor", "pointer", "sound", "theme", "tab appearance", "taskbar", "performance", "battery", "speed"]
+      aliases: ["settings", "preferences", "appearance", "styles", "modern", "retro", "windows 11", "kali", "kali linux", "linux", "cursor", "pointer", "sound", "theme", "tab appearance", "taskbar", "performance", "battery", "speed"]
     },
     terminal: {
       id: "terminal",
@@ -1421,7 +1421,7 @@
           var link = frameDocument.createElement("link");
           link.id = "neo-interface-styles";
           link.rel = "stylesheet";
-          link.href = new URL("./neo-interface-styles.css?v=20260912-windows11-style-v1&settings=combined-v1", document.baseURI).href;
+          link.href = new URL("./neo-interface-styles.css?v=20260913-kali-style-v1&settings=combined-v1", document.baseURI).href;
           frameDocument.head.appendChild(link);
         }
       }
@@ -1670,7 +1670,7 @@
   function setCustomCursor(data, name) {
     data = String(data || "");
     if (!isValidCustomCursorData(data)) {
-      showToast("Cursor not imported", "Choose a PNG, CUR, or ICO file no larger than 256 KB.", "info");
+      showToast("Cursor not imported", "Choose a PNG, CUR, or ICO file no larger than 2 MB.", "info");
       return false;
     }
     settings.customCursorData = data;
@@ -3105,12 +3105,12 @@
       if (!document.querySelector('link[data-neo-features]')) {
         var style = document.createElement("link");
         style.rel = "stylesheet";
-        style.href = "./neo-os-features.css?v=20260910-app-installer-v2&hover=bridge-v1";
+        style.href = "./neo-os-features.css?v=20260913-auto-clicker-v1&hover=bridge-v1";
         style.dataset.neoFeatures = "";
         document.head.appendChild(style);
       }
       var script = document.createElement("script");
-      script.src = "./neo-os-features.js?v=20260912-status-widget-toggles-v1&hover=bridge-v1";
+      script.src = "./neo-os-features.js?v=20260913-auto-clicker-v1&hover=bridge-v1";
       script.async = true;
       script.onload = function () {
         if (!window.NEO_FEATURES) {
@@ -8190,6 +8190,8 @@
             ? ["Retro style enabled", "Windows, apps, widgets, menus, and the taskbar now use the classic desktop style."]
             : nextInterfaceStyle === "windows11"
               ? ["Windows 11 style enabled", "The centered taskbar, Start menu, windows, controls, and flyouts now use the Windows 11 look."]
+              : nextInterfaceStyle === "kali"
+                ? ["Kali Linux style enabled", "Windows, menus, the taskbar, terminal, and local apps now use the Kali workstation look."]
               : ["Modern style restored", "The current NEO OS interface is active again."];
           showToast(interfaceStyleToast[0], interfaceStyleToast[1], "settings");
         }
