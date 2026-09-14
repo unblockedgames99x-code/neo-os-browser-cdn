@@ -53,7 +53,7 @@
       title: "Games",
       subtitle: "Thousands of games from the direct NEO game CDN",
       icon: "xbox-games",
-      route: "./neo-games/index.html?build=20260913-direct-games-v1",
+      route: "./neo-games/index.html?build=20260914-ggr-master-v1",
       keepAlive: false,
       width: 1180,
       height: 760,
