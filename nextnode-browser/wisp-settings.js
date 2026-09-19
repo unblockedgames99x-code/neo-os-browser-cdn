@@ -2,9 +2,9 @@
   "use strict";
 
   var STORAGE_KEY = "neo:browser:wisp:v1";
-  var DEFAULT_WISP = "wss://nextnode9124.b-cdn.net/w/";
+  // Match the named YukiOS choices. Custom is the only free-form option.
+  var DEFAULT_WISP = "wss://probuildingsupplies.com/w/";
   var SERVERS = Object.freeze([
-    Object.freeze({ name: "NextNode Wisp", url: DEFAULT_WISP }),
     Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
     Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" }),
     Object.freeze({ name: "Reeyuki Wisp", url: "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/" }),
