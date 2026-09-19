@@ -31,7 +31,8 @@
 
   function normalizeRoute(value) {
     var url = new URL(String(value || ""), document.baseURI);
-    if (url.protocol === "blob:" && url.origin === location.origin) return url.href;
+    var trustedOrigin = new URL(document.baseURI).origin;
+    if (url.protocol === "blob:" && url.origin === trustedOrigin) return url.href;
     return normalize(url.href);
   }
 
