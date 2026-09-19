@@ -440,6 +440,31 @@
     return withTimeout(request, 25000, "The protected game document took too long to load.");
   }
 
+  function requestProxyResource(worker, target, accept) {
+    const channel = new MessageChannel();
+    const request = new Promise((resolve, reject) => {
+      channel.port1.onmessage = (event) => {
+        if (event.data?.ok && event.data.bytes instanceof ArrayBuffer) {
+          resolve({
+            bytes: event.data.bytes,
+            type: event.data.type || "application/octet-stream",
+            fetchedUrl: event.data.url || target,
+          });
+          return;
+        }
+        reject(new Error(event.data?.message || "The proxied resource could not be loaded."));
+      };
+      channel.port1.onmessageerror = () => reject(new Error("The proxied resource response was invalid."));
+    });
+    worker.postMessage({
+      type: "neo-browser:proxy-resource",
+      engine: ENGINE_VERSION,
+      url: target,
+      accept: accept || "*/*",
+    }, [channel.port2]);
+    return withTimeout(request, 30000, "The proxied resource took too long to load.");
+  }
+
   async function configureTransportNow() {
     await loadScript(
       "neo-baremux-runtime",
@@ -2240,6 +2265,13 @@
       const runtime = await getRuntime();
       await ensureNavigationTransport(target);
       return runtime.fetchDocument(target);
+    },
+    async fetchResource(value, accept) {
+      const target = normalizeDestination(value);
+      if (!externalDestination(target)) throw new TypeError("Only http and https resources can use the web proxy.");
+      const runtime = await getRuntime();
+      await ensureNavigationTransport(target);
+      return requestProxyResource(await activateWorker(), target, accept);
     },
     async openQuery(options) {
       if (!options?.container) throw new Error("The web app has no page container.");

@@ -6,6 +6,7 @@ const ENGINE_VERSION = "neo-browse-v71";
 const ROUTE_PREFIX = new URL("./browse-v71/", self.location.href).pathname;
 const ultraviolet = new UVServiceWorker();
 const MAX_GAME_DOCUMENT_BYTES = 8 * 1024 * 1024;
+const MAX_PROXY_RESOURCE_BYTES = 16 * 1024 * 1024;
 const RETRYABLE_METHODS = new Set(["GET", "HEAD"]);
 const FALLBACK_TIMEOUT_MS = 8000;
 let fallbackRequest = null;
@@ -290,6 +291,49 @@ self.addEventListener("message", (event) => {
           : await new Response(upstream.body).text();
         if (html.length > MAX_GAME_DOCUMENT_BYTES) throw new Error("The game document is too large.");
         reply?.postMessage({ ok: true, html, url: target.href });
+      } catch (error) {
+        reply?.postMessage({ ok: false, message: String(error?.message || error) });
+      }
+    })());
+    return;
+  }
+  if (event.data?.type === "neo-browser:proxy-resource" && event.data.engine === ENGINE_VERSION) {
+    const reply = event.ports[0];
+    event.waitUntil((async () => {
+      try {
+        const target = new URL(String(event.data.url || ""));
+        if (target.protocol !== "https:" && target.protocol !== "http:") {
+          throw new Error("This resource address is not supported.");
+        }
+        const upstream = await ultraviolet.bareClient.fetch(target.href, {
+          method: "GET",
+          headers: {
+            accept: String(event.data.accept || "*/*").slice(0, 512),
+            "accept-language": "en-US,en;q=0.9",
+          },
+          redirect: "follow",
+        });
+        if (!upstream || upstream.status < 200 || upstream.status >= 300) {
+          throw new Error(`The resource host returned ${upstream?.status || "an invalid response"}.`);
+        }
+        const upstreamHeaders = upstream.rawHeaders || upstream.headers;
+        const headerValue = (name) => {
+          if (upstreamHeaders && typeof upstreamHeaders.get === "function") return upstreamHeaders.get(name) || "";
+          const direct = upstreamHeaders?.[name] || upstreamHeaders?.[name.toLowerCase()] || "";
+          return Array.isArray(direct) ? direct.join(", ") : String(direct || "");
+        };
+        const declaredSize = Number(headerValue("content-length") || 0);
+        if (declaredSize > MAX_PROXY_RESOURCE_BYTES) throw new Error("The proxied resource is too large.");
+        const bytes = typeof upstream.arrayBuffer === "function"
+          ? await upstream.arrayBuffer()
+          : await new Response(upstream.body).arrayBuffer();
+        if (bytes.byteLength > MAX_PROXY_RESOURCE_BYTES) throw new Error("The proxied resource is too large.");
+        reply?.postMessage({
+          ok: true,
+          bytes,
+          type: headerValue("content-type") || "application/octet-stream",
+          url: target.href,
+        }, [bytes]);
       } catch (error) {
         reply?.postMessage({ ok: false, message: String(error?.message || error) });
       }

@@ -29,6 +29,12 @@
     return url.href;
   }
 
+  function normalizeRoute(value) {
+    var url = new URL(String(value || ""), document.baseURI);
+    if (url.protocol === "blob:" && url.origin === location.origin) return url.href;
+    return normalize(url.href);
+  }
+
   function resolve(value, kind, signal) {
     var href = normalize(value);
     if (window.parent === window) return Promise.resolve(href);
@@ -90,7 +96,7 @@
       request.reject(new Error("The NEO web proxy could not route this resource."));
       return;
     }
-    try { request.resolve(normalize(data.route)); }
+    try { request.resolve(normalizeRoute(data.route)); }
     catch (error) { request.reject(error); }
   });
 

@@ -5779,6 +5779,17 @@
     };
     loadBrowseRuntime().then(function (engine) {
       if (!engine || typeof engine.proxyUrl !== "function") throw new Error("The web proxy is unavailable.");
+      var resourceKind = String(data.kind || "").toLowerCase();
+      if (
+        data.type === "neo-shell:proxy-resource" &&
+        typeof engine.fetchResource === "function" &&
+        ["fetch", "image", "search"].indexOf(resourceKind) !== -1
+      ) {
+        var accept = resourceKind === "image" ? "image/avif,image/webp,image/*,*/*;q=0.8" : "*/*";
+        return engine.fetchResource(target, accept).then(function (resource) {
+          return URL.createObjectURL(new Blob([resource.bytes], { type: resource.type || "application/octet-stream" }));
+        });
+      }
       return engine.proxyUrl(target);
     }).then(function (route) {
       reply({ ok: true, route: route });
