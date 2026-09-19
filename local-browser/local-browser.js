@@ -1,7 +1,7 @@
 (function () {
   "use strict";
   var pages = [
-    {name:"NEO Music",copy:"Search, stream, queue, and organize music in the full player.",url:"https://fastly.jsdelivr.net/gh/unblockedgames99x-code/neo-os-music-two-cdn@25e5750f27b6eb09224115240f9bdac5af13975a/music-v2/index.html",tags:"songs audio playlists albums artists streaming"},
+    {name:"NEO Music",copy:"Search, stream, queue, and organize music in the full player.",url:"https://fastly.jsdelivr.net/gh/unblockedgames99x-code/neo-os-music-two-cdn@68939faad0168a73c1d0116f171d7ee1152a80e4/music-v2/index.html",tags:"songs audio playlists albums artists streaming"},
     {name:"Grandmaster Chess",copy:"A complete chess game bundled in one local file.",url:"../../games/grandmaster-chess.html",tags:"game offline chess board"},
     {name:"Quantum Clicker",copy:"A local idle game with saved progress.",url:"../../games/quantum-clicker.html",tags:"game offline clicker"},
     {name:"Tetris",copy:"The falling-block game, ready without internet.",url:"../../games/tetris.html",tags:"game offline blocks puzzle"}

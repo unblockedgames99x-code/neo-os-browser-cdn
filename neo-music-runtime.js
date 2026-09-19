@@ -544,27 +544,12 @@
     startLoad(false);
   }
 
-  function cacheWindow(win, id, openWindows, app, forceDestroy, renderDock, activateTopWindow) {
-    if (!win || !id || forceDestroy === true || !app || !app.keepAlive || app.installed === false) return false;
-    try {
-      if (document.activeElement && win.contains(document.activeElement)) document.activeElement.blur();
-    } catch (error) {}
-    window.clearTimeout(win._neoCloseTimer);
-    win.classList.add("is-closing");
-    win.classList.remove("is-open", "is-active", "is-minimized");
-    win.setAttribute("aria-hidden", "true");
-    win.setAttribute("inert", "");
-    openWindows.delete(id);
-    cachedWindows.set(id, win);
-    win._neoCloseTimer = window.setTimeout(function () {
-      if (cachedWindows.get(id) !== win) return;
-      win.hidden = true;
-      win.classList.remove("is-closing");
-    }, 180);
-    try { renderDock(); } catch (error) {}
-    try { activateTopWindow(); } catch (error) {}
-    return true;
+  function cacheWindow() {
+    // Closing an app is a hard lifecycle boundary. Windows are never cached:
+    // media, navigation history, timers, and document state must all end.
+    return false;
   }
+
 
   function stopWindow(win, id) {
     if (!win || id !== "stream") return false;

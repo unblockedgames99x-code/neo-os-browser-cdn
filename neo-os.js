@@ -378,7 +378,7 @@
       subtitle: "Private web search",
       icon: "duckduckgo",
     route: "./NEO-BROWSER/index.html?v=20260912-proxy-ready-v2",
-      keepAlive: true,
+      keepAlive: false,
       width: 1080,
       height: 720,
       launcher: true,
@@ -5838,26 +5838,86 @@
     }
   }
 
+  function stopMediaElement(media) {
+    if (!media) return;
+    try { media.pause(); } catch (_error) {}
+    try {
+      if (media.srcObject && typeof media.srcObject.getTracks === "function") {
+        media.srcObject.getTracks().forEach(function (track) {
+          try { track.stop(); } catch (_error) {}
+        });
+        media.srcObject = null;
+      }
+    } catch (_error) {}
+    try { if (Number.isFinite(media.currentTime)) media.currentTime = 0; } catch (_error) {}
+    try { media.removeAttribute("autoplay"); } catch (_error) {}
+  }
+
+  function stopFrameRuntime(frame, id, visited) {
+    if (!frame || visited.has(frame)) return;
+    visited.add(frame);
+    try {
+      frame.contentWindow.postMessage({
+        type: "neo-shell:close",
+        appId: String(id || ""),
+        reason: "window-closed"
+      }, "*");
+    } catch (_error) {}
+    try {
+      var view = frame.contentWindow;
+      var sessionId = String(view._sessionInstId || "");
+      if (sessionId) view.localStorage.removeItem(sessionId + ":neo:tabs:v1");
+      view.sessionStorage.removeItem("__neo_inst__");
+    } catch (_error) {}
+    try {
+      var frameDocument = frame.contentDocument;
+      if (!frameDocument) return;
+      frameDocument.querySelectorAll("audio, video").forEach(stopMediaElement);
+      frameDocument.querySelectorAll("iframe").forEach(function (nestedFrame) {
+        stopFrameRuntime(nestedFrame, id, visited);
+      });
+      try { frameDocument.dispatchEvent(new Event("pagehide")); } catch (_error) {}
+    } catch (_error) {}
+  }
+
   function stopWindowMedia(win, id) {
-    if (id !== "stream") return;
-    if (win._neoLocalMusicCommand) win._neoLocalMusicCommand("stop");
-    if (musicRuntime && typeof musicRuntime.stopWindow === "function") {
-      try { musicRuntime.stopWindow(win, id); } catch (error) {}
+    if (!win) return;
+    win.querySelectorAll("audio, video").forEach(stopMediaElement);
+    var visited = new WeakSet();
+    win.querySelectorAll("iframe").forEach(function (frame) { stopFrameRuntime(frame, id, visited); });
+
+    if (id === "stream") {
+      if (win._neoLocalMusicCommand) win._neoLocalMusicCommand("stop");
+      if (musicRuntime && typeof musicRuntime.stopWindow === "function") {
+        try { musicRuntime.stopWindow(win, id); } catch (error) {}
+      }
+      if (window.NEO_FEATURES && typeof window.NEO_FEATURES.stopMusic === "function") {
+        try { window.NEO_FEATURES.stopMusic(); } catch (error) {}
+      } else if (featureRuntimePromise) {
+        featureRuntimePromise.then(function (runtime) {
+          if (runtime && typeof runtime.stopMusic === "function") {
+            try { runtime.stopMusic(); } catch (error) {}
+          }
+        }).catch(function () {});
+      }
     }
-    if (window.NEO_FEATURES && typeof window.NEO_FEATURES.stopMusic === "function") {
-      try { window.NEO_FEATURES.stopMusic(); } catch (error) {}
-    } else if (featureRuntimePromise) {
-      featureRuntimePromise.then(function (runtime) {
-        if (runtime && typeof runtime.stopMusic === "function") {
-          try { runtime.stopMusic(); } catch (error) {}
-        }
-      }).catch(function () {});
-    }
-    if (nowPlayingState && nowPlayingState.appId === "stream") {
+    if (nowPlayingState && nowPlayingState.appId === id) {
       try { renderNowPlaying({ source: nowPlayingState.source, active: false }); } catch (error) {}
     }
-    try { renderNowPlaying({ source: "browse-media:stream", active: false }); } catch (error) {}
+    try { renderNowPlaying({ source: "browse-media:" + id, active: false }); } catch (error) {}
   }
+
+  function destroyWindowFrames(win) {
+    if (!win) return;
+    win.querySelectorAll("iframe").forEach(function (frame) {
+      try { if (window.NEOFrameLoader) window.NEOFrameLoader.cancel(frame); } catch (_error) {}
+      try { if (frame.contentWindow && typeof frame.contentWindow.stop === "function") frame.contentWindow.stop(); } catch (_error) {}
+      try { frame.removeAttribute("srcdoc"); } catch (_error) {}
+      try { frame.src = "about:blank"; } catch (_error) {}
+      try { frame.remove(); } catch (_error) {}
+    });
+  }
+
 
   function pauseMusicForVideoFocus() {
     if (localOnly) {
@@ -5916,12 +5976,7 @@
     try { if (!win.hidden) saveWindowState(win); } catch (error) {}
     try { stopWindowMedia(win, id); } catch (error) {}
     releaseWindowMediaPriority(id);
-    if (id === "stream") forceDestroy = true;
-    var cached = false;
-    try {
-      cached = Boolean(musicRuntime.cacheWindow(win, id, openWindows, app, forceDestroy, renderDock, activateTopWindow));
-    } catch (error) {}
-    if (cached) return;
+    forceDestroy = true;
     try { musicRuntime.dropWindow(id); } catch (error) {}
     if (window.NEOFrameLoader) {
       win.querySelectorAll("iframe").forEach(function (frame) {
@@ -5933,7 +5988,9 @@
       try { if (typeof win._neoBrowserCleanup === "function") win._neoBrowserCleanup(); } catch (error) {}
       try { if (typeof win._neoMessagesCleanup === "function") win._neoMessagesCleanup(); } catch (error) {}
       try { if (typeof win._neoExtraCleanup === "function") win._neoExtraCleanup(); } catch (error) {}
+      destroyWindowFrames(win);
       window.clearTimeout(win._neoResizeTimer);
+      window.clearTimeout(win._neoCloseTimer);
       win.remove();
     }
     win.classList.remove("is-open", "is-active");
