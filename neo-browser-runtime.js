@@ -32,6 +32,11 @@
     "wss://wisp.mercurywork.shop/",
     "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/",
     "wss://reeyukiwisp.onrender.com/",
+    "wss://w2.qwq.sh/ws/",
+    "wss://api.personalloanonline.net/ws/",
+    "wss://www.goldenbasketballacademy.space/ws/",
+    "wss://www.atlantaclassical.info/ws/",
+    "wss://www.booksforschool.online/ws/",
   ]);
   const WISP_PREFERENCE_KEY = "neo:browser:wisp:v1";
   const WISP_RELAY_CACHE_KEY = `neo-wisp-relay:${ENGINE_VERSION}:selected-v1`;

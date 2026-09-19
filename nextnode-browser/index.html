@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><script src="./wisp-settings.js?v=20260914-official-wisp-v2"></script><script src="../neo-ad-shield.js"></script>
+<head><script src="./wisp-settings.js?v=20260919-aether-wisp-v1"></script><script src="../neo-ad-shield.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Browser</title>
@@ -587,10 +587,10 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
                 if(!doc||doc.__neoSearchBridge)return;
                 doc.__neoSearchBridge=true;
                 function routeSearch(input,event){
-                  if(!input||!tab||!/^(?:https?:\/\/)?(?:html\.)?duckduckgo\.com(?:\/|$)/i.test(String(tab.url||'')))return;
+                  if(!input||!tab||!isSearchProviderUrl(tab.url))return;
                   event.preventDefault();
                   event.stopImmediatePropagation();
-                  navigate('https://duckduckgo.com/?q='+encodeURIComponent(input.value||''));
+                  navigate(searchUrl(input.value||''));
                 }
                 frame.contentWindow.addEventListener('keydown',function(event){
                   if(event.key!=='Enter')return;
@@ -623,14 +623,35 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
           return upstreamOnFrameUrl.apply(this,arguments);
         };
       }
+      var SEARCH_PROVIDERS={
+        google:function(query){return 'https://www.google.com/search?q='+encodeURIComponent(query);},
+        bing:function(query){return 'https://www.bing.com/search?q='+encodeURIComponent(query);},
+        duckduckgo:function(query){return 'https://duckduckgo.com/?q='+encodeURIComponent(query);},
+        brave:function(query){return 'https://search.brave.com/search?q='+encodeURIComponent(query);},
+        searxng:function(query){return 'https://search.yuri.llc/search?q='+encodeURIComponent(query);}
+      };
+      var selectedSearchProvider='duckduckgo';
+      function setSearchProvider(value){
+        selectedSearchProvider=Object.prototype.hasOwnProperty.call(SEARCH_PROVIDERS,String(value||'').toLowerCase())?String(value).toLowerCase():'duckduckgo';
+        window.NEO_SEARCH_PROVIDER=selectedSearchProvider;
+      }
+      function searchUrl(query){return SEARCH_PROVIDERS[selectedSearchProvider](String(query||''));}
+      function isSearchProviderUrl(url){
+        try{return /(^|\.)(?:google\.com|bing\.com|duckduckgo\.com|brave\.com|yuri\.llc)$/i.test(new URL(String(url||'')).hostname);}catch(error){return false;}
+      }
+      window.addEventListener('message',function(event){
+        if(event.source!==parent||!event.data||event.data.type!=='neo:browser-settings-change')return;
+        setSearchProvider(event.data.searchEngine);
+      });
+      setSearchProvider('duckduckgo');
+      try{if(parent!==window)parent.postMessage({type:'neo-browser:settings-request'},'*');}catch(error){}
       var upstreamNormalize=window.normalizeInput;
       if(typeof upstreamNormalize!=='function')return;
-      window.NEO_SEARCH_PROVIDER='duckduckgo';
       window.normalizeInput=function(input){
         var value=String(input||'').trim();
         if(!value)return null;
         var looksLikeAddress=/^(?:[a-z][a-z0-9+.-]*:\/\/|localhost(?:[:/]|$)|(?:\d{1,3}\.){3}\d{1,3}(?:[:/]|$)|(?:[^.\s]+\.)+[^.\s]{2,}(?:[:/]|$))/i.test(value);
-        return looksLikeAddress?upstreamNormalize(value):'https://duckduckgo.com/?q='+encodeURIComponent(value);
+        return looksLikeAddress?upstreamNormalize(value):searchUrl(value);
       };
     })();</script>
 <script>(function(){

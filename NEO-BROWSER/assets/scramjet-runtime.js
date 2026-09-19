@@ -46,6 +46,11 @@
     Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" }),
     Object.freeze({ name: "Reeyuki Wisp", url: "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/" }),
     Object.freeze({ name: "Reeyuki Wisp 2", url: "wss://reeyukiwisp.onrender.com/" }),
+    Object.freeze({ name: "Aether Relay 1", url: "wss://w2.qwq.sh/ws/" }),
+    Object.freeze({ name: "Aether Relay 2", url: "wss://api.personalloanonline.net/ws/" }),
+    Object.freeze({ name: "Aether Relay 3", url: "wss://www.goldenbasketballacademy.space/ws/" }),
+    Object.freeze({ name: "Aether Relay 4", url: "wss://www.atlantaclassical.info/ws/" }),
+    Object.freeze({ name: "Aether Relay 5", url: "wss://www.booksforschool.online/ws/" }),
   ]);
   const relayCacheKey = "neo:jet:last-relay:selected-v1";
   const preferredRelayKey = "neo:browser:wisp:v1";

@@ -26,6 +26,29 @@
     input.oninput=()=>{sync();shell.setSetting('animationSpeed',speeds[Number(input.value)]||100);};
     sync();track.append(output,input);scale.append(el('span','animation-speed-endpoint','Slow'),track,el('span','animation-speed-endpoint','Very Fast'));setting.append(heading,scale);parent.append(setting);return input;
   }
+  function browserSettings(parent) {
+    const shell=window.NEO_SHELL,panel=section(parent,'Browser');
+    panel.classList.add('browser-settings-section');
+    panel.append(el('p','desktop-note','Choose the search service used when text in the Browser address bar is not a web address. DuckDuckGo uses its current full search page.'));
+    const field=el('label','browser-search-engine-field'),copy=el('span','browser-search-engine-copy'),engine=el('select');
+    copy.append(el('strong','','Search engine'),el('small','','Used for Browser address-bar searches'));
+    [
+      ['google','Google'],
+      ['bing','Bing'],
+      ['duckduckgo','DuckDuckGo'],
+      ['brave','Brave'],
+      ['searxng','SearXNG']
+    ].forEach(option=>{const item=el('option','',option[1]);item.value=option[0];engine.append(item);});
+    engine.value=shell.getSetting('browserSearchEngine')||'duckduckgo';
+    engine.setAttribute('aria-label','Browser search engine');
+    engine.onchange=()=>{
+      shell.setSetting('browserSearchEngine',engine.value);
+      const detail={type:'neo:browser-settings-change',searchEngine:engine.value};
+      window.dispatchEvent(new CustomEvent('neo-browser-settings-change',{detail}));
+      document.querySelectorAll('iframe').forEach(frame=>{try{frame.contentWindow.postMessage(detail,'*');}catch(_){}});
+    };
+    field.append(copy,engine);panel.append(field);
+  }
   function devtoolsSettings(parent) {
     const shell=window.NEO_SHELL,panel=section(parent,'DevTools');
     panel.classList.add('devtools-settings-section');
@@ -305,6 +328,7 @@
     Object.keys(C.themes).forEach(name => { const colors=C.themes[name],label=C.themeLabels?.[name]||name,b=button('',()=>B.set({theme:name}),grid),palette=el('span','theme-palette-preview'),accents=el('span','theme-accent-preview'); b.classList.add('theme-choice'); b.dataset.themeChoice=name; b.setAttribute('aria-label','Use '+label+' theme'); b.setAttribute('aria-pressed',String(name===p.theme)); b.style.setProperty('--theme-preview-bg',colors[0]); b.style.setProperty('--theme-preview-surface',colors[1]); b.style.setProperty('--theme-preview-text',colors[2]); b.style.setProperty('--theme-preview-line',colors[4]); b.style.setProperty('--theme-preview-accent',colors[5]); [colors[0],colors[1],colors[4]].forEach(color=>{const swatch=el('i');swatch.style.background=color;palette.append(swatch);}); [colors[5],colors[3],colors[2]].forEach(color=>{const swatch=el('i');swatch.style.background=color;accents.append(swatch);}); b.append(el('span','theme-choice-label',label),palette,accents); });
     cursorThemeEditor(app);
     tabAppearanceEditor(app);
+    browserSettings(app);
     devtoolsSettings(app);
     const sound = section(app,'Sound and display');
     const volume = slider(sound,'Master volume',0,100,p.volume,value=>B.set({volume:value}));

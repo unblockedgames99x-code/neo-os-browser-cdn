@@ -13,7 +13,7 @@
     onlineApps: Object.freeze(["chat", "games", "movies"]),
     assetBase: base.href,
     music: new URL("music-v2/index.html?v=20260918-proxy-only-v1&theme=system-v1&widgets=live-v1", base).href,
-    browser: new URL("nextnode-browser/index.html?v=20260914-official-wisp-v2", base).href,
+    browser: new URL("nextnode-browser/index.html?v=20260919-search-aether-v1", base).href,
     browserWarmAssets: Object.freeze([
       "study/sf-engine.js",
       "study/sf-ctl.js",
@@ -26,7 +26,12 @@
       Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
       Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" }),
       Object.freeze({ name: "Reeyuki Wisp", url: "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/" }),
-      Object.freeze({ name: "Reeyuki Wisp 2", url: "wss://reeyukiwisp.onrender.com/" })
+      Object.freeze({ name: "Reeyuki Wisp 2", url: "wss://reeyukiwisp.onrender.com/" }),
+      Object.freeze({ name: "Aether Relay 1", url: "wss://w2.qwq.sh/ws/" }),
+      Object.freeze({ name: "Aether Relay 2", url: "wss://api.personalloanonline.net/ws/" }),
+      Object.freeze({ name: "Aether Relay 3", url: "wss://www.goldenbasketballacademy.space/ws/" }),
+      Object.freeze({ name: "Aether Relay 4", url: "wss://www.atlantaclassical.info/ws/" }),
+      Object.freeze({ name: "Aether Relay 5", url: "wss://www.booksforschool.online/ws/" })
     ]),
     appProxy: new URL("NEO-BROWSER/index.html?v=20260913-yukios-wisp-v1", base).href,
     gameDocumentRelay: "https://neo-stratus-api-w6nw.onrender.com/games/v1/document",
