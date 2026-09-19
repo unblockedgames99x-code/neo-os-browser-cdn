@@ -611,7 +611,8 @@
     var stableSnowRiderHost = /^(?:cdn|fastly|gcore|quantil)\.jsdelivr\.net$/i.test(url.hostname);
     var stableSnowRiderMatch = url.pathname.match(/^\/gh\/unblockedgames99x-code\/neo-os-chat-tv-cdn@([0-9a-f]{40})\/neo-games\/snow-rider-stable\.html$/i);
     var localStableSnowRider = url.origin === location.origin && /\/neo-games\/snow-rider-stable\.html$/i.test(url.pathname);
-    if (!localStableSnowRider && (url.protocol !== "https:" || !((githackHost && githackPath) || luminRoute || (stableSnowRiderHost && stableSnowRiderMatch)))) throw new TypeError("This game is not available from the direct game service.");
+    var localCustomGamePlayer = url.origin === location.origin && /\/neo-games\/local-player\.html$/i.test(url.pathname) && /^[a-zA-Z0-9_-]{1,100}$/.test(url.searchParams.get("id") || "");
+    if (!localStableSnowRider && !localCustomGamePlayer && (url.protocol !== "https:" || !((githackHost && githackPath) || luminRoute || (stableSnowRiderHost && stableSnowRiderMatch)))) throw new TypeError("This game is not available from the direct game service.");
     if (githackHost) url.hostname = "rawcdn.githack.com";
     url.username = "";
     url.password = "";
