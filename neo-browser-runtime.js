@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const ENGINE_VERSION = "neo-browse-v70";
+  const ENGINE_VERSION = "neo-browse-v71";
   const RUNTIME_SCRIPT_URL = document.currentScript?.src || document.baseURI;
   const CORE_BASE_URL = new URL("./", RUNTIME_SCRIPT_URL);
   const BROWSER_BASE_URL = (() => {
@@ -13,7 +13,7 @@
   })();
   const browserAsset = (path) => new URL(path, BROWSER_BASE_URL).href;
   const OS_SCOPE = CORE_BASE_URL.pathname;
-  const ROUTE_PREFIX = new URL(`browse-v70/`, BROWSER_BASE_URL).pathname;
+  const ROUTE_PREFIX = new URL(`browse-v71/`, BROWSER_BASE_URL).pathname;
   const RUNTIME_ROOT = browserAsset("browser-runtime").replace(/\/$/, "");
   const NEW_TAB_DESTINATION = "neo://newtab";
   const NEW_TAB_PAGE = `${browserAsset("browser-newtab.html")}?v=${ENGINE_VERSION}`;
@@ -22,9 +22,10 @@
   const PRIMARY_TRANSPORT_URL = `${RUNTIME_ROOT}/epoxy/index.mjs?engine=${ENGINE_VERSION}`;
   const FALLBACK_TRANSPORT_URL = `${RUNTIME_ROOT}/libcurl/index.mjs?engine=${ENGINE_VERSION}`;
   const NEXTNODE_PROXY_ORIGIN = "https://nextnode9124.b-cdn.net/";
-  // These are the published endpoints supplied by the YukiOS server choices.
-  // A selected server is deliberately never replaced by an unrelated fallback.
-  const PREFERRED_WISP_RELAY = "wss://probuildingsupplies.com/w/";
+  // Use the user's selected endpoint first, then fail over only to the published
+  // WISP endpoints. ChromeOS networks frequently block an individual relay, so
+  // pinning the whole desktop to one socket makes every proxied app fail at once.
+  const PREFERRED_WISP_RELAY = "wss://nextnode9124.b-cdn.net/w/";
   const OFFICIAL_WISP_RELAYS = Object.freeze([
     PREFERRED_WISP_RELAY,
     "wss://probuildingsupplies.com/w/",
@@ -41,7 +42,10 @@
   let transportSetupPromise = null;
   let transportPrimaryPromise = null;
   let transportFallbackPromise = null;
+  let transportRecoveryPromise = null;
   let wispRelayPromise = null;
+  let activeWispRelay = "";
+  const failedWispRelays = new Set();
   let transportRecoveryListenerInstalled = false;
   const appThemePromises = new Map();
 
@@ -161,21 +165,50 @@
       // A custom relay is valid only when explicitly saved through Custom.
       if (selected) return selected;
     } catch (error) {}
-    return PREFERRED_WISP_RELAY;
+    return normalizeWispRelay(window.NEO_LOCAL_CONFIG?.browserWisp) || PREFERRED_WISP_RELAY;
+  }
+
+  function wispRelayCandidates() {
+    let cached = "";
+    try { cached = normalizeWispRelay(window.sessionStorage.getItem(WISP_RELAY_CACHE_KEY)); }
+    catch (error) {}
+    return Array.from(new Set([
+      preferredWispRelay(),
+      cached,
+      ...OFFICIAL_WISP_RELAYS,
+    ].map(normalizeWispRelay).filter(Boolean)));
   }
 
   function selectWispRelay() {
     if (wispRelayPromise) return wispRelayPromise;
     wispRelayPromise = (async () => {
-      const preferred = preferredWispRelay();
-      await probeWispRelay(preferred, 3600);
-      try { window.sessionStorage.setItem(WISP_RELAY_CACHE_KEY, preferred); } catch (error) {}
-      return preferred;
+      const candidates = wispRelayCandidates();
+      let remaining = candidates.filter((relay) => !failedWispRelays.has(relay));
+      if (!remaining.length) {
+        failedWispRelays.clear();
+        remaining = candidates;
+      }
+      const priority = remaining.shift();
+      let selected = "";
+      if (priority) {
+        selected = await probeWispRelay(priority, 1800).catch(() => "");
+      }
+      if (!selected) selected = await firstResponsiveWispRelay(remaining, 3800);
+      activeWispRelay = selected;
+      try { window.sessionStorage.setItem(WISP_RELAY_CACHE_KEY, selected); } catch (error) {}
+      return selected;
     })().catch((error) => {
       wispRelayPromise = null;
       throw error;
     });
     return wispRelayPromise;
+  }
+
+  function rotateWispRelay() {
+    if (activeWispRelay) failedWispRelays.add(activeWispRelay);
+    activeWispRelay = "";
+    wispRelayPromise = null;
+    return selectWispRelay();
   }
 
   function loadScript(id, src) {
@@ -422,8 +455,8 @@
       "The web app could not inspect its transport.",
     ).catch(() => "");
     if (candidates.includes(activeTransport)) {
-      activeTransportUrl = activeTransport;
-      return activeTransport;
+      candidates.splice(candidates.indexOf(activeTransport), 1);
+      candidates.unshift(activeTransport);
     }
 
     let lastError = null;
@@ -450,6 +483,47 @@
       }
     }
     throw lastError || new Error("The web app could not configure a transport.");
+  }
+
+  async function recoverTransport() {
+    if (transportRecoveryPromise) return transportRecoveryPromise;
+    transportRecoveryPromise = Promise.resolve()
+      .then(() => transportSetupPromise)
+      .catch(() => {})
+      .then(async () => {
+        if (!transportConnection) throw new Error("The web transport bridge is unavailable.");
+        const relay = await rotateWispRelay();
+        const current = activeTransportUrl || FALLBACK_TRANSPORT_URL;
+        const alternate = current === FALLBACK_TRANSPORT_URL
+          ? PRIMARY_TRANSPORT_URL
+          : FALLBACK_TRANSPORT_URL;
+        let lastError = null;
+        for (const transportUrl of [current, alternate]) {
+          try {
+            await withTimeout(
+              transportConnection.setTransport(transportUrl, [{ wisp: relay }]),
+              12000,
+              "The replacement web transport timed out.",
+            );
+            const selected = await withTimeout(
+              transportConnection.getTransport(),
+              4000,
+              "The replacement web transport could not be verified.",
+            );
+            if (selected !== transportUrl) throw new Error("The replacement web transport did not stay registered.");
+            activeTransportUrl = transportUrl;
+            await activateWorker().then((worker) => warmWorker(worker));
+            return transportUrl;
+          } catch (error) {
+            lastError = error;
+          }
+        }
+        throw lastError || new Error("No replacement web transport is available.");
+      })
+      .finally(() => {
+        transportRecoveryPromise = null;
+      });
+    return transportRecoveryPromise;
   }
 
   function configureTransport() {
@@ -590,7 +664,7 @@
     navigator.serviceWorker.addEventListener("message", (event) => {
       if (event.data?.type !== "neo-browser:transport-fallback" || event.data.engine !== ENGINE_VERSION) return;
       const reply = event.ports[0];
-      switchToAlternateTransport().then(
+      recoverTransport().then(
         (transport) => reply?.postMessage({ ok: true, transport }),
         (error) =>
           reply?.postMessage({

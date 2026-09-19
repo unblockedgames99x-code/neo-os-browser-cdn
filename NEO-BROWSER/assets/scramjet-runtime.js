@@ -38,8 +38,10 @@
     initialServiceWorker && new URL(initialServiceWorker.scriptURL).origin === pageBase.origin
   );
   const NEXTNODE_PROXY_ORIGIN = "https://nextnode9124.b-cdn.net/";
-  const DEFAULT_WISP_RELAY = "wss://probuildingsupplies.com/w/";
+  const NEXTNODE_WISP_RELAY = "wss://nextnode9124.b-cdn.net/w/";
+  const DEFAULT_WISP_RELAY = NEXTNODE_WISP_RELAY;
   const WISP_SERVERS = Object.freeze([
+    Object.freeze({ name: "NextNode Wisp", url: NEXTNODE_WISP_RELAY }),
     Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
     Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" }),
     Object.freeze({ name: "Reeyuki Wisp", url: "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/" }),
@@ -160,15 +162,24 @@
   function preferredRelay() {
     try {
       const saved = normalizeRelay(localStorage.getItem(preferredRelayKey));
-      // Named choices and an explicitly supplied Custom endpoint are both used
-      // exactly as selected; do not route through an unrelated relay.
+      // Named choices and explicitly supplied Custom endpoints are attempted
+      // first. If a school network blocks one socket, the runtime continues
+      // through another published WISP endpoint.
       if (saved) return saved;
+    } catch {}
+    try {
+      const configured = normalizeRelay(globalThis.parent?.NEO_LOCAL_CONFIG?.browserWisp);
+      if (configured) return configured;
     } catch {}
     return DEFAULT_WISP_RELAY;
   }
 
   function relayCandidates() {
-    return [...new Set(relayHosts.map(normalizeRelay).filter(Boolean))];
+    return [...new Set([
+      preferredRelay(),
+      cachedRelay(),
+      ...relayHosts,
+    ].map(normalizeRelay).filter(Boolean))];
   }
 
   // Complete a tiny WISP protocol exchange. A plain WebSocket "open" event is
@@ -433,18 +444,11 @@
 
     const connection = bareMuxConnection || new globalThis.BareMux.BareMuxConnection(bareMuxWorkerUrl);
     bareMuxConnection = connection;
-    const activeTransport = await withTimeout(
-      connection.getTransport(),
-      4000,
-      "The shared network service did not respond.",
-    ).catch(() => "");
-    if (activeTransport !== bareMuxTransportUrl) {
-      await withTimeout(
-        connection.setTransport(bareMuxTransportUrl, [{ wisp: relay }]),
-        12000,
-        "The shared network service took too long to start.",
-      );
-    }
+    await withTimeout(
+      connection.setTransport(bareMuxTransportUrl, [{ wisp: relay }]),
+      12000,
+      "The shared network service took too long to start.",
+    );
     const selectedTransport = await withTimeout(
       connection.getTransport(),
       4000,
@@ -565,8 +569,10 @@
   }
 
   async function selectTransport() {
-    const preferred = preferredRelay();
-    const selected = await probeRelay(preferred, 3800);
+    const candidates = relayCandidates();
+    const preferred = candidates.shift();
+    let selected = preferred ? await probeRelay(preferred, 1800) : null;
+    if (!selected) selected = await firstResponsiveRelay(candidates, 3800);
     if (!selected) throw new Error("No compatible relay is currently reachable.");
 
     let transport = null;

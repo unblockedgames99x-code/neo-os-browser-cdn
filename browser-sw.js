@@ -1,9 +1,9 @@
-import "./browser-runtime/uv/uv.bundle.js?engine=neo-browse-v70";
-import "./browser-runtime/uv/uv.config.js?engine=neo-browse-v70";
+import "./browser-runtime/uv/uv.bundle.js?engine=neo-browse-v71";
+import "./browser-runtime/uv/uv.config.js?engine=neo-browse-v71";
 import "./browser-runtime/uv/uv.sw.js";
 
-const ENGINE_VERSION = "neo-browse-v70";
-const ROUTE_PREFIX = new URL("./browse-v70/", self.location.href).pathname;
+const ENGINE_VERSION = "neo-browse-v71";
+const ROUTE_PREFIX = new URL("./browse-v71/", self.location.href).pathname;
 const ultraviolet = new UVServiceWorker();
 const MAX_GAME_DOCUMENT_BYTES = 8 * 1024 * 1024;
 const RETRYABLE_METHODS = new Set(["GET", "HEAD"]);
