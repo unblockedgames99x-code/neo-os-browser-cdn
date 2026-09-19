@@ -122,6 +122,28 @@
   };
 
   try {
+    var removeYukiAppsKey = "neo_os_remove_yukios_apps_v1";
+    if (localStorage.getItem(removeYukiAppsKey) !== "1") {
+      var yukiAppIds = [
+        "itch-io", "crazy-games", "newgrounds", "geforce-now", "flashpoint", "roblox", "js-dos", "ruffle", "lavat",
+        "slack", "gmail", "outlook", "zoom", "x-twitter", "instagram", "pinterest", "proton-mail", "yahoo-mail", "maps", "torrent-web",
+        "chatgpt-web", "deepseek", "grok", "notion", "google-docs", "office-web", "figma", "canva", "pixlr", "github", "gitlab", "codepen",
+        "twitch", "soundcloud", "deezer", "tiktok", "aniwatch", "aquarium-web", "markdown", "file-converter", "clock-tools", "camera",
+        "color-picker", "emoji-selector", "screenshot-studio", "clipboard-manager", "magnifier", "system-monitor", "storage-editor", "developer-tools",
+        "virtual-machine-manager", "app-creator", "rhythms", "cmatrix", "mode-switcher", "shortcuts", "default-apps", "session-manager",
+        "neo-guide", "intro-tour", "whats-new"
+      ];
+      ["neo_os_pinned_apps_v1", "neo_os_installed_apps_v1"].forEach(function (key) {
+        var savedApps = JSON.parse(localStorage.getItem(key) || "null");
+        if (Array.isArray(savedApps)) {
+          localStorage.setItem(key, JSON.stringify(savedApps.filter(function (id) { return yukiAppIds.indexOf(id) === -1; })));
+        }
+      });
+      if (typeof localStorage.removeItem === "function") localStorage.removeItem("neo_extended_settings_v1");
+      if (typeof sessionStorage !== "undefined") sessionStorage.removeItem("neo_autostart_completed_v1");
+      localStorage.setItem(removeYukiAppsKey, "1");
+    }
+
     var searchMigrationKey = "neo_os_unpin_search_v1";
     if (localStorage.getItem(searchMigrationKey) !== "1") {
       var existingPins = JSON.parse(localStorage.getItem("neo_os_pinned_apps_v1") || "null");

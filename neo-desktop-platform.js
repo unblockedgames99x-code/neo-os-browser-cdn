@@ -26,6 +26,31 @@
     input.oninput=()=>{sync();shell.setSetting('animationSpeed',speeds[Number(input.value)]||100);};
     sync();track.append(output,input);scale.append(el('span','animation-speed-endpoint','Slow'),track,el('span','animation-speed-endpoint','Very Fast'));setting.append(heading,scale);parent.append(setting);return input;
   }
+  function devtoolsSettings(parent) {
+    const shell=window.NEO_SHELL,panel=section(parent,'DevTools');
+    panel.classList.add('devtools-settings-section');
+    panel.append(el('p','desktop-note','Inspect Browser pages, view console output, sources, network activity, and local storage.'));
+
+    const toggle=el('label','toggle-row devtools-enable-row'),copy=el('span'),enabled=el('input'),switchControl=el('span','switch');
+    copy.append(el('strong','','Enable DevTools'),el('small','','Show the inspector button in Browser and enable F12 / Ctrl + Shift + I'));
+    enabled.type='checkbox';enabled.checked=shell.getSetting('devtoolsEnabled')!==false;enabled.dataset.devtoolsEnabled='';
+    switchControl.setAttribute('aria-hidden','true');toggle.append(copy,enabled,switchControl);panel.append(toggle);
+
+    const positionLabel=el('label','devtools-position-field'),positionCopy=el('span','devtools-position-copy'),position=el('select');
+    positionCopy.append(el('strong','','Position'),el('small','','Choose where the panel docks'));
+    [['right','Right'],['left','Left'],['bottom','Bottom'],['top','Top']].forEach(option=>{const item=el('option','',option[1]);item.value=option[0];position.append(item);});
+    position.value=shell.getSetting('devtoolsPosition')||'right';position.setAttribute('aria-label','DevTools position');
+    positionLabel.append(positionCopy,position);panel.append(positionLabel);
+
+    function notifyBrowser(){
+      const detail={type:'neo:devtools-settings-change',enabled:enabled.checked,position:position.value};
+      window.dispatchEvent(new CustomEvent('neo-devtools-settings-change',{detail}));
+      document.querySelectorAll('iframe').forEach(frame=>{try{frame.contentWindow.postMessage(detail,'*');}catch(_){}});
+    }
+    enabled.onchange=()=>{shell.setSetting('devtoolsEnabled',enabled.checked);position.disabled=!enabled.checked;notifyBrowser();};
+    position.onchange=()=>{shell.setSetting('devtoolsPosition',position.value);notifyBrowser();};
+    position.disabled=!enabled.checked;
+  }
   function check(parent, label, value, change) { const l = el('label'), n = el('input'); n.type = 'checkbox'; n.checked = value; n.onchange = () => change(n.checked); l.append(n, document.createTextNode(' ' + label)); parent.append(l); return n; }
   function download(name, text) { const a = el('a'); const url = URL.createObjectURL(new Blob([text], {type:'text/plain'})); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
   function cleanName(name) { return String(name || '').trim().replace(/\\/g,'/').replace(/^\/+/, '').replace(/[^a-zA-Z0-9_ .\-/]/g,'').split('/').filter(s => s && s !== '.' && s !== '..').join('/').slice(0,160); }
@@ -280,6 +305,7 @@
     Object.keys(C.themes).forEach(name => { const colors=C.themes[name],label=C.themeLabels?.[name]||name,b=button('',()=>B.set({theme:name}),grid),palette=el('span','theme-palette-preview'),accents=el('span','theme-accent-preview'); b.classList.add('theme-choice'); b.dataset.themeChoice=name; b.setAttribute('aria-label','Use '+label+' theme'); b.setAttribute('aria-pressed',String(name===p.theme)); b.style.setProperty('--theme-preview-bg',colors[0]); b.style.setProperty('--theme-preview-surface',colors[1]); b.style.setProperty('--theme-preview-text',colors[2]); b.style.setProperty('--theme-preview-line',colors[4]); b.style.setProperty('--theme-preview-accent',colors[5]); [colors[0],colors[1],colors[4]].forEach(color=>{const swatch=el('i');swatch.style.background=color;palette.append(swatch);}); [colors[5],colors[3],colors[2]].forEach(color=>{const swatch=el('i');swatch.style.background=color;accents.append(swatch);}); b.append(el('span','theme-choice-label',label),palette,accents); });
     cursorThemeEditor(app);
     tabAppearanceEditor(app);
+    devtoolsSettings(app);
     const sound = section(app,'Sound and display');
     const volume = slider(sound,'Master volume',0,100,p.volume,value=>B.set({volume:value}));
     const mute = check(sound,'Mute all local apps',p.muted,value=>B.set({muted:value}));

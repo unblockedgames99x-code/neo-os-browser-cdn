@@ -824,6 +824,38 @@ html.neo-auto-hide-bars[data-window-bar-style="ultra"] .window-control .icon {
   border-bottom: 0;
 }
 
+.devtools-settings-section .desktop-note { margin-bottom: 14px; }
+.devtools-enable-row {
+  min-height: 58px;
+  padding: 12px 14px;
+  background: var(--neo-theme-soft);
+  border: 1px solid var(--desktop-line);
+  border-radius: 11px;
+}
+.devtools-position-field {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+}
+.devtools-position-copy { display: grid; gap: 2px; }
+.devtools-position-copy strong { color: var(--desktop-text); font-size: 14px; }
+.devtools-position-copy small { color: var(--desktop-muted); font-size: 12px; }
+.devtools-position-field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  color: var(--desktop-text);
+  background: var(--neo-theme-soft);
+  border: 1px solid var(--desktop-line);
+  border-radius: 10px;
+  font: inherit;
+}
+.devtools-position-field select:focus-visible {
+  outline: 2px solid var(--desktop-accent);
+  outline-offset: 2px;
+}
+.devtools-position-field select:disabled { opacity: .55; cursor: not-allowed; }
+
 .performance-settings,
 .taskbar-option-group {
   gap: 14px;

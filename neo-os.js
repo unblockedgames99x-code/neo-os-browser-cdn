@@ -184,7 +184,7 @@
   }
 
   var defaultSettings = {
-    designVersion: 25,
+    designVersion: 26,
     wallpaper: "we-steam-1403160205",
     wallpaperFavorites: [],
     wallpaperRecent: [],
@@ -228,6 +228,8 @@
     taskbarAccent: "#ffffff",
     reduceMotion: false,
     animationSpeed: 100,
+    devtoolsEnabled: true,
+    devtoolsPosition: "right",
     performanceMode: "normal",
     autoPerformanceMode: false
   };
@@ -304,6 +306,10 @@
       return id === "we-steam-1403160205" || id === "neo-reactive" || /^(?:local|steam|commons)-/.test(String(id || ""));
     });
   }
+  if (savedDesignVersion < 26) {
+    if (savedSettings.devtoolsEnabled === undefined) savedSettings.devtoolsEnabled = true;
+    if (!savedSettings.devtoolsPosition) savedSettings.devtoolsPosition = "right";
+  }
   savedSettings.performanceMode = normalizePerformanceMode(savedSettings.performanceMode);
   savedSettings.taskbarPosition = normalizeTaskbarPosition(savedSettings.taskbarPosition);
   savedSettings.taskbarStyle = normalizeTaskbarStyle(savedSettings.taskbarStyle);
@@ -336,12 +342,16 @@
   savedSettings.animationSpeed = Number.isFinite(savedAnimationSpeed)
     ? clamp(Math.round(savedAnimationSpeed / 25) * 25, 50, 200)
     : 100;
+  savedSettings.devtoolsEnabled = savedSettings.devtoolsEnabled !== false;
+  savedSettings.devtoolsPosition = ["right", "left", "bottom", "top"].indexOf(String(savedSettings.devtoolsPosition || "").toLowerCase()) >= 0
+    ? String(savedSettings.devtoolsPosition).toLowerCase()
+    : "right";
   delete savedSettings.performance;
   delete savedSettings.taskbarMaterial;
   delete savedSettings.taskbarOpacity;
   delete savedSettings.taskbarBlur;
   delete savedSettings.taskbarTintStrength;
-  savedSettings.designVersion = 25;
+  savedSettings.designVersion = 26;
   var settings = Object.assign({}, defaultSettings, savedSettings);
   var appliedTabAppearanceSignature = "";
   // Preserve explicit wallpaper sound/pause choices across reloads.
