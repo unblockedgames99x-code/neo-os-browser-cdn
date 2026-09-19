@@ -1619,6 +1619,13 @@
     root.dataset.dockIconSize = "normal";
     settings.taskbarPosition = normalizeTaskbarPosition(settings.taskbarPosition);
     settings.taskbarStyle = normalizeTaskbarStyle(settings.taskbarStyle);
+    // The clear-rail preset is intentionally a vertical dock. Older builds
+    // rendered it as a row of separate outlined tiles when Bottom was saved.
+    // Keep the preset deterministic and match its settings preview.
+    if (settings.taskbarStyle === "transparent") {
+      settings.taskbarPosition = "left";
+      settings.taskbarAppNames = false;
+    }
     settings.taskbarSurface = normalizeTaskbarSurface(settings.taskbarSurface);
     settings.windowBarStyle = normalizeWindowBarStyle(settings.windowBarStyle);
     settings.interfaceStyle = normalizeInterfaceStyle(settings.interfaceStyle);
@@ -1896,7 +1903,7 @@
     });
     host.querySelectorAll("[data-taskbar-options-summary]").forEach(function (summary) {
       var position = settings.taskbarPosition.charAt(0).toUpperCase() + settings.taskbarPosition.slice(1);
-      var style = settings.taskbarStyle === "current" ? "Floating" : settings.taskbarStyle === "typical" ? "Full edge" : settings.taskbarStyle === "xeno" ? "XENO" : "Transparent";
+      var style = settings.taskbarStyle === "current" ? "Floating" : settings.taskbarStyle === "typical" ? "Full edge" : settings.taskbarStyle === "xeno" ? "XENO" : "Clear rail";
       var surface = settings.taskbarSurface.charAt(0).toUpperCase() + settings.taskbarSurface.slice(1);
       summary.textContent = settings.taskbarStyle === "xeno" ? "Bottom center · XENO · Theme adaptive" : position + " · " + style + " · " + surface;
     });
@@ -8789,7 +8796,7 @@
         var style = normalizeTaskbarStyle(taskbarStyle.getAttribute("data-taskbar-style-option"));
         if (style !== settings.taskbarStyle) {
           setSetting("taskbarStyle", style);
-          showToast("Taskbar style changed", style === "current" ? "The floating dock layout is active." : style === "transparent" ? "Only the taskbar icons remain visible." : style === "xeno" ? "Running apps now use XENO pills. Press Space to search or Ctrl for all apps." : "The taskbar now fills the selected edge.", "settings");
+          showToast("Taskbar style changed", style === "current" ? "The floating dock layout is active." : style === "transparent" ? "The vertical clear-glass rail is active on the left." : style === "xeno" ? "Running apps now use XENO pills. Press Space to search or Ctrl for all apps." : "The taskbar now fills the selected edge.", "settings");
         }
         return;
       }

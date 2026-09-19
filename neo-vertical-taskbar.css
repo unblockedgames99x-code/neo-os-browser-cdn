@@ -201,12 +201,14 @@ html[data-taskbar-tone="light"][data-taskbar-style="current"] .taskbar {
 }
 
 html[data-taskbar-style="transparent"] .taskbar {
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  border-radius: 14px !important;
-  box-shadow: none !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.015) 48%, rgba(0, 0, 0, 0.075)),
+    rgba(var(--neo-taskbar-tint), calc(var(--neo-taskbar-opacity) * 0.72)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.34) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.3), inset 0 1px rgba(255, 255, 255, 0.36) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(1.45) !important;
+  backdrop-filter: blur(30px) saturate(1.45) !important;
 }
 
 html[data-performance-mode="performance"][data-taskbar-style="current"][data-taskbar-surface="glass"] .taskbar,
@@ -224,7 +226,7 @@ html[data-performance-mode="ultimate"][data-taskbar-style="current"][data-taskba
 
 html[data-taskbar-style="transparent"] .taskbar .dock-button,
 html[data-taskbar-style="transparent"] .taskbar-start-button {
-  filter: drop-shadow(0 5px 7px rgba(0, 0, 0, 0.58));
+  filter: none;
 }
 
 html[data-taskbar-style="typical"] .taskbar {

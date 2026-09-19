@@ -4177,6 +4177,150 @@ html[data-taskbar-style="current"][data-taskbar-app-names="true"] .taskbar .dock
   box-shadow: inset 0 1px color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 10%, transparent) !important;
 }
 
+/* Transparent is a single clear vertical rail, not a horizontal collection
+   of individually outlined icon tiles. Keep this after every interface theme
+   so Modern, Retro, Windows 11, and Kali all render the same preset. */
+@media (min-width: 701px) {
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar {
+    --dock-hit: var(--vertical-dock-hit, 42px) !important;
+    --dock-art: var(--vertical-dock-art, 30px) !important;
+    position: absolute !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: calc(var(--neo-taskbar-edge-gap, 14px) + env(safe-area-inset-left)) !important;
+    width: var(--neo-taskbar-vertical-size, 66px) !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - var(--topbar-height) - (var(--neo-taskbar-edge-gap, 14px) * 2)) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 7px !important;
+    overflow: visible !important;
+    color: var(--neo-taskbar-foreground, #fff) !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    transform: translateY(-50%) !important;
+    isolation: isolate !important;
+  }
+
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar::before {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+    background:
+      linear-gradient(145deg, rgba(255,255,255,.11), rgba(255,255,255,.018) 48%, rgba(0,0,0,.08)),
+      rgba(var(--neo-taskbar-tint), calc(var(--neo-taskbar-opacity) * .72)) !important;
+    border: 1px solid rgba(255,255,255,.34) !important;
+    border-radius: inherit !important;
+    box-shadow: 0 16px 38px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.36) !important;
+    -webkit-backdrop-filter: blur(30px) saturate(1.45) !important;
+    backdrop-filter: blur(30px) saturate(1.45) !important;
+  }
+
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar::after { display: none !important; }
+
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar-center {
+    position: relative !important;
+    z-index: 1 !important;
+    inset: auto !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: 100% !important;
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 3px !important;
+    overflow: hidden !important;
+    transform: none !important;
+  }
+
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar .dock {
+    order: 1 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: var(--vertical-dock-gap, 3px) !important;
+    margin: 0 !important;
+    padding: 1px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar-start-button {
+    order: 2 !important;
+    margin: 3px 0 0 !important;
+  }
+
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar-start-button,
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar .dock-button {
+    width: var(--dock-hit) !important;
+    height: var(--dock-hit) !important;
+    min-width: var(--dock-hit) !important;
+    min-height: var(--dock-hit) !important;
+    max-width: var(--dock-hit) !important;
+    max-height: var(--dock-hit) !important;
+    flex: 0 0 var(--dock-hit) !important;
+    display: grid !important;
+    place-items: center !important;
+    margin-inline: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    filter: none !important;
+    position: relative !important;
+    z-index: 2 !important;
+  }
+
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar-start-button > *,
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar .dock-button > *,
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar .dock-app-art,
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar .app-image-icon {
+    position: relative !important;
+    z-index: 3 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar-start-button:is(:hover,:focus-visible),
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar .dock-button:is(:hover,:focus-visible) {
+    background: color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 9%, transparent) !important;
+    border-color: color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 11%, transparent) !important;
+    box-shadow: inset 0 1px color-mix(in srgb, var(--neo-taskbar-foreground, #fff) 8%, transparent) !important;
+  }
+
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar .dock-app-name,
+  html[data-interface-style][data-taskbar-style="transparent"][data-taskbar-position] .taskbar-tray {
+    display: none !important;
+  }
+}
+
 /* The application launcher is a screen-level surface. Anchor its center to
    the desktop itself so changing taskbar edge, taskbar style or interface
    theme can never move it away from the middle. Mobile keeps its intentional
