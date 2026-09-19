@@ -24,7 +24,7 @@
 
     function prepareProxyWorker() {
       if (!('serviceWorker' in navigator)) return Promise.resolve();
-      var workerUrl = new URL('study/sf-sw.js', location.href).href;
+      var workerUrl = new URL('study/sf-sw.js?v=20260919-same-origin-repair-v2', location.href).href;
       var workerScope = new URL('study/', location.href).href;
       return navigator.serviceWorker.register(workerUrl, { scope: workerScope })
         .then(function (registration) {
