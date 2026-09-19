@@ -480,6 +480,27 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
         if(typeof saveBookmarks==='function')saveBookmarks();
         if(typeof renderBookmarks==='function')renderBookmarks();
       }
+      function normalizeMalformedExternalLink(value){
+        var raw=String(value||'').trim().replace(/&amp;/g,'&');
+        var direct=raw.match(/^(https?)(?:\\|\/)?\:\/+(.+)$/i);
+        if(!direct)direct=raw.match(/^(https?)\/\:\/+(.+)$/i);
+        if(direct)return direct[1].toLowerCase()+'://'+direct[2].replace(/^\/+/,'');
+        var nested=raw.match(/^https?:\/\/.*?\/(https?)(?:\\|\/)?\:\/+(.+)$/i);
+        return nested?nested[1].toLowerCase()+'://'+nested[2].replace(/^\/+/,''):'';
+      }
+      function installMalformedLinkRepair(doc){
+        if(!doc||doc.__neoMalformedLinkRepair)return;
+        doc.__neoMalformedLinkRepair=true;
+        doc.addEventListener('click',function(event){
+          var target=event.target&&event.target.closest?event.target.closest('a[href]'):null;
+          if(!target)return;
+          var repaired=normalizeMalformedExternalLink(target.getAttribute('href'));
+          if(!repaired)return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          navigate(repaired);
+        },true);
+      }
       function installGoogleSitesGameRepair(tab,frame,doc){
         if(!doc||doc.__neoGoogleSitesGameRepair)return;
         doc.__neoGoogleSitesGameRepair=true;
@@ -539,6 +560,9 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
                 if(!sandbox.split(/\s+/).includes(token))sandbox+=(sandbox?' ':'')+token;
               });
               gameFrame.setAttribute('sandbox',sandbox);
+              gameFrame.addEventListener('load',function(){
+                try{installMalformedLinkRepair(gameFrame.contentDocument);}catch(error){}
+              });
               embed.replaceWith(gameFrame);
               sjController.createFrame(gameFrame).go(target);
             });
@@ -558,6 +582,7 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
             frame.addEventListener('load',function(){
               try{
                 var doc=frame.contentDocument;
+                installMalformedLinkRepair(doc);
                 installGoogleSitesGameRepair(tab,frame,doc);
                 if(!doc||doc.__neoSearchBridge)return;
                 doc.__neoSearchBridge=true;

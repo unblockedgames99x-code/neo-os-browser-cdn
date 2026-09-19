@@ -23,10 +23,20 @@ function repairMalformedProxyRequestUrl(rawUrl) {
         .replace(/^http\/:\/+/i, 'http://')
         .replace(/^https:\/(?!\/)/i, 'https://')
         .replace(/^http:\/(?!\/)/i, 'http://');
+    var nestedMalformedScheme = target.match(/^https?:\/\/.*?\/(https?)(?:\\|\/)?\:\/+(.+)$/i);
+    if (nestedMalformedScheme) target = nestedMalformedScheme[1] + '://' + nestedMalformedScheme[2];
     if (!/^https?:\/\//i.test(target) || target === payload) return '';
-    target += current.search + current.hash;
+    var targetQuery = [];
+    var proxyQuery = [];
+    current.search.replace(/^\?/, '').split('&').filter(Boolean).forEach(function(part) {
+        var name = part.split('=', 1)[0];
+        try { name = decodeURIComponent(name); } catch (_error) {}
+        (name.indexOf('$') === 0 ? proxyQuery : targetQuery).push(part);
+    });
+    if (targetQuery.length) target += '?' + targetQuery.join('&');
+    target += current.hash;
     var prefix = current.pathname.slice(0, secondSlash + 1);
-    return current.origin + prefix + encodeURIComponent(target);
+    return current.origin + prefix + encodeURIComponent(target) + (proxyQuery.length ? '?' + proxyQuery.join('&') : '');
 }
 
 function patchedProxyFetch(e) {
