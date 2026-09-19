@@ -5719,14 +5719,11 @@ html[data-taskbar-material="opaque"] .taskbar {
 .arcade-brand-mark {
   width: 31px;
   height: 31px;
-  display: grid;
-  place-items: center;
+  display: block;
+  object-fit: contain;
   margin-right: 5px;
-  color: #090a0b;
-  background: #fff;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 900;
+  background: transparent;
+  border-radius: 50%;
 }
 
 .arcade-nav,

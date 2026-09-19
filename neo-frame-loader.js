@@ -30,6 +30,47 @@
     }
   }
 
+  function isConfiguredGameDocument(sourceUrl) {
+    try {
+      var configured = window.NEO_LOCAL_CONFIG && window.NEO_LOCAL_CONFIG.gameDocumentRelay;
+      if (!configured) return false;
+      var source = new URL(sourceUrl, document.baseURI);
+      var relay = new URL(configured, document.baseURI);
+      return source.origin === relay.origin && source.pathname === relay.pathname && source.searchParams.has("url");
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function originalGameDocumentUrl(sourceUrl) {
+    try {
+      if (!isConfiguredGameDocument(sourceUrl)) return "";
+      var target = new URL(sourceUrl, document.baseURI).searchParams.get("url") || "";
+      var game = new URL(target);
+      if (game.protocol !== "https:" || game.hostname.toLowerCase() !== "a.luminsdk.com" || !/^\/g\/[A-Za-z0-9_-]+\//.test(game.pathname)) return "";
+      return game.href;
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  function sanitizeGameDocument(source, originalUrl) {
+    var html = String(source || "");
+    html = html.replace(/<meta\b[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/gi, "");
+    html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, function (tag) {
+      if (/cdn\.r9x\.in|googletagmanager\.com|google-analytics\.com|doubleclick\.net|googlesyndication\.com|\/js\/all\.min\.js(?:[?#"'])/i.test(tag)) return "";
+      if (/\b(?:dataLayer|gtag)\s*(?:=|\(|\.push)/i.test(tag)) return "";
+      return tag;
+    });
+    html = html.replace(/<(?:iframe|ins|aside)\b[^>]*(?:doubleclick\.net|googlesyndication\.com|cdn\.r9x\.in|\bclass=["'][^"']*\b(?:advert|interstitial|ad-container)\b)[^>]*>[\s\S]*?<\/(?:iframe|ins|aside)\s*>/gi, "");
+    html = html.replace(/<base\b[^>]*>/gi, "");
+    var base = '<base href="' + escapeAttribute(originalUrl) + '" target="_self">';
+    if (/<head(?:\s[^>]*)?>/i.test(html)) {
+      return html.replace(/<head(?:\s[^>]*)?>/i, function (head) { return head + base; });
+    }
+    return "<head>" + base + "</head>" + html;
+  }
+
   function resolveUrl(route) {
     return new URL(String(route || ""), document.baseURI).href;
   }
@@ -59,6 +100,7 @@
   function prepareDocument(source, sourceUrl) {
     var baseUrl = new URL("./", sourceUrl).href;
     var html = String(source || "");
+    var gameDocument = isConfiguredGameDocument(sourceUrl);
     // A fetched document becomes srcdoc under the runner origin. Its original
     // self-only CSP would block the trusted asset base injected just below.
     html = html.replace(/<meta\b[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/gi, "");
@@ -71,9 +113,9 @@
         '<base href="' + escapeAttribute(documentBase) + '" target="_self">'
       );
     }
-    html = deferExternalEmbeds(html, sourceUrl, documentBase);
+    if (!gameDocument) html = deferExternalEmbeds(html, sourceUrl, documentBase);
     var hasAssetBase = /<base\b[^>]*\bhref\s*=/i.test(html);
-    var audioRuntime = !/\/music-(?:local|v2)\//i.test(sourceUrl)
+    var audioRuntime = !gameDocument && !/\/music-(?:local|v2)\//i.test(sourceUrl)
       ? '<script src="' + escapeAttribute(resolveUrl("./neo-audio-spectrum-bridge.js?v=20260909-all-audio-v1")) + '"><\/script>'
       : "";
     var adShieldRuntime = /<script\b[^>]*\bsrc\s*=\s*["'][^"']*neo-ad-shield\.js(?:[?#][^"']*)?["']/i.test(html)
@@ -82,6 +124,7 @@
     var networkRuntime = "";
     if (
       isRunner() &&
+      !gameDocument &&
       !/\/NEO-BROWSER\//i.test(sourceUrl) &&
       !/\/neo-games\//i.test(sourceUrl) &&
       !/\/music-(?:local|v2)\//i.test(sourceUrl) &&
@@ -89,7 +132,7 @@
     ) {
       networkRuntime = '<script src="' + escapeAttribute(resolveUrl("./neo-runner-network.js?v=20260831-fast-full-stream-v5")) + '"><\/script>';
     }
-    var linkProxyRuntime = /\/(?:NEO-BROWSER|neo-games)\//i.test(sourceUrl)
+    var linkProxyRuntime = gameDocument || /\/(?:NEO-BROWSER|neo-games)\//i.test(sourceUrl)
       ? ""
       : '<script id="neo-link-proxy-runtime" src="' + escapeAttribute(resolveUrl("./neo-link-proxy.js?v=20260911-all-links-v1")) + '"><\/script>';
     var injection = (hasAssetBase ? "" : '<base href="' + escapeAttribute(baseUrl) + '" target="_self">') +
@@ -151,7 +194,20 @@
       });
     }
 
-    return attempt(0);
+    return attempt(0).catch(function (error) {
+      var originalUrl = originalGameDocumentUrl(sourceUrl);
+      if (!originalUrl || typeof options.gameDocumentFallback !== "function") throw error;
+      return Promise.resolve(options.gameDocumentFallback(originalUrl, signal)).then(function (result) {
+        if (signal && signal.aborted) throw new DOMException("The request was aborted.", "AbortError");
+        if (typeof result === "string") return { html: result, fetchedUrl: originalUrl };
+        if (!result || typeof result.html !== "string") throw new Error("The protected game response was invalid.");
+        return { html: result.html, fetchedUrl: result.fetchedUrl || originalUrl };
+      });
+    }).then(function (result) {
+      var originalUrl = originalGameDocumentUrl(sourceUrl);
+      if (originalUrl) result.html = sanitizeGameDocument(result.html, originalUrl);
+      return result;
+    });
   }
 
   function cancel(frame) {
@@ -168,7 +224,8 @@
       window.NEO_LOCAL_CONFIG &&
       window.NEO_LOCAL_CONFIG.enabled &&
       !isAllowedLocalSource(sourceUrl) &&
-      !isConfiguredDirectSource(sourceUrl)
+      !isConfiguredDirectSource(sourceUrl) &&
+      !isConfiguredGameDocument(sourceUrl)
     ) {
       return Promise.reject(new Error("External pages are unavailable in local preview."));
     }

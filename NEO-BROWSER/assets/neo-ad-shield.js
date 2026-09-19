@@ -20,6 +20,7 @@
     "bidr.io",
     "casalemedia.com",
     "clickadu.com",
+    "cdn.r9x.in",
     "criteo.com",
     "criteo.net",
     "doubleclick.net",
@@ -152,7 +153,8 @@
     style.textContent = [
       "ins.adsbygoogle,#carbonads,#google_ads_frame,[data-ad-client],[data-ad-slot],[data-ad-unit],[data-zone],",
       ".ad-banner,.ad-box,.ad-container,.ad-wrapper,.advert,.advertisement,.advertising,.sponsored-content,",
-      "[id='ads'],[id^='ad-'],[id^='ads-'],[class~='advertisement'],[class~='sponsored']",
+      ".ad-overlay,.ad-modal,.ad-interstitial,.interstitial-ad,.rewarded-ad,.video-ad,.ima-ad-container,",
+      "[id='ads'],[id^='ad-'],[id^='ads-'],[id*='interstitial'],[class*='interstitial-ad'],[class~='advertisement'],[class~='sponsored']",
       "{display:none!important;visibility:hidden!important;pointer-events:none!important;min-height:0!important;height:0!important;margin:0!important;padding:0!important;border:0!important}"
     ].join("");
     try { (doc.head || doc.documentElement).appendChild(style); } catch (_error) {}

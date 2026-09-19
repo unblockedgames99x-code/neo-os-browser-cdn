@@ -184,7 +184,7 @@
   }
 
   var defaultSettings = {
-    designVersion: 24,
+    designVersion: 25,
     wallpaper: "we-steam-1403160205",
     wallpaperFavorites: [],
     wallpaperRecent: [],
@@ -292,6 +292,18 @@
   if (savedDesignVersion < 24) {
     savedSettings.animationSpeed = 100;
   }
+  if (savedDesignVersion < 25) {
+    var savedWallpaperId = String(savedSettings.wallpaper || "");
+    if (savedWallpaperId && savedWallpaperId !== "we-steam-1403160205" && savedWallpaperId !== "neo-reactive" && savedWallpaperId !== "custom" && !/^(?:local|steam|commons)-/.test(savedWallpaperId)) {
+      savedSettings.wallpaper = "we-steam-1403160205";
+    }
+    savedSettings.wallpaperFavorites = savedSettings.wallpaperFavorites.filter(function (id) {
+      return id === "we-steam-1403160205" || id === "neo-reactive" || /^(?:local|steam|commons)-/.test(String(id || ""));
+    });
+    savedSettings.wallpaperRecent = savedSettings.wallpaperRecent.filter(function (id) {
+      return id === "we-steam-1403160205" || id === "neo-reactive" || /^(?:local|steam|commons)-/.test(String(id || ""));
+    });
+  }
   savedSettings.performanceMode = normalizePerformanceMode(savedSettings.performanceMode);
   savedSettings.taskbarPosition = normalizeTaskbarPosition(savedSettings.taskbarPosition);
   savedSettings.taskbarStyle = normalizeTaskbarStyle(savedSettings.taskbarStyle);
@@ -329,12 +341,9 @@
   delete savedSettings.taskbarOpacity;
   delete savedSettings.taskbarBlur;
   delete savedSettings.taskbarTintStrength;
-  savedSettings.designVersion = 24;
+  savedSettings.designVersion = 25;
   var settings = Object.assign({}, defaultSettings, savedSettings);
   var appliedTabAppearanceSignature = "";
-  // Keep imported wallpapers and the local reactive scene. Remote workshop defaults
-  // cannot boot in this build, so start with the bundled static desktop instead.
-  if (localOnly && /^(?:we-(?:youtube|steam-(?:1153238076|1403160205|1509243786|1748506393|1789171537|3137947556|3470738721))|youtube|online|custom$)/.test(settings.wallpaper)) settings.wallpaper = "neo";
   // Preserve explicit wallpaper sound/pause choices across reloads.
   var widgetLayout = readJson(WIDGET_LAYOUT_KEY, {});
   var windowStates = readJson(WINDOW_STATE_KEY, {});
@@ -493,7 +502,7 @@
     apps.browser.accessibleName = "NEO Browser";
   }
   if (localOnly) {
-    ["discord", "youtube-app", "geometry-dash", "neo-cloud", "report"].forEach(function (id) {
+    ["report"].forEach(function (id) {
       if (!apps[id]) return;
       if (id === "report" && localConfig.support) {
         apps[id].route = localConfig.support;
@@ -596,10 +605,14 @@
   function normalizeDirectGameUrl(value) {
     var url;
     try { url = new URL(String(value || "")); } catch (error) { throw new TypeError("This game address is invalid."); }
-    var directHost = /^(?:raw|rawcdn)\.githack\.com$/i.test(url.hostname);
-    var directPath = /^\/unblockedgames99x-code\/neo-os-games-\d+-cdn\/[^/]+\/games\/[A-Za-z0-9%._()\[\] -]+\.html$/i.test(url.pathname);
-    if (url.protocol !== "https:" || !directHost || !directPath) throw new TypeError("This game is not available from the direct game CDN.");
-    url.hostname = "rawcdn.githack.com";
+    var githackHost = /^(?:raw|rawcdn)\.githack\.com$/i.test(url.hostname);
+    var githackPath = /^\/unblockedgames99x-code\/neo-os-games-\d+-cdn\/[^/]+\/games\/[A-Za-z0-9%._()\[\] -]+\.html$/i.test(url.pathname);
+    var luminRoute = url.hostname.toLowerCase() === "a.luminsdk.com" && /^\/g\/[A-Za-z0-9_-]+\//.test(url.pathname);
+    var stableSnowRiderHost = /^(?:cdn|fastly|gcore|quantil)\.jsdelivr\.net$/i.test(url.hostname);
+    var stableSnowRiderMatch = url.pathname.match(/^\/gh\/unblockedgames99x-code\/neo-os-chat-tv-cdn@([0-9a-f]{40})\/neo-games\/snow-rider-stable\.html$/i);
+    var localStableSnowRider = url.origin === location.origin && /\/neo-games\/snow-rider-stable\.html$/i.test(url.pathname);
+    if (!localStableSnowRider && (url.protocol !== "https:" || !((githackHost && githackPath) || luminRoute || (stableSnowRiderHost && stableSnowRiderMatch)))) throw new TypeError("This game is not available from the direct game service.");
+    if (githackHost) url.hostname = "rawcdn.githack.com";
     url.username = "";
     url.password = "";
     url.hash = "";
@@ -640,7 +653,9 @@
   }
 
   function persistCustomApps() {
-    writeJson(CUSTOM_APPS_KEY, Object.keys(apps).map(function (id) { return apps[id]; }).filter(function (app) { return app && app.custom; }).map(customAppRecord));
+    writeJson(CUSTOM_APPS_KEY, Object.keys(apps).map(function (id) { return apps[id]; }).filter(function (app) {
+      return app && app.custom && app.launcher && app.transient !== true;
+    }).map(customAppRecord));
   }
 
   function restoreCustomApps(registry) {
@@ -709,6 +724,16 @@
     if (!app) {
       var installed = installCustomApp({ title: input.title, url: url, icon: input.icon, mode: mode });
       app = apps[installed.id];
+    } else if (app.transient === true || !app.launcher) {
+      app.transient = false;
+      app.launcher = true;
+      app.installed = true;
+      app.title = String(input.title || app.title || "Game").replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, 48) || app.title;
+      app.icon = safeCustomAppIcon(input.icon) || app.icon;
+      installedAppIds.add(app.id);
+      hiddenDesktopShortcutIds.delete(app.id);
+      writeJson(INSTALLED_APPS_KEY, Array.from(installedAppIds));
+      persistCustomApps();
     } else if (!app.installed) {
       setAppInstalled(app.id, true);
     }
@@ -716,6 +741,34 @@
     writeJson(DESKTOP_SHORTCUT_HIDDEN_KEY, Array.from(hiddenDesktopShortcutIds));
     setAppPinned(app.id, true);
     renderDesktopShortcuts();
+    return publicAppRecord(app);
+  }
+
+  function openGameInWindow(input, owner) {
+    input = input && typeof input === "object" ? input : {};
+    var url = normalizeDirectGameUrl(input.url);
+    var title = String(input.title || "Game").replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, 48) || "Game";
+    var icon = safeCustomAppIcon(input.icon) || "steam";
+    var app = Object.keys(apps).map(function (id) { return apps[id]; }).find(function (candidate) {
+      return candidate && candidate.custom && candidate.sourceUrl === url && candidate.launchMode === "direct-game";
+    });
+    if (!app) {
+      var id = "custom-app-game-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      while (apps[id]) id += "x";
+      app = customAppDefinition({ id: id, title: title, url: url, icon: icon, mode: "direct-game" });
+      if (!app) throw new TypeError("This game window could not be created.");
+      app.launcher = false;
+      app.installed = false;
+      app.transient = true;
+      apps[id] = app;
+    } else {
+      app.title = title;
+      app.icon = icon;
+    }
+    app.gameId = String(input.id || "");
+    app.gameOwner = owner || null;
+    var win = openApp(app.id);
+    if (!win) throw new Error("This game window could not be opened.");
     return publicAppRecord(app);
   }
 
@@ -750,16 +803,12 @@
       code: "./assets/vscode-official.png",
       duckduckgo: "./assets/duckduckgo.png",
       chat: "./assets/imessage-logo.png?v=20260908-imessage-logo-v2",
-      "geometry-dash": "./assets/geometry-dash.png",
       "google-drive": "./assets/google-drive.svg?v=20260824-drive-logo-v3",
       wallpaper: "./assets/wallpaper-engine.png",
       "media-player": "./assets/media-player.svg?v=20260827-high-resolution-v1",
       "html-games": "./assets/html-games.svg?v=20260827-blue-controller-v1",
-      "neo-cloud": "./assets/neo-cloud.svg?v=20260901-cloud-logo-v2",
       widgets: "./assets/widgets.svg?v=20260907-widgets-logo-v1",
-      discord: "./assets/discord-official.png?v=20260828-user-artwork-v2",
-      youtube: "./assets/youtube-official.webp?v=20260828-user-artwork-v1",
-      chatgpt: "./assets/neo-ai-logo.svg?v=20260910-chatgpt-white-v1",
+      steam: "./assets/steam.svg?v=20260918-steam-brand-v1",
       "xbox-games": "./assets/xbox-games.svg?v=20260912-official-shape-v2",
       movies: "./assets/movies-icon.webp?v=20260912-user-artwork-v1"
     };
@@ -1417,7 +1466,7 @@
   function interfaceStyleScopeForApp(app) {
     if (!app) return "shell";
     if (app.custom) return "bridge";
-    if (["browser", "stream", "chat", "discord", "youtube-app", "neo-cloud", "nowgg", "neo-ai", "games", "movies"].indexOf(app.id) !== -1) return "bridge";
+    if (["browser", "stream", "chat", "games", "movies"].indexOf(app.id) !== -1) return "bridge";
     if (["skins", "vscode", "terminal"].indexOf(app.id) !== -1) return "native";
     if (app.template || app.lazy || app.runtime) return "native";
     return "shell";
@@ -3327,11 +3376,15 @@
       var minTop = maxTop >= WINDOW_TOP_GAP ? WINDOW_TOP_GAP : 0;
       win.style.top = clamp(top, minTop, maxTop) + "px";
     }
+    var gamePinControl = app.launchMode === "direct-game" && !app.pinned
+      ? '<button class="window-control game-pin" type="button" data-window-action="pin" aria-label="Add game to taskbar" title="Add to taskbar">' + iconMarkup("pin") + "</button>"
+      : "";
     win.innerHTML =
       '<header class="window-chrome">' +
         '<span class="window-app-icon app-icon-shape ' + appIconClass(app.icon) + '">' + iconMarkup(app.icon) + "</span>" +
         '<span class="window-title"><strong></strong><small></small></span>' +
         '<span class="window-controls">' +
+          gamePinControl +
           '<button class="window-control minimize" type="button" data-window-action="minimize" aria-label="Minimize">' + iconMarkup("minimize") + "</button>" +
           '<button class="window-control maximize" type="button" data-window-action="maximize" aria-label="Maximize">' + iconMarkup("maximize") + "</button>" +
           '<button class="window-control close" type="button" data-window-action="close" aria-label="Close">' + iconMarkup("close") + "</button>" +
@@ -5152,6 +5205,20 @@
 
   function mountFrame(app, body) {
     var browserBacked = app.id === "browser" || Boolean(app.custom);
+    var directGame = app.launchMode === "direct-game";
+    var fetchedDirectGame = directGame;
+    function directGameDocumentRoute(route) {
+      if (!directGame || !localConfig.gameDocumentRelay) return route;
+      try {
+        var source = new URL(route, document.baseURI);
+        if (source.protocol !== "https:" || source.hostname.toLowerCase() !== "a.luminsdk.com" || !/^\/g\/[A-Za-z0-9_-]+\//.test(source.pathname)) return route;
+        var relay = new URL(localConfig.gameDocumentRelay, document.baseURI);
+        relay.searchParams.set("url", source.href);
+        return relay.href;
+      } catch (_error) {
+        return route;
+      }
+    }
     if (browserBacked && location.protocol === "file:") {
       body.innerHTML = '<div class="feature-loader is-error" role="alert"><strong>Browser needs the NEO web runtime</strong><p>Tabs and website loading require the local secure context; they cannot run from a raw file.</p><a class="button primary" data-browser-runtime-link>Open working NEO OS</a></div>';
       var browserRuntimeLink = body.querySelector("[data-browser-runtime-link]");
@@ -5169,7 +5236,9 @@
     var retry = document.createElement("button");
     var direct = document.createElement("button");
     fallbackTitle.textContent = "This page is taking longer than expected";
-    fallbackCopy.textContent = "You can retry the embedded page or open the existing route directly.";
+    fallbackCopy.textContent = directGame
+      ? "Retry the protected game document. NEO will not fall back to an ad-enabled page."
+      : "You can retry the embedded page or open the existing route directly.";
     fallbackActions.className = "upload-actions";
     retry.className = "button primary";
     retry.type = "button";
@@ -5179,7 +5248,8 @@
     direct.type = "button";
     direct.setAttribute("data-frame-direct", app.route);
     direct.innerHTML = iconMarkup("external") + "Open directly";
-    fallbackActions.append(retry, direct);
+    fallbackActions.append(retry);
+    if (!directGame) fallbackActions.append(direct);
     fallback.append(fallbackTitle, fallbackCopy, fallbackActions);
     var frame = document.createElement("iframe");
     frame.title = app.title;
@@ -5190,11 +5260,11 @@
       "allow-same-origin",
       "allow-scripts",
       "allow-forms",
-      "allow-popups",
       "allow-downloads",
       "allow-pointer-lock",
       "allow-presentation"
     ];
+    if (!directGame) frameSandbox.push("allow-popups");
     if (app.id !== "browser") frameSandbox.push("allow-modals");
     frame.sandbox = frameSandbox.join(" ");
     frame.allow = "fullscreen; autoplay; picture-in-picture; gamepad; clipboard-read; clipboard-write; display-capture";
@@ -5422,9 +5492,22 @@
         loader.classList.add("is-complete");
         fallback.classList.add("is-visible");
       }, 9000);
+      var protectedRoute = fetchedDirectGame ? directGameDocumentRoute(app.route) : app.route;
+      if (directGame) frame.referrerPolicy = "no-referrer";
       var frameLoad = window.NEOFrameLoader
-        ? window.NEOFrameLoader.load(frame, app.route, { forceFetch: !browserBacked })
-        : Promise.resolve().then(function () { frame.src = app.route; });
+        ? window.NEOFrameLoader.load(frame, protectedRoute, {
+            forceFetch: directGame || !browserBacked,
+            gameDocumentFallback: directGame ? function (gameUrl, signal) {
+              if (signal && signal.aborted) throw new DOMException("The request was aborted.", "AbortError");
+              return loadBrowseRuntime().then(function (engine) {
+                if (!engine || typeof engine.fetchDocument !== "function") throw new Error("The protected game transport is unavailable.");
+                return engine.fetchDocument(gameUrl);
+              });
+            } : null
+          })
+        : directGame
+          ? Promise.reject(new Error("The protected game loader is unavailable."))
+          : Promise.resolve().then(function () { frame.src = app.route; });
       frameLoad.catch(function (error) {
         if (error && error.name === "AbortError") return;
         window.clearTimeout(timeout);
@@ -5558,6 +5641,24 @@
   function handleProxyBridgeMessage(event) {
     var data = event.data;
     if (!data || typeof data !== "object") return;
+    if (data.type === "neo-shell:open-game-window") {
+      if (!ownsFrameWindow(event.source)) return;
+      var gameWindowReply = function (payload) {
+        try {
+          event.source.postMessage(Object.assign({
+            type: "neo-shell:open-game-window-result",
+            id: String(data.id || "")
+          }, payload), "*");
+        } catch (_error) {}
+      };
+      try {
+        var openedGame = openGameInWindow(data.game, event.source);
+        gameWindowReply({ ok: true, app: openedGame });
+      } catch (error) {
+        gameWindowReply({ ok: false, error: error && error.message ? error.message : "This game could not be opened." });
+      }
+      return;
+    }
     if (data.type === "neo-shell:add-game-shortcut") {
       if (!ownsFrameWindow(event.source)) return;
       var shortcutReply = function (payload) {
@@ -5734,10 +5835,28 @@
     syncWallpaperMediaPriority();
   }
 
+  function exitFullscreenForWindow(win) {
+    var fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!fullscreenElement || !win || !win.contains(fullscreenElement)) return;
+    var exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (typeof exit !== "function") return;
+    try {
+      var result = exit.call(document);
+      if (result && typeof result.catch === "function") result.catch(function () {});
+    } catch (_error) {}
+  }
+
   function closeWindow(win, forceDestroy) {
     if (!win || win.classList.contains("is-closing")) return;
     var id = win.dataset.appId;
     var app = apps[id];
+    exitFullscreenForWindow(win);
+    if (app && app.launchMode === "direct-game" && app.gameOwner) {
+      try {
+        app.gameOwner.postMessage({ type: "neo-shell:game-window-closed", gameId: app.gameId || "", appId: id }, "*");
+      } catch (_error) {}
+      app.gameOwner = null;
+    }
     setWindowMotionOrigin(win, id);
     try {
       window.dispatchEvent(new CustomEvent("neo-window-state-change", {
@@ -5771,6 +5890,11 @@
     win.setAttribute("aria-hidden", "true");
     win.setAttribute("inert", "");
     if (openWindows.get(id) === win) openWindows.delete(id);
+    if (app && app.transient === true && !app.pinned) {
+      delete apps[id];
+      delete windowStates[id];
+      writeJson(WINDOW_STATE_KEY, windowStates);
+    }
     syncAutoPerformanceMode();
     try { renderDock(); } catch (error) {}
     try { activateTopWindow(); } catch (error) {}
@@ -6523,7 +6647,7 @@
       saveArcadeSettings();
       syncSettings();
       if (!soundMuted) playLibraryFx(610);
-      showToast(soundMuted ? "Game sounds muted" : "Game sounds on", "This only changes NEO Games interface sounds.", "info");
+      showToast(soundMuted ? "Game sounds muted" : "Game sounds on", "This only changes the Steam interface sounds.", "info");
     });
     if (settingsButton && settingsPanel) settingsButton.addEventListener("click", function (event) {
       event.stopPropagation();
@@ -8272,6 +8396,22 @@
     if (action === "close") closeWindow(win);
     if (action === "minimize") minimizeWindow(win);
     if (action === "maximize") toggleMaximize(win);
+    if (action === "pin") {
+      var app = win && apps[win.dataset.appId];
+      if (!app || app.launchMode !== "direct-game") return;
+      try {
+        var pinned = addCustomAppToTaskbarAndHomeScreen({
+          title: app.title,
+          url: app.sourceUrl,
+          icon: app.icon,
+          mode: "direct-game"
+        });
+        button.remove();
+        showToast("Added to taskbar", pinned.title + " was also added to the home screen.", "apps");
+      } catch (error) {
+        showToast("Could not add game", error && error.message ? error.message : "Try again.", "apps");
+      }
+    }
   }
 
   function bindGlobalEvents() {

@@ -38,27 +38,17 @@
     initialServiceWorker && new URL(initialServiceWorker.scriptURL).origin === pageBase.origin
   );
   const NEXTNODE_PROXY_ORIGIN = "https://nextnode9124.b-cdn.net/";
-  const NEXTNODE_WISP_RELAY = "wss://nextnode9124.b-cdn.net/w/";
+  const DEFAULT_WISP_RELAY = "wss://probuildingsupplies.com/w/";
   const WISP_SERVERS = Object.freeze([
-    Object.freeze({ name: "NextNode Wisp", url: NEXTNODE_WISP_RELAY }),
     Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
     Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" }),
     Object.freeze({ name: "Reeyuki Wisp", url: "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/" }),
     Object.freeze({ name: "Reeyuki Wisp 2", url: "wss://reeyukiwisp.onrender.com/" }),
   ]);
-  const relayCacheKey = "neo:jet:last-relay:nextnode-v1";
+  const relayCacheKey = "neo:jet:last-relay:selected-v1";
   const preferredRelayKey = "neo:browser:wisp:v1";
   const controllerReloadKey = "neo:jet:controller-reload:v3";
-  const relayHosts = [
-    ...WISP_SERVERS.map((server) => server.url),
-    "wss://support.pired.org/lively/",
-    "wss://girlspreples.org/wi/",
-    "cdn.northstreetumc.org",
-    "cdn.vipersfootball.com",
-    "cdn.pcesc.org",
-    "cdn.kcchallengevbc.com",
-    "cdn.slcbmooc.org",
-  ];
+  const relayHosts = WISP_SERVERS.map((server) => server.url);
 
   let initializePromise = null;
   let runtimePromise = null;
@@ -149,9 +139,14 @@
 
   function normalizeRelay(value) {
     const relay = String(value || "").trim();
-    if (!relay) return "";
-    if (/^wss?:\/\//i.test(relay)) return relay.endsWith("/") ? relay : `${relay}/`;
-    return `wss://${relay}/adblock/`;
+    if (!/^wss?:\/\//i.test(relay)) return "";
+    try {
+      const url = new URL(relay);
+      if (url.protocol !== "ws:" && url.protocol !== "wss:") return "";
+      return url.href.endsWith("/") ? url.href : `${url.href}/`;
+    } catch {
+      return "";
+    }
   }
 
   function cachedRelay() {
@@ -165,9 +160,11 @@
   function preferredRelay() {
     try {
       const saved = normalizeRelay(localStorage.getItem(preferredRelayKey));
-      if (relayCandidates().includes(saved)) return saved;
+      // Named choices and an explicitly supplied Custom endpoint are both used
+      // exactly as selected; do not route through an unrelated relay.
+      if (saved) return saved;
     } catch {}
-    return NEXTNODE_WISP_RELAY;
+    return DEFAULT_WISP_RELAY;
   }
 
   function relayCandidates() {
@@ -569,13 +566,7 @@
 
   async function selectTransport() {
     const preferred = preferredRelay();
-    const cached = cachedRelay();
-    let selected = await probeRelay(preferred, 1800);
-    if (!selected && cached && cached !== preferred) selected = await probeRelay(cached, 1400);
-    if (!selected) {
-      const candidates = relayCandidates().filter((relay) => relay !== preferred && relay !== cached);
-      selected = await firstResponsiveRelay(candidates, 3800);
-    }
+    const selected = await probeRelay(preferred, 3800);
     if (!selected) throw new Error("No compatible relay is currently reachable.");
 
     let transport = null;
@@ -806,7 +797,7 @@
     go,
     deactivate,
     configuredRelay: () => selectedRelay || cachedRelay() || preferredRelay() || "",
-    allowRelay: (value) => relayCandidates().includes(normalizeRelay(value)),
+    allowRelay: (value) => Boolean(normalizeRelay(value)),
     relayCandidates: () => relayCandidates(),
     relayOptions: () => WISP_SERVERS.map((server) => ({ ...server })),
     get active() { return active; },

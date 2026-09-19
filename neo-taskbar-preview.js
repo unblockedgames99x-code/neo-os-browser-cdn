@@ -8,6 +8,9 @@
   var hideTimer = 0;
   var activeId = "";
   var anchor = null;
+  var xenoClose = null;
+  var xenoCloseId = "";
+  var xenoCloseTimer = 0;
   var nowPlayingState = null;
   var staticPreviewCache = new Map();
   var minimizedCardCache = new Map();
@@ -203,6 +206,90 @@
       root.hasAttribute("data-tab-fullscreen") ||
       root.dataset.fullscreen === "true"
     );
+  }
+
+  function xenoCloseMode() {
+    return document.documentElement.dataset.taskbarStyle === "xeno";
+  }
+
+  function clearXenoCloseTimer() {
+    window.clearTimeout(xenoCloseTimer);
+    xenoCloseTimer = 0;
+  }
+
+  function positionXenoClose(button) {
+    if (!xenoClose || xenoClose.hidden || !button || !button.isConnected) return;
+    var rect = button.getBoundingClientRect();
+    var width = xenoClose.offsetWidth || 24;
+    var height = xenoClose.offsetHeight || 24;
+    var left = rect.right - width - 7;
+    var top = rect.top + (rect.height - height) / 2;
+    xenoClose.style.left = Math.round(Math.max(4, Math.min(left, window.innerWidth - width - 4))) + "px";
+    xenoClose.style.top = Math.round(Math.max(4, Math.min(top, window.innerHeight - height - 4))) + "px";
+  }
+
+  function hideXenoClose() {
+    clearXenoCloseTimer();
+    if (anchor) anchor.classList.remove("has-xeno-close");
+    xenoCloseId = "";
+    if (!xenoClose) return;
+    xenoClose.hidden = true;
+    xenoClose.removeAttribute("data-app");
+  }
+
+  function queueHideXenoClose(delay) {
+    clearXenoCloseTimer();
+    xenoCloseTimer = window.setTimeout(hideXenoClose, delay == null ? 100 : delay);
+  }
+
+  function showXenoClose(button) {
+    if (!api || !xenoClose || !button || !button.isConnected) return;
+    var id = button.dataset.app;
+    var win = api.windows.get(id);
+    if (!win) {
+      hideXenoClose();
+      return;
+    }
+    clearTimers();
+    clearXenoCloseTimer();
+    if (anchor && anchor !== button) anchor.classList.remove("has-xeno-close");
+    activeId = "";
+    anchor = button;
+    preview.classList.remove("is-open");
+    preview.hidden = true;
+    preview.querySelector("[data-taskbar-preview-viewport]").textContent = "";
+    xenoCloseId = id;
+    button.classList.add("has-xeno-close");
+    xenoClose.dataset.app = id;
+    xenoClose.setAttribute("aria-label", "Close " + appName(api.apps[id]));
+    xenoClose.hidden = false;
+    requestAnimationFrame(function () {
+      if (xenoCloseId === id) positionXenoClose(button);
+    });
+  }
+
+  function createXenoClose() {
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "neo-xeno-taskbar-close";
+    button.hidden = true;
+    button.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>';
+    button.addEventListener("pointerenter", clearXenoCloseTimer);
+    button.addEventListener("pointerleave", function (event) {
+      if (anchor && event.relatedTarget && anchor.contains(event.relatedTarget)) return;
+      queueHideXenoClose(90);
+    });
+    button.addEventListener("focus", clearXenoCloseTimer);
+    button.addEventListener("blur", function () { queueHideXenoClose(80); });
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      var win = api && api.windows.get(xenoCloseId);
+      hideXenoClose();
+      if (win) api.close(win);
+    });
+    document.body.appendChild(button);
+    return button;
   }
 
   function dockButton(id) {
@@ -535,6 +622,7 @@
 
   function hideNow() {
     clearTimers();
+    hideXenoClose();
     activeId = "";
     anchor = null;
     if (!preview) return;
@@ -581,6 +669,11 @@
       queueHide(80);
       return;
     }
+    if (xenoCloseMode()) {
+      showXenoClose(button);
+      return;
+    }
+    hideXenoClose();
     window.clearTimeout(hideTimer);
     if (activeId === button.dataset.app && !preview.hidden) {
       anchor = button;
@@ -636,7 +729,11 @@
     api.dock.addEventListener("pointerout", function (event) {
       var button = event.target.closest(".dock-button[data-app]");
       if (!button || !api.dock.contains(button)) return;
-      if (event.relatedTarget && (button.contains(event.relatedTarget) || preview.contains(event.relatedTarget))) return;
+      if (event.relatedTarget && (button.contains(event.relatedTarget) || preview.contains(event.relatedTarget) || (xenoClose && xenoClose.contains(event.relatedTarget)))) return;
+      if (xenoCloseMode()) {
+        queueHideXenoClose();
+        return;
+      }
       queueHide();
     });
     api.dock.addEventListener("focusin", function (event) {
@@ -644,10 +741,22 @@
       if (button) queueShow(button, 0);
     });
     api.dock.addEventListener("focusout", function (event) {
-      if (event.relatedTarget && (api.dock.contains(event.relatedTarget) || preview.contains(event.relatedTarget))) return;
+      if (event.relatedTarget && (api.dock.contains(event.relatedTarget) || preview.contains(event.relatedTarget) || (xenoClose && xenoClose.contains(event.relatedTarget)))) return;
+      if (xenoCloseMode()) {
+        queueHideXenoClose(80);
+        return;
+      }
       queueHide(80);
     });
     new MutationObserver(function () {
+      if (xenoCloseId) {
+        var closeAnchor = dockButton(xenoCloseId);
+        if (!closeAnchor || !api.windows.has(xenoCloseId)) hideXenoClose();
+        else {
+          anchor = closeAnchor;
+          positionXenoClose(closeAnchor);
+        }
+      }
       if (!activeId) return;
       var next = Array.from(api.dock.querySelectorAll(".dock-button[data-app]")).find(function (button) { return button.dataset.app === activeId; });
       if (!next || !api.windows.has(activeId)) hideNow();
@@ -663,9 +772,13 @@
     if (!dock || !windows || preview) return;
     api = { dock: dock, windows: windows, apps: apps, open: open, close: close };
     preview = createPreview();
+    xenoClose = createXenoClose();
     minimizedTray = createMinimizedTray();
     bindDock();
-    window.addEventListener("resize", function () { if (anchor) positionPreview(anchor); }, { passive: true });
+    window.addEventListener("resize", function () {
+      if (xenoCloseId && anchor) positionXenoClose(anchor);
+      else if (anchor) positionPreview(anchor);
+    }, { passive: true });
     window.addEventListener("blur", hideNow);
     document.addEventListener("fullscreenchange", syncFullscreenVisibility);
     document.addEventListener("webkitfullscreenchange", syncFullscreenVisibility);

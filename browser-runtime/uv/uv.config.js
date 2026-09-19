@@ -1,6 +1,6 @@
 /* global Ultraviolet */
 (() => {
-  const engineVersion = "neo-browse-v69";
+  const engineVersion = "neo-browse-v70";
   const runsInDocument = typeof document !== "undefined";
   const configSource = runsInDocument && document.currentScript?.src
     ? document.currentScript.src

@@ -2,7 +2,7 @@
 <html lang="en" data-boot="pending" data-neo-app="shell" data-interface-style="modern" data-wallpaper="we-steam-1403160205" data-performance-mode="normal" data-auto-performance-active="false" data-animation-speed="100" data-taskbar-position="left" data-taskbar-style="current" data-taskbar-surface="glass" data-taskbar-outline="true" data-taskbar-running-apps="true" data-taskbar-app-names="false" data-window-bar-style="ultra" data-desktop-system-widget="false" data-desktop-active-app-widget="false" data-desktop-now-playing-widget="false">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http://127.0.0.1:3092 http://localhost:3092; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: http://127.0.0.1:3092 http://localhost:3092 https://fastly.jsdelivr.net https://cdn.jsdelivr.net https://gcore.jsdelivr.net https://quantil.jsdelivr.net https://pipedapi.ducks.party https://api.piped.private.coffee https://lol.samidy.workers.dev https://lunchbreak.dyercountylawncare.workers.dev https://neo-stratus-api-w6nw.onrender.com wss://nextnode9124.b-cdn.net wss://support.pired.org wss://girlspreples.com wss://northstreetumc.org wss://pcesc.com wss://kcchallengevbc.com wss://slcbmooc.org wss://probuildingsupplies.com wss://wisp.mercurywork.shop wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app wss://reeyukiwisp.onrender.com; frame-src 'self' blob: https://nextnode9124.b-cdn.net https://fastly.jsdelivr.net https://cdn.jsdelivr.net https://gcore.jsdelivr.net https://quantil.jsdelivr.net; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fastly.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http://127.0.0.1:3092 http://localhost:3092; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: http://127.0.0.1:3092 http://localhost:3092 https://a.luminsdk.com https://fastly.jsdelivr.net https://cdn.jsdelivr.net https://gcore.jsdelivr.net https://quantil.jsdelivr.net https://pipedapi.ducks.party https://api.piped.private.coffee https://lol.samidy.workers.dev https://lunchbreak.dyercountylawncare.workers.dev https://neo-stratus-api-w6nw.onrender.com wss://nextnode9124.b-cdn.net wss://support.pired.org wss://girlspreples.com wss://northstreetumc.org wss://pcesc.com wss://kcchallengevbc.com wss://slcbmooc.org wss://probuildingsupplies.com wss://wisp.mercurywork.shop wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app wss://reeyukiwisp.onrender.com; frame-src 'self' blob: https://a.luminsdk.com https://nextnode9124.b-cdn.net https://fastly.jsdelivr.net https://cdn.jsdelivr.net https://gcore.jsdelivr.net https://quantil.jsdelivr.net; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
     <script src="./neo-local-config.js?v=20260913-yukios-wisp-v1&amp;theme=system-v1&amp;widgets=live-v1&amp;music=preconnect-v1"></script>
     <script src="./neo-desktop-config.js?v=20260912-acrylic-theme-v1"></script>
     <script src="./neo-system-bridge.js?v=20260909-oled-default-v1"></script>
@@ -76,7 +76,7 @@
       fetchpriority="high"
     />
     <link rel="stylesheet" href="./neo-os.css?v=20260912-status-widget-toggles-v1&amp;boot=universal-loader-v3&amp;popout=resizable-v1" />
-    <link rel="stylesheet" href="./neo-taskbar-menu.css?v=20260828-app-spacing-v2" />
+    <link rel="stylesheet" href="./neo-taskbar-menu.css?v=20260919-logo-fit-v1" />
     <link rel="stylesheet" href="./neo-taskbar-preview.css?v=20260913-current-state-v1" />
     <link rel="stylesheet" href="./neo-apps.css?v=20260912-calculator-fit-v1" />
     <link rel="stylesheet" href="./neo-window-resize.css?v=20260907-fullscreen-exit-v3" />
@@ -1302,9 +1302,9 @@
     <template id="library-template">
       <div class="native-app neo-library" data-library-app>
         <header class="arcade-topbar">
-          <div class="arcade-brand" aria-label="NEO Games">
-            <span class="arcade-brand-mark" aria-hidden="true">N</span>
-            <strong>NEO</strong><span>GAMES</span>
+          <div class="arcade-brand" aria-label="Steam">
+            <img class="arcade-brand-mark" src="./assets/steam.svg?v=20260918-steam-brand-v1" alt="">
+            <strong>STEAM</strong>
           </div>
           <nav class="arcade-nav" aria-label="Games navigation">
             <button class="arcade-nav-button is-active" type="button" data-library-nav="home" aria-pressed="true">

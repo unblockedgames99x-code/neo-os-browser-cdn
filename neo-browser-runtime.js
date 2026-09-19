@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const ENGINE_VERSION = "neo-browse-v69";
+  const ENGINE_VERSION = "neo-browse-v70";
   const RUNTIME_SCRIPT_URL = document.currentScript?.src || document.baseURI;
   const CORE_BASE_URL = new URL("./", RUNTIME_SCRIPT_URL);
   const BROWSER_BASE_URL = (() => {
@@ -13,7 +13,7 @@
   })();
   const browserAsset = (path) => new URL(path, BROWSER_BASE_URL).href;
   const OS_SCOPE = CORE_BASE_URL.pathname;
-  const ROUTE_PREFIX = new URL(`browse-v69/`, BROWSER_BASE_URL).pathname;
+  const ROUTE_PREFIX = new URL(`browse-v70/`, BROWSER_BASE_URL).pathname;
   const RUNTIME_ROOT = browserAsset("browser-runtime").replace(/\/$/, "");
   const NEW_TAB_DESTINATION = "neo://newtab";
   const NEW_TAB_PAGE = `${browserAsset("browser-newtab.html")}?v=${ENGINE_VERSION}`;
@@ -22,20 +22,18 @@
   const PRIMARY_TRANSPORT_URL = `${RUNTIME_ROOT}/epoxy/index.mjs?engine=${ENGINE_VERSION}`;
   const FALLBACK_TRANSPORT_URL = `${RUNTIME_ROOT}/libcurl/index.mjs?engine=${ENGINE_VERSION}`;
   const NEXTNODE_PROXY_ORIGIN = "https://nextnode9124.b-cdn.net/";
-  const PREFERRED_WISP_RELAY = "wss://nextnode9124.b-cdn.net/w/";
-  const WISP_RELAYS = [
+  // These are the published endpoints supplied by the YukiOS server choices.
+  // A selected server is deliberately never replaced by an unrelated fallback.
+  const PREFERRED_WISP_RELAY = "wss://probuildingsupplies.com/w/";
+  const OFFICIAL_WISP_RELAYS = Object.freeze([
     PREFERRED_WISP_RELAY,
     "wss://probuildingsupplies.com/w/",
     "wss://wisp.mercurywork.shop/",
     "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/",
     "wss://reeyukiwisp.onrender.com/",
-    "wss://cdn.northstreetumc.org/adblock/",
-    "wss://cdn.pcesc.org/adblock/",
-    "wss://girlspreples.org/wi/",
-    "wss://mages.io/wisp/",
-  ];
+  ]);
   const WISP_PREFERENCE_KEY = "neo:browser:wisp:v1";
-  const WISP_RELAY_CACHE_KEY = `neo-wisp-relay:${ENGINE_VERSION}:nextnode-v1`;
+  const WISP_RELAY_CACHE_KEY = `neo-wisp-relay:${ENGINE_VERSION}:selected-v1`;
   let runtimePromise = null;
   let stylesPromise = null;
   let transportConnection = null;
@@ -144,10 +142,24 @@
     });
   }
 
+  function normalizeWispRelay(value) {
+    const text = String(value || "").trim();
+    if (!/^wss?:\/\//i.test(text)) return "";
+    try {
+      const relay = new URL(text);
+      return (relay.protocol === "wss:" || relay.protocol === "ws:")
+        ? (relay.href.endsWith("/") ? relay.href : `${relay.href}/`)
+        : "";
+    } catch (error) {
+      return "";
+    }
+  }
+
   function preferredWispRelay() {
     try {
-      const selected = String(window.localStorage.getItem(WISP_PREFERENCE_KEY) || "").trim();
-      if (WISP_RELAYS.includes(selected)) return selected;
+      const selected = normalizeWispRelay(window.localStorage.getItem(WISP_PREFERENCE_KEY));
+      // A custom relay is valid only when explicitly saved through Custom.
+      if (selected) return selected;
     } catch (error) {}
     return PREFERRED_WISP_RELAY;
   }
@@ -155,28 +167,10 @@
   function selectWispRelay() {
     if (wispRelayPromise) return wispRelayPromise;
     wispRelayPromise = (async () => {
-      let cached = "";
-      try { cached = window.sessionStorage.getItem(WISP_RELAY_CACHE_KEY) || ""; } catch (error) {}
       const preferred = preferredWispRelay();
-      let selectedRelay = "";
-      try {
-        await probeWispRelay(preferred, 1800);
-        selectedRelay = preferred;
-      } catch (preferredError) {}
-      if (!selectedRelay && cached && cached !== preferred && WISP_RELAYS.includes(cached)) {
-        try {
-          await probeWispRelay(cached, 1400);
-          selectedRelay = cached;
-        } catch (cachedError) {}
-      }
-      if (!selectedRelay) {
-        const remaining = WISP_RELAYS.filter(
-          (relay) => relay !== preferred && relay !== cached,
-        );
-        selectedRelay = await firstResponsiveWispRelay(remaining, 3800);
-      }
-      try { window.sessionStorage.setItem(WISP_RELAY_CACHE_KEY, selectedRelay); } catch (error) {}
-      return selectedRelay;
+      await probeWispRelay(preferred, 3600);
+      try { window.sessionStorage.setItem(WISP_RELAY_CACHE_KEY, preferred); } catch (error) {}
+      return preferred;
     })().catch((error) => {
       wispRelayPromise = null;
       throw error;
@@ -386,6 +380,26 @@
     }
     worker.postMessage(message, transfer);
     await withTimeout(warmed, 15000, "The web app could not reach its relay.");
+  }
+
+  function requestGameDocument(worker, target) {
+    const channel = new MessageChannel();
+    const request = new Promise((resolve, reject) => {
+      channel.port1.onmessage = (event) => {
+        if (event.data?.ok && typeof event.data.html === "string") {
+          resolve({ html: event.data.html, fetchedUrl: event.data.url || target });
+          return;
+        }
+        reject(new Error(event.data?.message || "The protected game document could not be loaded."));
+      };
+      channel.port1.onmessageerror = () => reject(new Error("The protected game response was invalid."));
+    });
+    worker.postMessage({
+      type: "neo-browser:game-document",
+      engine: ENGINE_VERSION,
+      url: target,
+    }, [channel.port2]);
+    return withTimeout(request, 25000, "The protected game document took too long to load.");
   }
 
   async function configureTransportNow() {
@@ -608,9 +622,13 @@
 
     installTransportRecoveryListener();
     await configureTransport();
-    await activateWorker().then((worker) => warmWorker(worker));
+    const worker = await activateWorker();
+    await warmWorker(worker);
     return {
       config: window.__uv$config,
+      fetchDocument(target) {
+        return requestGameDocument(worker, target);
+      },
       routeFor(target) {
         return `${ROUTE_PREFIX}${window.__uv$config.encodeUrl(target)}`;
       },
@@ -2136,6 +2154,13 @@
       const runtime = await getRuntime();
       await ensureNavigationTransport(target);
       return runtime.routeFor(target);
+    },
+    async fetchDocument(value) {
+      const target = normalizeDestination(value);
+      if (!externalDestination(target)) throw new TypeError("Only http and https pages can use the web proxy.");
+      const runtime = await getRuntime();
+      await ensureNavigationTransport(target);
+      return runtime.fetchDocument(target);
     },
     async openQuery(options) {
       if (!options?.container) throw new Error("The web app has no page container.");

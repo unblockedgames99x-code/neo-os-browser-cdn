@@ -129,9 +129,10 @@
         fullMedia: true
       };
     }
-    return base.map(function (item, index) { return record(item[0], item[1], "", "Classic", index); })
-      .concat(mac.map(function (file, index) { return record(title(file), file, "mac-wallpapers", "macOS", index); }))
-      .concat(chrome.map(function (file, index) { return record(title(file), file, "chromeos-wallpapers", "ChromeOS", index); }));
+    // Keep the shipped library intentionally small. Remote wallpaper packs
+    // created dozens of eager preview requests every time Wallpaper Engine
+    // opened; users can still import their own images and videos on demand.
+    return [];
   })();
   var reactiveAudioState = {
     source: "",

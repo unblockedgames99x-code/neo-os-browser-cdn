@@ -102,6 +102,7 @@
 
   var SETTINGS_KEY = "neo_extended_settings_v1";
   var WISP_STORAGE_KEY = "neo:browser:wisp:v1";
+  var WISP_CUSTOM_VALUE = "custom";
   var WISP_SERVERS = Object.freeze({
     probuildings: "wss://probuildingsupplies.com/w/",
     mercury: "wss://wisp.mercurywork.shop/",
@@ -120,6 +121,9 @@
     if (LEGACY_WISP_IDS[text]) return LEGACY_WISP_IDS[text];
     if (/^wss?:\/\//i.test(text)) return text.endsWith("/") ? text : text + "/";
     return WISP_SERVERS.probuildings;
+  }
+  function isOfficialWispServer(value) {
+    return Object.keys(WISP_SERVERS).some(function (key) { return WISP_SERVERS[key] === value; });
   }
   function syncWispServer(value, notifyOpenBrowsers) {
     var url = resolveWispServer(value);
@@ -218,7 +222,8 @@
 
     control.appendChild(section("Network and browser", "Choose a CDN mirror, WISP endpoint, and Scramjet transport.",
       select("networkMirror", "CDN mirror", "Asset delivery provider", [["fastly","Fastly jsDelivr"],["global","Global jsDelivr"],["gcore","GCore jsDelivr"],["quantil","Quantil jsDelivr"]]) +
-      select("wispServer", "WISP server", "Proxy connection used by Scramjet", [[WISP_SERVERS.probuildings,"Probuilding Wisp"],[WISP_SERVERS.mercury,"Mercury Wisp"],[WISP_SERVERS.reeyuki,"Reeyuki Wisp"],[WISP_SERVERS.reeyuki2,"Reeyuki Wisp 2"]]) +
+      select("wispServer", "WISP server", "Proxy connection used by Scramjet", [[WISP_SERVERS.probuildings,"Probuilding Wisp"],[WISP_SERVERS.mercury,"Mercury Wisp"],[WISP_SERVERS.reeyuki,"Reeyuki Wisp"],[WISP_SERVERS.reeyuki2,"Reeyuki Wisp 2"],[WISP_CUSTOM_VALUE,"Custom..."]]) +
+      '<label class="parity-select-row" data-wisp-custom-row hidden><span><strong>Custom WISP URL</strong><small>Used only when Custom is selected</small></span><input type="url" inputmode="url" placeholder="wss://your-server.example/" data-wisp-custom-input></label>' +
       select("transport", "Transport protocol", "Scramjet browser transport", [["epoxy","Epoxy (Wisp)"],["libcurl","Libcurl"],["bare","Bare fallback"]]), "network-parity-settings"));
 
     control.appendChild(section("Gaming and Flash", "Tune the gaming overlay and Ruffle compatibility defaults.",
@@ -242,20 +247,48 @@
 
   function wireSettings(control) {
     var state = readSettings();
+    var customWispRow = control.querySelector("[data-wisp-custom-row]");
+    var customWispInput = control.querySelector("[data-wisp-custom-input]");
     control.querySelectorAll("[data-extended-setting]").forEach(function (input) {
       var name = input.dataset.extendedSetting;
       if (input.type === "checkbox") input.checked = Boolean(state[name]);
-      else input.value = state[name];
+      else if (name === "wispServer") {
+        var selectedWisp = resolveWispServer(state.wispServer);
+        var officialWisp = isOfficialWispServer(selectedWisp);
+        input.value = officialWisp ? selectedWisp : WISP_CUSTOM_VALUE;
+        if (customWispRow) customWispRow.hidden = officialWisp;
+        if (customWispInput) customWispInput.value = officialWisp ? "" : selectedWisp;
+      } else input.value = state[name];
       function update() {
+        if (name === "wispServer") {
+          var candidate = input.value === WISP_CUSTOM_VALUE
+            ? resolveWispServer(customWispInput && customWispInput.value)
+            : resolveWispServer(input.value);
+          if (!candidate) return;
+          state.wispServer = syncWispServer(candidate, true);
+          writeSettings(state);
+          return;
+        }
         state[name] = input.type === "checkbox" ? input.checked : (input.type === "range" ? Number(input.value) : input.value);
         if (name === "ads") state.ads = false;
-        if (name === "wispServer") state.wispServer = syncWispServer(state.wispServer, true);
         var output = control.querySelector('[data-extended-output="' + name + '"]');
         if (output) output.textContent = input.value + (name === "notificationDuration" ? "s" : "px");
         writeSettings(state);
       }
-      input.addEventListener(input.type === "range" ? "input" : "change", update);
-      update();
+      if (name === "wispServer") {
+        input.addEventListener("change", function () {
+          if (customWispRow) customWispRow.hidden = input.value !== WISP_CUSTOM_VALUE;
+          if (input.value === WISP_CUSTOM_VALUE) customWispInput && customWispInput.focus();
+          else update();
+        });
+        if (customWispInput) {
+          customWispInput.addEventListener("change", update);
+          customWispInput.addEventListener("blur", update);
+        }
+      } else {
+        input.addEventListener(input.type === "range" ? "input" : "change", update);
+        update();
+      }
     });
     var list = control.querySelector("[data-autostart-list]");
     var search = control.querySelector("[data-autostart-search]");

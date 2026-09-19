@@ -1,10 +1,11 @@
-import "./browser-runtime/uv/uv.bundle.js?engine=neo-browse-v69";
-import "./browser-runtime/uv/uv.config.js?engine=neo-browse-v69";
+import "./browser-runtime/uv/uv.bundle.js?engine=neo-browse-v70";
+import "./browser-runtime/uv/uv.config.js?engine=neo-browse-v70";
 import "./browser-runtime/uv/uv.sw.js";
 
-const ENGINE_VERSION = "neo-browse-v69";
-const ROUTE_PREFIX = new URL("./browse-v69/", self.location.href).pathname;
+const ENGINE_VERSION = "neo-browse-v70";
+const ROUTE_PREFIX = new URL("./browse-v70/", self.location.href).pathname;
 const ultraviolet = new UVServiceWorker();
+const MAX_GAME_DOCUMENT_BYTES = 8 * 1024 * 1024;
 const RETRYABLE_METHODS = new Set(["GET", "HEAD"]);
 const FALLBACK_TIMEOUT_MS = 8000;
 let fallbackRequest = null;
@@ -252,6 +253,47 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("message", (event) => {
   if (event.data?.type === "neo-browser:activate" && event.data.engine === ENGINE_VERSION) {
     event.waitUntil(self.skipWaiting());
+    return;
+  }
+  if (event.data?.type === "neo-browser:game-document" && event.data.engine === ENGINE_VERSION) {
+    const reply = event.ports[0];
+    event.waitUntil((async () => {
+      try {
+        const target = new URL(String(event.data.url || ""));
+        if (
+          target.protocol !== "https:" ||
+          target.hostname.toLowerCase() !== "a.luminsdk.com" ||
+          !/^\/g\/[A-Za-z0-9_-]+\//.test(target.pathname)
+        ) {
+          throw new Error("This game document source is not trusted.");
+        }
+        const upstream = await ultraviolet.bareClient.fetch(target.href, {
+          method: "GET",
+          headers: {
+            accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "accept-language": "en-US,en;q=0.9",
+            referer: "https://fern.best/",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36",
+          },
+          redirect: "follow",
+        });
+        if (!upstream || upstream.status < 200 || upstream.status >= 300) {
+          const detail = upstream && typeof upstream.text === "function"
+            ? String(await upstream.text()).replace(/\s+/g, " ").trim().slice(0, 160)
+            : "";
+          throw new Error(`The game host returned ${upstream?.status || "an invalid response"}.${detail ? ` ${detail}` : ""}`);
+        }
+        const declaredSize = Number((upstream.rawHeaders || upstream.headers)?.["content-length"] || 0);
+        if (declaredSize > MAX_GAME_DOCUMENT_BYTES) throw new Error("The game document is too large.");
+        const html = typeof upstream.text === "function"
+          ? await upstream.text()
+          : await new Response(upstream.body).text();
+        if (html.length > MAX_GAME_DOCUMENT_BYTES) throw new Error("The game document is too large.");
+        reply?.postMessage({ ok: true, html, url: target.href });
+      } catch (error) {
+        reply?.postMessage({ ok: false, message: String(error?.message || error) });
+      }
+    })());
     return;
   }
   if (event.data?.type !== "neo-browser:warm") return;
