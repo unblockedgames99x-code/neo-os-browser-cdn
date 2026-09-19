@@ -23,9 +23,9 @@
     games: {
       id: "games",
       title: "Steam",
-      subtitle: "Browse and play the Fern game library",
+      subtitle: "Browse and play your complete Steam library",
       icon: "steam",
-      route: "./neo-games/index.html?build=20260918-steam-brand-v1",
+      route: "./neo-games/index.html?build=20260919-steam-client-v2",
       keepAlive: false,
       width: 1180,
       height: 760,

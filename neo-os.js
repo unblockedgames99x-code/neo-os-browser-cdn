@@ -850,7 +850,7 @@
       "media-player": "./assets/media-player.svg?v=20260827-high-resolution-v1",
       "html-games": "./assets/html-games.svg?v=20260827-blue-controller-v1",
       widgets: "./assets/widgets.svg?v=20260907-widgets-logo-v1",
-      steam: "./assets/steam.svg?v=20260918-steam-brand-v1",
+      steam: "./assets/steam.svg?v=20260919-current-steam-logo-v2",
       "xbox-games": "./assets/xbox-games.svg?v=20260912-official-shape-v2",
       movies: "./assets/movies-icon.webp?v=20260912-user-artwork-v1"
     };
