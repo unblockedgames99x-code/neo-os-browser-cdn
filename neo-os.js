@@ -5696,9 +5696,18 @@
   }
 
   function ownsFrameWindow(source) {
-    return Array.prototype.some.call(document.querySelectorAll("iframe"), function (frame) {
-      try { return frame.contentWindow === source; } catch (_error) { return false; }
-    });
+    function ownsInDocument(frameDocument, depth) {
+      if (!frameDocument || depth < 0) return false;
+      return Array.prototype.some.call(frameDocument.querySelectorAll("iframe"), function (frame) {
+        try {
+          if (frame.contentWindow === source) return true;
+          return depth > 0 && ownsInDocument(frame.contentDocument, depth - 1);
+        } catch (_error) {
+          return false;
+        }
+      });
+    }
+    return ownsInDocument(document, 5);
   }
 
   function handleProxyBridgeMessage(event) {

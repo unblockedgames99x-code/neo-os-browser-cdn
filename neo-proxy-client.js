@@ -7,6 +7,20 @@
   var pending = new Map();
   var sequence = 0;
 
+  function shellWindow() {
+    var candidate = window.parent;
+    for (var depth = 0; candidate && candidate !== window && depth < 6; depth += 1) {
+      try {
+        if (candidate.NEO_SHELL) return candidate;
+        if (candidate.parent === candidate) break;
+        candidate = candidate.parent;
+      } catch (_error) {
+        break;
+      }
+    }
+    return window.parent;
+  }
+
   function normalize(value) {
     var url = new URL(String(value || ""), document.baseURI);
     if (url.protocol !== "http:" && url.protocol !== "https:") throw new TypeError("Only web URLs can use the proxy.");
@@ -48,7 +62,7 @@
         abort: abort
       });
       if (signal) signal.addEventListener("abort", abort, { once: true });
-      window.parent.postMessage({
+      shellWindow().postMessage({
         type: "neo-shell:proxy-resource",
         id: id,
         href: href,
@@ -65,7 +79,7 @@
   }
 
   window.addEventListener("message", function (event) {
-    if (event.source !== window.parent) return;
+    if (event.source !== shellWindow() && event.source !== window.parent) return;
     var data = event.data;
     if (!data || data.type !== "neo-shell:proxy-resource-result" || !pending.has(data.id)) return;
     var request = pending.get(data.id);
