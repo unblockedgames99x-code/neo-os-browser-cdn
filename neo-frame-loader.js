@@ -172,7 +172,12 @@
   }
 
   function fetchDocument(sourceUrl, options, signal) {
+    var originalGameUrl = originalGameDocumentUrl(sourceUrl);
     var candidates = documentCandidates(sourceUrl);
+    // Lumin game documents are CORS-readable. Fetch the original HTML before
+    // the relay so NEO can strip ad bootstraps locally without ever rendering
+    // the unfiltered page. Keep the relay and browser transport as fallbacks.
+    if (originalGameUrl) candidates.unshift(originalGameUrl);
     var lastError = null;
 
     function attempt(index) {
@@ -195,17 +200,15 @@
     }
 
     return attempt(0).catch(function (error) {
-      var originalUrl = originalGameDocumentUrl(sourceUrl);
-      if (!originalUrl || typeof options.gameDocumentFallback !== "function") throw error;
-      return Promise.resolve(options.gameDocumentFallback(originalUrl, signal)).then(function (result) {
+      if (!originalGameUrl || typeof options.gameDocumentFallback !== "function") throw error;
+      return Promise.resolve(options.gameDocumentFallback(originalGameUrl, signal)).then(function (result) {
         if (signal && signal.aborted) throw new DOMException("The request was aborted.", "AbortError");
-        if (typeof result === "string") return { html: result, fetchedUrl: originalUrl };
+        if (typeof result === "string") return { html: result, fetchedUrl: originalGameUrl };
         if (!result || typeof result.html !== "string") throw new Error("The protected game response was invalid.");
-        return { html: result.html, fetchedUrl: result.fetchedUrl || originalUrl };
+        return { html: result.html, fetchedUrl: result.fetchedUrl || originalGameUrl };
       });
     }).then(function (result) {
-      var originalUrl = originalGameDocumentUrl(sourceUrl);
-      if (originalUrl) result.html = sanitizeGameDocument(result.html, originalUrl);
+      if (originalGameUrl) result.html = sanitizeGameDocument(result.html, originalGameUrl);
       return result;
     });
   }
