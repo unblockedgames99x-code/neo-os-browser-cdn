@@ -13,7 +13,7 @@
     onlineApps: Object.freeze(["chat", "games", "movies"]),
     assetBase: base.href,
     music: new URL("music-v2/index.html?v=20260918-proxy-only-v1&theme=system-v1&widgets=live-v1", base).href,
-    browser: new URL("nextnode-browser/index.html?v=20260919-search-aether-v1", base).href,
+    browser: new URL("nextnode-browser/index.html?v=20260919-auto-wisp-v1", base).href,
     browserWarmAssets: Object.freeze([
       "study/sf-engine.js",
       "study/sf-ctl.js",

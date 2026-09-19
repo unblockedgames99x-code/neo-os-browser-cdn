@@ -2,7 +2,7 @@
   "use strict";
 
   var STORAGE_KEY = "neo:browser:wisp:v1";
-  // Match the named YukiOS choices. Custom is the only free-form option.
+  var MODE_KEY = "neo:browser:wisp-mode:v2";
   var DEFAULT_WISP = "wss://probuildingsupplies.com/w/";
   var SERVERS = Object.freeze([
     Object.freeze({ name: "NextNode Wisp", url: "wss://nextnode9124.b-cdn.net/w/" }),
@@ -23,9 +23,15 @@
     return text.endsWith("/") ? text : text + "/";
   }
 
-  function storedWisp() {
-    try { return normalize(localStorage.getItem(STORAGE_KEY)); } catch (_error) { return ""; }
+  function readStorage(key) {
+    try { return localStorage.getItem(key) || ""; } catch (_error) { return ""; }
   }
+
+  function writeStorage(key, value) {
+    try { localStorage.setItem(key, value); } catch (_error) {}
+  }
+
+  function storedWisp() { return normalize(readStorage(STORAGE_KEY)); }
 
   function configuredWisp() {
     var stored = storedWisp();
@@ -37,16 +43,84 @@
     return DEFAULT_WISP;
   }
 
+  function configuredMode() { return readStorage(MODE_KEY) === "manual" ? "manual" : "auto"; }
+
+  function serverFor(url) {
+    var normalized = normalize(url);
+    return SERVERS.find(function (server) { return server.url === normalized; }) || null;
+  }
+
+  function serverLabel(url) {
+    var preset = serverFor(url);
+    return preset ? preset.name : normalize(url).replace(/^wss?:\/\//i, "");
+  }
+
+  function setStatus(message, isError) {
+    var status = document.getElementById("wisp-status");
+    if (!status) return;
+    status.textContent = message;
+    if (isError) status.dataset.error = "true";
+    else status.removeAttribute("data-error");
+  }
+
+  function refreshStatus(message) {
+    if (message) return setStatus(message, false);
+    var prefix = configuredMode() === "auto" ? "Automatic · Active: " : "Active: ";
+    setStatus(prefix + serverLabel(window.NEO_WISP), false);
+  }
+
+  async function activate(url, reason) {
+    var next = normalize(url);
+    if (!next) throw new Error("Invalid WISP URL");
+    window.NEO_WISP = next;
+    writeStorage(STORAGE_KEY, next);
+    if (typeof window.NEO_SWITCH_WISP_TRANSPORT === "function") {
+      await window.NEO_SWITCH_WISP_TRANSPORT(next, reason || "settings");
+    }
+    window.dispatchEvent(new CustomEvent("neo:wisp-changed", {
+      detail: { url: next, name: serverLabel(next), mode: configuredMode(), reason: reason || "settings" }
+    }));
+    refreshStatus();
+    return next;
+  }
+
+  async function useMode(mode, url) {
+    var nextMode = mode === "manual" ? "manual" : "auto";
+    writeStorage(MODE_KEY, nextMode);
+    window.NEO_WISP_MODE = nextMode;
+    if (url) await activate(url, "settings");
+    else refreshStatus();
+  }
+
+  async function nextServer(reason) {
+    if (configuredMode() !== "auto") return null;
+    var current = normalize(window.NEO_WISP || configuredWisp());
+    var index = SERVERS.findIndex(function (server) { return server.url === current; });
+    var next = SERVERS[(index + 1 + SERVERS.length) % SERVERS.length];
+    setStatus("Reconnecting through " + next.name + "…", false);
+    await activate(next.url, reason || "automatic-recovery");
+    return next;
+  }
+
   window.NEO_PROXY_ENGINE = "Scramjet";
   window.NEO_WISP_SERVERS = SERVERS;
   window.NEO_WISP = configuredWisp();
+  window.NEO_WISP_MODE = configuredMode();
+  window.NEO_WISP_MANAGER = Object.freeze({
+    servers: SERVERS,
+    current: function () { return normalize(window.NEO_WISP); },
+    mode: configuredMode,
+    isAutomatic: function () { return configuredMode() === "auto"; },
+    next: nextServer,
+    activate: activate,
+    useMode: useMode
+  });
 
   window.addEventListener("message", function (event) {
     if (event.source !== parent || !event.data || event.data.type !== "neo:wisp-server-change") return;
     var next = normalize(event.data.url);
-    if (!next || next === configuredWisp()) return;
-    try { localStorage.setItem(STORAGE_KEY, next); } catch (_error) {}
-    window.location.reload();
+    if (!next) return;
+    useMode(event.data.auto === true ? "auto" : "manual", next).catch(function () { window.location.reload(); });
   });
 
   function install() {
@@ -60,15 +134,15 @@
     if (!button || !panel || !select || !customRow || !customInput || !applyButton || !status) return;
 
     var current = configuredWisp();
-    select.innerHTML = SERVERS.map(function (server) {
+    select.innerHTML = '<option value="auto">Automatic (recommended)</option>' + SERVERS.map(function (server) {
       return '<option value="' + server.url + '">' + server.name + "</option>";
     }).join("") + '<option value="custom">Custom...</option>';
 
-    var preset = SERVERS.find(function (server) { return server.url === current; });
-    select.value = preset ? preset.url : "custom";
+    var preset = serverFor(current);
+    select.value = configuredMode() === "auto" ? "auto" : (preset ? preset.url : "custom");
     customInput.value = preset ? "" : current;
-    customRow.hidden = Boolean(preset);
-    status.textContent = "Active: " + (preset ? preset.name : current.replace(/^wss?:\/\//i, ""));
+    customRow.hidden = select.value !== "custom";
+    refreshStatus();
 
     function close() {
       panel.hidden = true;
@@ -86,17 +160,18 @@
       if (!customRow.hidden) customInput.focus();
     });
     applyButton.addEventListener("click", function () {
-      var next = select.value === "custom" ? normalize(customInput.value) : normalize(select.value);
+      var isAuto = select.value === "auto";
+      var next = isAuto ? configuredWisp() : (select.value === "custom" ? normalize(customInput.value) : normalize(select.value));
       if (!next) {
-        status.textContent = "Enter a ws:// or wss:// server URL.";
-        status.dataset.error = "true";
+        setStatus("Enter a ws:// or wss:// server URL.", true);
         return;
       }
-      try { localStorage.setItem(STORAGE_KEY, next); } catch (_error) {}
-      status.removeAttribute("data-error");
-      status.textContent = "Switching server...";
-      window.location.reload();
+      setStatus(isAuto ? "Enabling automatic server switching…" : "Switching server…", false);
+      useMode(isAuto ? "auto" : "manual", next).then(function () {
+        select.value = isAuto ? "auto" : select.value;
+      }).catch(function () { setStatus("That server could not be activated.", true); });
     });
+    window.addEventListener("neo:wisp-changed", function () { refreshStatus(); });
     document.addEventListener("click", function (event) {
       if (!panel.hidden && !panel.contains(event.target) && event.target !== button) close();
     });

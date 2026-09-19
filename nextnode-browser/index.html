@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><script src="./wisp-settings.js?v=20260919-aether-wisp-v1"></script><script src="../neo-ad-shield.js"></script>
+<head><script src="./wisp-settings.js?v=20260919-auto-wisp-v1"></script><script src="../neo-ad-shield.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Browser</title>
@@ -396,7 +396,7 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
 
     <section class="wisp-panel" id="wisp-panel" aria-label="Proxy server settings" hidden>
         <div class="wisp-panel-title"><i class="ri-shield-check-line"></i><span>WISP Server</span></div>
-        <p class="wisp-panel-copy">Choose the server used by the Scramjet web proxy.</p>
+        <p class="wisp-panel-copy">Automatic mode switches servers and retries only the affected tab when a proxy route fails.</p>
         <label class="wisp-field">
             <span>Server</span>
             <select id="wisp-select" aria-label="WISP server"></select>
@@ -654,90 +654,5 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
         return looksLikeAddress?upstreamNormalize(value):searchUrl(value);
       };
     })();</script>
-<script>(function(){
-      var PENDING_KEY='neo:browser:pending-navigation:v1';
-      var RETRY_KEY='neo:browser:transport-retry:v1';
-      var RETRY_WINDOW_MS=45000;
-      var MAX_RETRIES=2;
-      var reloadScheduled=false;
-      var lastNavigationUrl='';
-      var originalNavigate=typeof navigate==='function'?navigate:null;
-      var originalConsoleError=console.error.bind(console);
-
-      function readRetryState(){
-        try{
-          var state=JSON.parse(sessionStorage.getItem(RETRY_KEY)||'null');
-          if(!state||!Number.isFinite(state.count)||Date.now()-state.at>RETRY_WINDOW_MS){
-            return {count:0,at:Date.now()};
-          }
-          return state;
-        }catch(error){
-          return {count:0,at:Date.now()};
-        }
-      }
-
-      function clearRecovery(){
-        try{
-          sessionStorage.removeItem(PENDING_KEY);
-          sessionStorage.removeItem(RETRY_KEY);
-        }catch(error){}
-      }
-
-      function recover(url,phase){
-        if(reloadScheduled)return;
-        var target=String(url||lastNavigationUrl||'').trim();
-        var state=readRetryState();
-        if(state.count>=MAX_RETRIES){
-          clearRecovery();
-          originalConsoleError('[browser] automatic transport recovery stopped after '+MAX_RETRIES+' attempts.');
-          return;
-        }
-        try{
-          if(target)sessionStorage.setItem(PENDING_KEY,target);
-          sessionStorage.setItem(RETRY_KEY,JSON.stringify({
-            count:state.count+1,
-            at:Date.now(),
-            phase:String(phase||'navigation')
-          }));
-        }catch(error){}
-        reloadScheduled=true;
-        setTimeout(function(){location.reload();},180);
-      }
-
-      if(originalNavigate){
-        navigate=function(url,options){
-          lastNavigationUrl=String(url||'');
-          if(!proxyReady){
-            return Promise.resolve(proxyBoot).then(function(){
-              return originalNavigate(url,options);
-            }).catch(function(){
-              recover(url,'startup');
-            });
-          }
-          return originalNavigate(url,options);
-        };
-      }
-
-      console.error=function(){
-        var args=Array.prototype.slice.call(arguments);
-        originalConsoleError.apply(console,args);
-        if(args[0]==='[browser] navigation failed:')recover(lastNavigationUrl,'navigation');
-      };
-
-      var pendingUrl='';
-      try{pendingUrl=sessionStorage.getItem(PENDING_KEY)||'';}catch(error){}
-      if(pendingUrl&&originalNavigate){
-        lastNavigationUrl=pendingUrl;
-        Promise.resolve(proxyBoot).then(function(){
-          reloadScheduled=false;
-          return navigate(pendingUrl,{replace:true});
-        }).then(function(){
-          setTimeout(function(){
-            if(!reloadScheduled)clearRecovery();
-          },1200);
-        }).catch(function(){
-          recover(pendingUrl,'startup');
-        });
-      }
-    })();</script><script src="./neo-devtools.js?v=20260919-docked-v1"></script></body>
+<script src="./auto-server-switch.js?v=20260919-auto-wisp-v1"></script><script src="./neo-devtools.js?v=20260919-docked-v1"></script></body>
 </html>
