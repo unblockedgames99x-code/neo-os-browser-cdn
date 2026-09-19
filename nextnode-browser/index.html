@@ -480,6 +480,74 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
         if(typeof saveBookmarks==='function')saveBookmarks();
         if(typeof renderBookmarks==='function')renderBookmarks();
       }
+      function installGoogleSitesGameRepair(tab,frame,doc){
+        if(!doc||doc.__neoGoogleSitesGameRepair)return;
+        doc.__neoGoogleSitesGameRepair=true;
+        var attempts=0;
+        var timer=setInterval(function(){
+          attempts+=1;
+          try{
+            var embeds=Array.from(doc.querySelectorAll('iframe')).filter(function(item){
+              return /(?:www\.)?gstatic\.com\/atari\/embeds\//i.test(String(item.src||item.getAttribute('src')||''));
+            });
+            if(!embeds.length){
+              if(attempts>=40)clearInterval(timer);
+              return;
+            }
+            var serialized=doc.documentElement?doc.documentElement.outerHTML:'';
+            var decoder=doc.createElement('textarea');
+            decoder.innerHTML=serialized;
+            var decoded=decoder.value;
+            var sourceHost='';
+            try{sourceHost=new URL(String(tab&&tab.url||'')).hostname.toLowerCase();}catch(error){}
+            var candidates=[];
+            (decoded.match(/<link\b[^>]*>/gi)||[]).forEach(function(tag){
+              if(!/\brel\s*=\s*(['"])[^'"]*\bcanonical\b[^'"]*\1/i.test(tag))return;
+              var match=tag.match(/\bhref\s*=\s*(['"])(.*?)\1/i);
+              if(match)candidates.push(match[2]);
+            });
+            (decoded.match(/<iframe\b[^>]*>/gi)||[]).forEach(function(tag){
+              var match=tag.match(/\bsrc\s*=\s*(['"])(https?:\/\/.*?)\1/i);
+              if(match)candidates.push(match[2]);
+            });
+            var target='';
+            candidates.some(function(value){
+              try{
+                var url=new URL(String(value).replace(/&amp;/g,'&'));
+                var host=url.hostname.toLowerCase();
+                if(!/^https?:$/.test(url.protocol)||host===sourceHost||/(^|\.)(?:google\.com|googleusercontent\.com|gstatic\.com|googletagmanager\.com|google-analytics\.com)$/.test(host))return false;
+                target=url.href;
+                return true;
+              }catch(error){return false;}
+            });
+            if(!target){
+              if(attempts>=40)clearInterval(timer);
+              return;
+            }
+            embeds.forEach(function(embed){
+              if(embed.dataset.neoGoogleSitesGame==='ready')return;
+              var gameFrame=document.createElement('iframe');
+              Array.from(embed.attributes||[]).forEach(function(attribute){
+                if(attribute.name!=='src')gameFrame.setAttribute(attribute.name,attribute.value);
+              });
+              gameFrame.dataset.neoGoogleSitesGame='ready';
+              gameFrame.title=embed.title||'Embedded game';
+              gameFrame.setAttribute('allow','autoplay; fullscreen; gamepad; clipboard-read; clipboard-write');
+              gameFrame.setAttribute('allowfullscreen','');
+              var sandbox=String(gameFrame.getAttribute('sandbox')||'');
+              ['allow-scripts','allow-same-origin','allow-forms','allow-popups','allow-pointer-lock','allow-modals','allow-presentation','allow-downloads'].forEach(function(token){
+                if(!sandbox.split(/\s+/).includes(token))sandbox+=(sandbox?' ':'')+token;
+              });
+              gameFrame.setAttribute('sandbox',sandbox);
+              embed.replaceWith(gameFrame);
+              sjController.createFrame(gameFrame).go(target);
+            });
+            clearInterval(timer);
+          }catch(error){
+            if(attempts>=40)clearInterval(timer);
+          }
+        },200);
+      }
       var upstreamMakeFrame=window.makeFrame;
       if(typeof upstreamMakeFrame==='function'){
         window.makeFrame=function(tab){
@@ -490,6 +558,7 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
             frame.addEventListener('load',function(){
               try{
                 var doc=frame.contentDocument;
+                installGoogleSitesGameRepair(tab,frame,doc);
                 if(!doc||doc.__neoSearchBridge)return;
                 doc.__neoSearchBridge=true;
                 function routeSearch(input,event){
