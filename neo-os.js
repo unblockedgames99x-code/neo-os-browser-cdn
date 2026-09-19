@@ -791,6 +791,21 @@
     return true;
   }
 
+  function removeUnavailableApp(app, hostWindow) {
+    if (!app || app.core) return false;
+    var title = app.title || "This app";
+    if (app.custom) {
+      if (hostWindow && (!app.launcher || app.transient === true)) closeWindow(hostWindow, true);
+      removeCustomApp(app.id);
+    } else if (app.launcher) {
+      setAppInstalled(app.id, false);
+    } else if (hostWindow) {
+      closeWindow(hostWindow, true);
+    }
+    showToast("App removed", title + " was removed because it could not load.", "apps");
+    return true;
+  }
+
   function escapeSelector(value) {
     if (window.CSS && typeof window.CSS.escape === "function") return window.CSS.escape(value);
     return String(value).replace(/[^a-zA-Z0-9_-]/g, "\\$&");
@@ -5236,10 +5251,10 @@
     var fallbackActions = document.createElement("div");
     var retry = document.createElement("button");
     var direct = document.createElement("button");
-    fallbackTitle.textContent = "This page is taking longer than expected";
+    fallbackTitle.textContent = "Unable to open " + app.title;
     fallbackCopy.textContent = directGame
       ? "Retry the protected game document. NEO will not fall back to an ad-enabled page."
-      : "You can retry the embedded page or open the existing route directly.";
+      : "Retry this built-in app. Slow starts are retried automatically.";
     fallbackActions.className = "upload-actions";
     retry.className = "button primary";
     retry.type = "button";
@@ -5275,6 +5290,8 @@
     if (app.id.indexOf("zone-") === 0) mountGameTouchControls(body, frame);
 
     var timeout = 0;
+    var loadAttempt = 0;
+    var failureHandled = false;
     var hostWindow = body.closest(".neo-window");
     var youtubePopoutSnapshot = null;
     var youtubePopoutDrag = null;
@@ -5485,14 +5502,29 @@
         // The supplied browser remains usable if a future build becomes cross-origin.
       }
     }
+    function handleLoadFailure(attempt) {
+      if (attempt !== loadAttempt || failureHandled) return;
+      window.clearTimeout(timeout);
+      loader.classList.add("is-complete");
+      if (removeUnavailableApp(app, hostWindow)) {
+        failureHandled = true;
+        return;
+      }
+      fallback.classList.add("is-visible");
+    }
     function beginLoad() {
+      var attempt = ++loadAttempt;
       loader.classList.remove("is-complete");
       fallback.classList.remove("is-visible");
       window.clearTimeout(timeout);
       timeout = window.setTimeout(function () {
-        loader.classList.add("is-complete");
-        fallback.classList.add("is-visible");
-      }, 9000);
+        if (attempt !== loadAttempt || failureHandled) return;
+        if (attempt === 1) {
+          beginLoad();
+          return;
+        }
+        handleLoadFailure(attempt);
+      }, attempt === 1 ? 12000 : 18000);
       var protectedRoute = fetchedDirectGame ? directGameDocumentRoute(app.route) : app.route;
       if (directGame) frame.referrerPolicy = "no-referrer";
       var frameLoad = window.NEOFrameLoader
@@ -5510,13 +5542,12 @@
           ? Promise.reject(new Error("The protected game loader is unavailable."))
           : Promise.resolve().then(function () { frame.src = app.route; });
       frameLoad.catch(function (error) {
-        if (error && error.name === "AbortError") return;
-        window.clearTimeout(timeout);
-        loader.classList.add("is-complete");
-        fallback.classList.add("is-visible");
+        if ((error && error.name === "AbortError") || attempt !== loadAttempt) return;
+        handleLoadFailure(attempt);
       });
     }
     frame.addEventListener("load", function () {
+      failureHandled = false;
       window.clearTimeout(timeout);
       applyHostIntegration();
       applyInterfaceStyleToFrame(frame);
@@ -5532,9 +5563,7 @@
       fallback.classList.remove("is-visible");
     });
     frame.addEventListener("error", function () {
-      window.clearTimeout(timeout);
-      loader.classList.add("is-complete");
-      fallback.classList.add("is-visible");
+      handleLoadFailure(loadAttempt);
     });
     retry.addEventListener("click", beginLoad);
     beginLoad();
