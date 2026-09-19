@@ -480,6 +480,55 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
         if(typeof saveBookmarks==='function')saveBookmarks();
         if(typeof renderBookmarks==='function')renderBookmarks();
       }
+      var upstreamMakeFrame=window.makeFrame;
+      if(typeof upstreamMakeFrame==='function'){
+        window.makeFrame=function(tab){
+          var result=upstreamMakeFrame.apply(this,arguments);
+          var frame=tab&&tab.frameEl;
+          if(frame&&!frame.dataset.neoSearchBridge){
+            frame.dataset.neoSearchBridge='true';
+            frame.addEventListener('load',function(){
+              try{
+                var doc=frame.contentDocument;
+                if(!doc||doc.__neoSearchBridge)return;
+                doc.__neoSearchBridge=true;
+                function routeSearch(input,event){
+                  if(!input||!tab||!/^(?:https?:\/\/)?(?:html\.)?duckduckgo\.com(?:\/|$)/i.test(String(tab.url||'')))return;
+                  event.preventDefault();
+                  event.stopImmediatePropagation();
+                  navigate('https://duckduckgo.com/?q='+encodeURIComponent(input.value||''));
+                }
+                frame.contentWindow.addEventListener('keydown',function(event){
+                  if(event.key!=='Enter')return;
+                  var target=event.target;
+                  var input=target&&target.matches&&target.matches('input[name="q"]')?target:null;
+                  routeSearch(input,event);
+                },true);
+                frame.contentWindow.addEventListener('submit',function(event){
+                  var form=event.target;
+                  routeSearch(form&&form.querySelector&&form.querySelector('input[name="q"]'),event);
+                },true);
+              }catch(error){}
+            });
+          }
+          return result;
+        };
+      }
+      var upstreamOnFrameUrl=window.onFrameUrl;
+      if(typeof upstreamOnFrameUrl==='function'){
+        window.onFrameUrl=function(tab,url){
+          if(tab&&/^(?:https?:\/\/)?(?:html\.)?duckduckgo\.com(?:\/|$)/i.test(String(tab.url||''))&&/^https?:\/\/(?:html\.)?duckduckgo\.com\/undefined(?:[?#]|$)/i.test(String(url||''))){
+            if(tab.id===activeId){
+              currentUrl=tab.url;
+              var address=document.getElementById('url');
+              if(address)address.value=tab.url;
+              updateLock(tab.url);
+            }
+            return;
+          }
+          return upstreamOnFrameUrl.apply(this,arguments);
+        };
+      }
       var upstreamNormalize=window.normalizeInput;
       if(typeof upstreamNormalize!=='function')return;
       window.NEO_SEARCH_PROVIDER='duckduckgo';
@@ -487,7 +536,7 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
         var value=String(input||'').trim();
         if(!value)return null;
         var looksLikeAddress=/^(?:[a-z][a-z0-9+.-]*:\/\/|localhost(?:[:/]|$)|(?:\d{1,3}\.){3}\d{1,3}(?:[:/]|$)|(?:[^.\s]+\.)+[^.\s]{2,}(?:[:/]|$))/i.test(value);
-        return looksLikeAddress?upstreamNormalize(value):'https://html.duckduckgo.com/html/?q='+encodeURIComponent(value);
+        return looksLikeAddress?upstreamNormalize(value):'https://duckduckgo.com/?q='+encodeURIComponent(value);
       };
     })();</script>
 <script>(function(){
