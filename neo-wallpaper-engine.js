@@ -45,8 +45,6 @@
   var stabilityRecovery = 0;
   var stabilityExpected = 0;
   var stabilityStallScore = 0;
-  var reactiveCoverElement = null;
-  var reactiveCoverRefresh = null;
   var initialized = false;
   var YOUTUBE_CHROME_CROP = 96;
   var YOUTUBE_CLEAN_REVEAL_DELAY = 4200;
@@ -63,22 +61,7 @@
     reduceMotion: false,
     performanceMode: "normal"
   };
-  var BUILT_IN_CANVAS_WALLPAPERS = [{
-    id: "neo-reactive",
-    name: "NEO Reactive",
-    type: "canvas",
-    mediaType: "canvas",
-    sourceType: "scene",
-    author: "NEO OS",
-    description: "A full-spectrum NEO scene that reacts to the current song and shows its timestamp.",
-    size: 0,
-    width: 1920,
-    height: 1080,
-    createdAt: 0,
-    bundled: true,
-    builtIn: true,
-    fullMedia: true
-  }];
+  var BUILT_IN_CANVAS_WALLPAPERS = [];
   var REMOTE_IMAGE_WALLPAPERS = (function () {
     var origin = "https://yukios.pages.dev/static/wallpapers/";
     var base = [
@@ -134,59 +117,6 @@
     // opened; users can still import their own images and videos on demand.
     return [];
   })();
-  var reactiveAudioState = {
-    source: "",
-    active: false,
-    playing: false,
-    title: "",
-    cover: "",
-    coverReady: false,
-    coverRevision: 0,
-    position: 0,
-    duration: 0,
-    stateAt: 0,
-    levels: [0, 0, 0, 0, 0, 0, 0, 0],
-    levelsAt: 0
-  };
-
-  function safeReactiveCover(value) {
-    var source = String(value || "").trim();
-    if (!source || source.length > 900000) return "";
-    if (/^data:image\/(?:avif|gif|jpeg|png|webp);/i.test(source)) return source;
-    try {
-      var url = new URL(source, window.location.href);
-      return /^(?:blob:|https?:)$/.test(url.protocol) ? url.href : "";
-    } catch (_error) {
-      return "";
-    }
-  }
-
-  function syncReactiveCoverElement() {
-    if (!reactiveCoverElement || !reactiveCoverElement.isConnected) return;
-    var cover = reactiveAudioState.cover;
-    if (reactiveCoverElement.dataset.cover === cover) return;
-    reactiveCoverElement.dataset.cover = cover;
-    reactiveCoverElement.classList.remove("is-ready");
-    reactiveCoverElement.removeAttribute("src");
-    reactiveAudioState.coverReady = false;
-    if (!cover) return;
-    reactiveCoverElement.onload = function () {
-      if (!reactiveCoverElement || reactiveCoverElement.dataset.cover !== cover) return;
-      reactiveAudioState.coverReady = true;
-      reactiveAudioState.coverRevision += 1;
-      reactiveCoverElement.classList.add("is-ready");
-      if (reactiveCoverRefresh) reactiveCoverRefresh();
-    };
-    reactiveCoverElement.onerror = function () {
-      if (!reactiveCoverElement || reactiveCoverElement.dataset.cover !== cover) return;
-      reactiveAudioState.coverReady = false;
-      reactiveAudioState.coverRevision += 1;
-      reactiveCoverElement.classList.remove("is-ready");
-      if (reactiveCoverRefresh) reactiveCoverRefresh();
-    };
-    reactiveCoverElement.src = cover;
-  }
-
   function openDatabase() {
     return new Promise(function (resolve, reject) {
       if (!window.indexedDB) {
@@ -646,57 +576,6 @@
   function isBundled(id) {
     var value = String(id || "");
     return value.indexOf("we-") === 0 || Boolean(builtInCanvasFor(value)) || REMOTE_IMAGE_WALLPAPERS.some(function (item) { return item.id === value; }) || Boolean(bundledFor(value));
-  }
-
-  function finiteMediaNumber(value) {
-    var number = Number(value);
-    return Number.isFinite(number) && number > 0 ? number : 0;
-  }
-
-  function handleReactiveMediaState(event) {
-    var detail = event && event.detail || {};
-    var source = String(detail.source || "media");
-    if (detail.active === false) {
-      if (reactiveAudioState.source !== source) return;
-      reactiveAudioState.active = false;
-      reactiveAudioState.playing = false;
-      reactiveAudioState.cover = "";
-      reactiveAudioState.coverReady = false;
-      reactiveAudioState.coverRevision += 1;
-      reactiveAudioState.position = 0;
-      reactiveAudioState.duration = 0;
-      reactiveAudioState.stateAt = Date.now();
-      reactiveAudioState.levels.fill(0);
-      reactiveAudioState.levelsAt = 0;
-      syncReactiveCoverElement();
-      return;
-    }
-    if (detail.kind !== "audio" || !String(detail.title || "").trim()) return;
-    reactiveAudioState.source = source;
-    reactiveAudioState.active = true;
-    reactiveAudioState.playing = detail.playing === true;
-    reactiveAudioState.title = String(detail.title || "").trim().slice(0, 120);
-    var nextCover = safeReactiveCover(detail.cover);
-    if (nextCover !== reactiveAudioState.cover) {
-      reactiveAudioState.cover = nextCover;
-      reactiveAudioState.coverReady = false;
-      reactiveAudioState.coverRevision += 1;
-      syncReactiveCoverElement();
-    }
-    reactiveAudioState.position = finiteMediaNumber(detail.position);
-    reactiveAudioState.duration = finiteMediaNumber(detail.duration);
-    reactiveAudioState.stateAt = Date.now();
-  }
-
-  function handleReactiveMediaLevels(event) {
-    var detail = event && event.detail || {};
-    if (!reactiveAudioState.active || String(detail.source || "") !== reactiveAudioState.source) return;
-    var levels = Array.from(detail.levels || []).slice(0, 8).map(function (value) {
-      return Math.max(0, Math.min(1, Number(value) || 0));
-    });
-    if (levels.length !== 8) return;
-    reactiveAudioState.levels = levels;
-    reactiveAudioState.levelsAt = Date.now();
   }
 
   function ensureLayer() {
@@ -1673,323 +1552,6 @@
     });
   }
 
-  function formatReactiveTime(seconds) {
-    var value = Math.max(0, Math.floor(Number(seconds) || 0));
-    var minutes = Math.floor(value / 60);
-    var remainder = String(value % 60).padStart(2, "0");
-    return minutes + ":" + remainder;
-  }
-
-  function startNeoReactiveCanvas(sequence, staticOnly) {
-    var layer = ensureLayer();
-    if (!layer || sequence !== applySequence) return;
-    clearMedia("switch");
-    activeId = "neo-reactive";
-    activeRecord = builtInCanvasFor(activeId);
-    if (staticOnly) suspendedKey = activeId + "|" + performanceMode() + "|" + (runtimeSettings.wallpaperFit || "cover");
-    root.dataset.wallpaperMedia = "true";
-    root.dataset.wallpaperPlayback = staticOnly || shouldPause() ? "paused" : "playing";
-
-    var canvas = document.createElement("canvas");
-    canvas.className = "wallpaper-media-asset wallpaper-neo-reactive-canvas";
-    canvas.setAttribute("aria-hidden", "true");
-    if (staticOnly) canvas.dataset.performanceStill = "true";
-    var coverBackdrop = document.createElement("img");
-    coverBackdrop.className = "wallpaper-neo-reactive-cover" + (staticOnly ? " is-static" : "");
-    coverBackdrop.alt = "";
-    coverBackdrop.decoding = "async";
-    coverBackdrop.draggable = false;
-    coverBackdrop.referrerPolicy = "no-referrer";
-    coverBackdrop.setAttribute("aria-hidden", "true");
-    layer.appendChild(coverBackdrop);
-    reactiveCoverElement = coverBackdrop;
-    syncReactiveCoverElement();
-
-    enforceFullBleed(canvas, "cover");
-    layer.appendChild(canvas);
-    activeMedia = canvas;
-
-    var context = canvas.getContext("2d", { alpha: true, desynchronized: true });
-    if (!context) {
-      layer.style.backgroundColor = "#030406";
-      emit(staticOnly ? "performance-still" : "mount");
-      return;
-    }
-
-    var refreshCoverFrame = function () {
-      if (activeMedia === canvas && sequence === applySequence) drawFrame(performance.now());
-    };
-    reactiveCoverRefresh = refreshCoverFrame;
-
-    var background = document.createElement("canvas");
-    var backgroundContext = background.getContext("2d", { alpha: true });
-    var logo = new Image();
-    var logoReady = false;
-    var smoothedEnergy = 0.08;
-    var lowPowerDevice = Number(navigator.deviceMemory || 4) <= 4 || Number(navigator.hardwareConcurrency || 4) <= 4;
-    var particleCount = lowPowerDevice || window.innerWidth < 720 ? 26 : 38;
-    var palette = [0, 30, 56, 112, 174, 210, 258, 314];
-    var coverRevision = -1;
-    var bubbleSprites = palette.map(function (hue) {
-      var sprite = document.createElement("canvas");
-      sprite.width = 64;
-      sprite.height = 64;
-      var spriteContext = sprite.getContext("2d", { alpha: true });
-      if (!spriteContext) return sprite;
-      var glow = spriteContext.createRadialGradient(32, 32, 3, 32, 32, 30);
-      glow.addColorStop(0, "hsla(" + hue + ",100%,72%,0.22)");
-      glow.addColorStop(0.42, "hsla(" + hue + ",100%,58%,0.12)");
-      glow.addColorStop(1, "hsla(" + hue + ",100%,48%,0)");
-      spriteContext.fillStyle = glow;
-      spriteContext.fillRect(0, 0, 64, 64);
-      spriteContext.strokeStyle = "hsla(" + hue + ",100%,72%,0.82)";
-      spriteContext.lineWidth = 3;
-      spriteContext.beginPath();
-      spriteContext.arc(32, 32, 12, 0, Math.PI * 2);
-      spriteContext.stroke();
-      return sprite;
-    });
-    var particles = Array.from({ length: particleCount }, function (_, index) {
-      var seed = (index * 0.61803398875) % 1;
-      return {
-        x: (seed + (index % 5) * 0.083) % 1,
-        y: (index * 0.38196601125) % 1,
-        radius: 2.2 + (index % 6) * 1.35,
-        speed: 0.000009 + (index % 7) * 0.000002,
-        phase: index * 0.79,
-        hue: palette[index % palette.length]
-      };
-    });
-
-    function paintBackground(width, height, dpr) {
-      background.width = Math.max(1, Math.round(width * dpr));
-      background.height = Math.max(1, Math.round(height * dpr));
-      if (!backgroundContext) return;
-      backgroundContext.setTransform(dpr, 0, 0, dpr, 0, 0);
-      backgroundContext.clearRect(0, 0, width, height);
-      var coverDriven = Boolean(reactiveAudioState.cover && reactiveAudioState.coverReady);
-      backgroundContext.fillStyle = coverDriven ? "rgba(2,3,5,0.66)" : "#020305";
-      backgroundContext.fillRect(0, 0, width, height);
-      palette.forEach(function (hue, index) {
-        var angle = (index / palette.length) * Math.PI * 2 - Math.PI / 2;
-        var x = width * 0.5 + Math.cos(angle) * width * 0.44;
-        var y = height * 0.5 + Math.sin(angle) * height * 0.48;
-        var radius = Math.max(width, height) * 0.36;
-        var glow = backgroundContext.createRadialGradient(x, y, 0, x, y, radius);
-        glow.addColorStop(0, "hsla(" + hue + ",100%,54%," + (coverDriven ? "0.032" : "0.115") + ")");
-        glow.addColorStop(0.44, "hsla(" + hue + ",100%,48%," + (coverDriven ? "0.010" : "0.035") + ")");
-        glow.addColorStop(1, "hsla(" + hue + ",100%,42%,0)");
-        backgroundContext.fillStyle = glow;
-        backgroundContext.fillRect(0, 0, width, height);
-      });
-      var vignette = backgroundContext.createRadialGradient(width * 0.5, height * 0.5, 0, width * 0.5, height * 0.5, Math.max(width, height) * 0.72);
-      vignette.addColorStop(0, "rgba(0,0,0,0)");
-      vignette.addColorStop(0.72, "rgba(0,0,0,0.12)");
-      vignette.addColorStop(1, "rgba(0,0,0,0.72)");
-      backgroundContext.fillStyle = vignette;
-      backgroundContext.fillRect(0, 0, width, height);
-    }
-
-    function resize() {
-      if (activeMedia !== canvas || sequence !== applySequence) return;
-      var width = Math.max(1, layer.clientWidth || window.innerWidth);
-      var height = Math.max(1, layer.clientHeight || window.innerHeight);
-      var dprCap = lowPowerDevice || width < 720 ? 1 : 1.35;
-      var dpr = Math.min(window.devicePixelRatio || 1, dprCap);
-      canvas.width = Math.max(1, Math.round(width * dpr));
-      canvas.height = Math.max(1, Math.round(height * dpr));
-      canvas.dataset.dpr = String(dpr);
-      canvas.dataset.cssWidth = String(width);
-      canvas.dataset.cssHeight = String(height);
-      coverRevision = reactiveAudioState.coverRevision;
-      paintBackground(width, height, dpr);
-    }
-
-    function currentPlaybackPosition() {
-      var position = reactiveAudioState.position;
-      if (reactiveAudioState.active && reactiveAudioState.playing && reactiveAudioState.stateAt) {
-        position += Math.max(0, (Date.now() - reactiveAudioState.stateAt) / 1000);
-      }
-      if (reactiveAudioState.duration > 0) position = Math.min(position, reactiveAudioState.duration);
-      return position;
-    }
-
-    function targetEnergy(now) {
-      if (!reactiveAudioState.active || !reactiveAudioState.playing) return 0.055;
-      var freshLevels = Date.now() - reactiveAudioState.levelsAt < 850;
-      if (freshLevels) {
-        var average = reactiveAudioState.levels.reduce(function (sum, value) { return sum + value; }, 0) / 8;
-        var peak = Math.max.apply(Math, reactiveAudioState.levels);
-        return Math.max(0.09, Math.min(1, average * 0.72 + peak * 0.42));
-      }
-      var beat = Math.pow(Math.max(0, Math.sin(now * 0.0042)), 5);
-      return 0.13 + beat * 0.22;
-    }
-
-    function drawFrame(now) {
-      var dpr = Number(canvas.dataset.dpr || 1);
-      var width = Number(canvas.dataset.cssWidth || layer.clientWidth || window.innerWidth);
-      var height = Number(canvas.dataset.cssHeight || layer.clientHeight || window.innerHeight);
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (coverRevision !== reactiveAudioState.coverRevision) {
-        coverRevision = reactiveAudioState.coverRevision;
-        paintBackground(width, height, dpr);
-      }
-      context.globalCompositeOperation = "source-over";
-      context.globalAlpha = 1;
-      context.shadowBlur = 0;
-      context.clearRect(0, 0, width, height);
-      context.drawImage(background, 0, 0, width, height);
-
-      var wantedEnergy = targetEnergy(now);
-      smoothedEnergy += (wantedEnergy - smoothedEnergy) * (staticOnly ? 1 : 0.16);
-      var cx = width * 0.5;
-      var cy = height * 0.48;
-      var radius = Math.max(72, Math.min(188, Math.min(width, height) * (width < 720 ? 0.17 : 0.155)));
-      var motionTime = staticOnly ? 1800 : now;
-
-      context.globalCompositeOperation = "lighter";
-      particles.forEach(function (particle, index) {
-        var level = reactiveAudioState.levels[index % 8] || 0;
-        var orbit = Math.sin(motionTime * particle.speed + particle.phase);
-        var x = particle.x * width + orbit * (16 + smoothedEnergy * 42);
-        var drift = ((motionTime * particle.speed * 0.055 + particle.y) % 1) * height;
-        var y = height - drift;
-        var pulse = 0.72 + Math.sin(motionTime * 0.0018 + particle.phase) * 0.2 + level * 0.72;
-        var bubbleRadius = particle.radius * pulse * (1 + smoothedEnergy * 0.45);
-        var diameter = Math.max(9, bubbleRadius * 6.4);
-        context.globalAlpha = Math.min(1, 0.46 + smoothedEnergy * 0.42 + level * 0.18);
-        context.drawImage(bubbleSprites[index % bubbleSprites.length], x - diameter / 2, y - diameter / 2, diameter, diameter);
-      });
-
-      context.globalAlpha = 1;
-      context.shadowBlur = 0;
-      var segmentGap = 0.06;
-      palette.forEach(function (hue, index) {
-        var start = -Math.PI / 2 + index * Math.PI * 2 / palette.length + segmentGap;
-        var end = -Math.PI / 2 + (index + 1) * Math.PI * 2 / palette.length - segmentGap;
-        var level = reactiveAudioState.levels[index] || 0;
-        context.strokeStyle = "hsla(" + hue + ",100%,68%," + (0.62 + smoothedEnergy * 0.34).toFixed(3) + ")";
-        context.lineWidth = 2 + level * 3.5;
-        context.shadowColor = "hsla(" + hue + ",100%,58%,0.9)";
-        context.shadowBlur = lowPowerDevice ? 7 : 13 + level * 10;
-        context.beginPath();
-        context.arc(cx, cy, radius + level * 9, start, end);
-        context.stroke();
-      });
-
-      var bandCount = lowPowerDevice ? 32 : 48;
-      context.shadowBlur = 0;
-      for (var band = 0; band < bandCount; band++) {
-        var bandAngle = -Math.PI / 2 + band / bandCount * Math.PI * 2;
-        var bandLevel = reactiveAudioState.levels[Math.floor(band / bandCount * 8)] || 0;
-        var ambient = reactiveAudioState.playing ? 0.18 + Math.sin(motionTime * 0.0035 + band * 0.61) * 0.08 : 0.05;
-        var bar = 5 + Math.max(0, bandLevel + ambient) * (15 + smoothedEnergy * 26);
-        var inner = radius + 10;
-        var outer = inner + bar;
-        var bandHue = palette[Math.floor(band / bandCount * palette.length) % palette.length];
-        context.strokeStyle = "hsla(" + bandHue + ",100%,72%," + (0.28 + smoothedEnergy * 0.52).toFixed(3) + ")";
-        context.lineWidth = width < 720 ? 1.2 : 1.8;
-        context.beginPath();
-        context.moveTo(cx + Math.cos(bandAngle) * inner, cy + Math.sin(bandAngle) * inner);
-        context.lineTo(cx + Math.cos(bandAngle) * outer, cy + Math.sin(bandAngle) * outer);
-        context.stroke();
-      }
-
-      context.globalCompositeOperation = "source-over";
-      context.shadowBlur = 0;
-      context.fillStyle = "rgba(0,0,0,0.78)";
-      context.beginPath();
-      context.arc(cx, cy, radius - 9, 0, Math.PI * 2);
-      context.fill();
-
-      var logoSize = radius * 1.54;
-      if (logoReady) {
-        context.save();
-        context.beginPath();
-        context.arc(cx, cy, logoSize * 0.5, 0, Math.PI * 2);
-        context.clip();
-        context.drawImage(logo, cx - logoSize / 2, cy - logoSize / 2, logoSize, logoSize);
-        context.restore();
-        context.strokeStyle = "rgba(255,255,255,0.2)";
-        context.lineWidth = 1;
-        context.beginPath();
-        context.arc(cx, cy, logoSize * 0.5, 0, Math.PI * 2);
-        context.stroke();
-      } else {
-        context.fillStyle = "#ffffff";
-        context.font = "800 " + Math.max(24, radius * 0.3) + "px Arial, sans-serif";
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.fillText("NEO", cx, cy);
-      }
-
-      var position = currentPlaybackPosition();
-      var timestamp = formatReactiveTime(position);
-      if (reactiveAudioState.duration > 0) timestamp += " / " + formatReactiveTime(reactiveAudioState.duration);
-      context.textAlign = "center";
-      context.textBaseline = "middle";
-      context.font = "700 " + (width < 720 ? 13 : 15) + "px Arial, sans-serif";
-      context.letterSpacing = "0.04em";
-      context.fillStyle = "rgba(255,255,255,0.94)";
-      context.shadowColor = "rgba(65,220,255,0.72)";
-      context.shadowBlur = lowPowerDevice ? 4 : 8;
-      context.fillText(timestamp, cx, cy + radius + (width < 720 ? 42 : 50));
-      context.shadowBlur = 0;
-    }
-
-    resize();
-    var observer = window.ResizeObserver ? new ResizeObserver(function () {
-      resize();
-      drawFrame(performance.now());
-    }) : null;
-    if (observer) observer.observe(layer);
-    else window.addEventListener("resize", resize, { passive: true });
-
-    logo.onload = function () {
-      logoReady = true;
-      if (activeMedia === canvas && sequence === applySequence) drawFrame(performance.now());
-    };
-    logo.onerror = function () { logoReady = false; };
-    logo.decoding = "async";
-    logo.src = "./assets/neo-logo.svg";
-
-    canvasCleanup = function () {
-      if (observer) observer.disconnect();
-      else window.removeEventListener("resize", resize);
-      logo.onload = null;
-      logo.onerror = null;
-      coverBackdrop.onload = null;
-      coverBackdrop.onerror = null;
-      if (reactiveCoverElement === coverBackdrop) reactiveCoverElement = null;
-      if (reactiveCoverRefresh === refreshCoverFrame) reactiveCoverRefresh = null;
-    };
-
-    var last = 0;
-    var frameBudget = lowPowerDevice ? 40 : 33;
-    function draw(now) {
-      if (activeMedia !== canvas || sequence !== applySequence) return;
-      if (staticOnly || shouldPause()) {
-        root.dataset.wallpaperPlayback = "paused";
-        canvasFrame = 0;
-        return;
-      }
-      if (now - last >= frameBudget) {
-        last = now;
-        drawFrame(now);
-        root.dataset.wallpaperPlayback = "playing";
-      }
-      canvasFrame = requestAnimationFrame(draw);
-    }
-    canvasResume = function () {
-      if (!staticOnly && !canvasFrame && activeMedia === canvas && sequence === applySequence && !shouldPause()) {
-        canvasFrame = requestAnimationFrame(draw);
-      }
-    };
-    drawFrame(performance.now());
-    canvasResume();
-    emit(staticOnly ? "performance-still" : "mount");
-  }
 
   function startSignalCanvas(sequence) {
     var layer = ensureLayer();
@@ -2069,6 +1631,7 @@
   }
 
   function apply(id, nextSettings) {
+    if (id === "neo-reactive") id = "we-steam-1403160205";
     runtimeSettings = Object.assign({}, runtimeSettings, nextSettings || {});
     runtimeSettings.performanceMode = performanceMode();
     var nextSuspendedKey = String(id || "") + "|" + performanceMode() + (performanceMode() === "performance" ? "|" + (runtimeSettings.wallpaperFit || "cover") : "");
@@ -2082,18 +1645,6 @@
     if (performanceMode() === "ultimate") {
       var ultimateSequence = ++applySequence;
       return mountPerformanceStill(id, null, ultimateSequence);
-    }
-    if (id === "neo-reactive") {
-      var reactiveStill = performanceActive();
-      if (activeId === id && activeMedia && (activeMedia.dataset.performanceStill === "true") === reactiveStill) {
-        root.dataset.wallpaperPlayback = reactiveStill || shouldPause() ? "paused" : "playing";
-        if (!reactiveStill && canvasResume) canvasResume();
-        emit("playback");
-        return Promise.resolve();
-      }
-      var reactiveSequence = ++applySequence;
-      startNeoReactiveCanvas(reactiveSequence, reactiveStill);
-      return Promise.resolve();
     }
     if (id === "signal") {
       if (performanceActive()) {
@@ -2279,7 +1830,7 @@
   function getState() {
     return {
       id: activeId,
-      type: activeRecord ? activeRecord.type : (activeId === "signal" || activeId === "neo-reactive" ? "canvas" : "built-in"),
+      type: activeRecord ? activeRecord.type : (activeId === "signal" ? "canvas" : "built-in"),
       local: isLocal(activeId),
       ready: root.dataset.wallpaperPlayback !== "loading" && root.dataset.wallpaperPlayback !== "error",
       playback: root.dataset.wallpaperPlayback || "idle",
@@ -2311,8 +1862,6 @@
     root.dataset.wallpaperStability = "stable";
     startStabilityWatch();
     window.addEventListener("message", handleWebMessage);
-    window.addEventListener("neo-media-state", handleReactiveMediaState);
-    window.addEventListener("neo-media-levels", handleReactiveMediaLevels);
     document.addEventListener("visibilitychange", resumePlayback);
     document.addEventListener("fullscreenchange", resumePlayback);
     document.addEventListener("webkitfullscreenchange", resumePlayback);
@@ -2344,8 +1893,6 @@
   function destroy() {
     stopStabilityWatch();
     clearMedia("destroy");
-    window.removeEventListener("neo-media-state", handleReactiveMediaState);
-    window.removeEventListener("neo-media-levels", handleReactiveMediaLevels);
     assetUrls.forEach(function (url) { URL.revokeObjectURL(url); });
     previewUrls.forEach(function (url) { URL.revokeObjectURL(url); });
     assetUrls.clear();

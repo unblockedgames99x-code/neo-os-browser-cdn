@@ -18,11 +18,6 @@ html[data-wallpaper-media="true"] #weather-canvas {
   opacity: 0;
 }
 
-html[data-wallpaper="neo-reactive"][data-performance-mode="normal"] .rainmeter-clock {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .wallpaper-media-asset,
 .wallpaper-preview-source,
 .wallpaper-preview-canvas,
@@ -163,36 +158,6 @@ html[data-performance-mode="ultimate"] .wallpaper-loading-spinner {
   object-fit: cover;
 }
 
-.wallpaper-neo-reactive-canvas {
-  z-index: 1;
-  object-fit: cover;
-  background: transparent;
-}
-
-.wallpaper-neo-reactive-cover {
-  position: absolute;
-  z-index: 0;
-  inset: -9%;
-  width: 118%;
-  height: 118%;
-  max-width: none;
-  max-height: none;
-  object-fit: cover;
-  opacity: 0;
-  filter: blur(58px) saturate(1.5) brightness(0.56);
-  transform: scale(1.08);
-  transition: opacity 480ms var(--neo-ease);
-  pointer-events: none;
-  user-select: none;
-}
-
-.wallpaper-neo-reactive-cover.is-ready { opacity: 0.92; }
-
-html[data-performance-mode="performance"] .wallpaper-neo-reactive-cover {
-  filter: saturate(1.22) brightness(0.42);
-  transform: none;
-}
-
 html[data-wallpaper-playback="paused"] .wallpaper-media-asset {
   will-change: auto;
 }
@@ -235,35 +200,6 @@ html[data-wallpaper-playback="paused"] .wallpaper-media-asset {
     repeating-linear-gradient(0deg, transparent 0 19px, rgba(101, 194, 210, 0.12) 20px),
     repeating-linear-gradient(90deg, transparent 0 27px, rgba(124, 145, 255, 0.1) 28px),
     linear-gradient(135deg, #071013, #111821 52%, #050709);
-}
-
-.neo-reactive-preview {
-  isolation: isolate;
-  background:
-    radial-gradient(circle at 18% 24%, rgba(255, 56, 72, 0.58), transparent 27%),
-    radial-gradient(circle at 82% 22%, rgba(255, 188, 31, 0.48), transparent 26%),
-    radial-gradient(circle at 88% 76%, rgba(47, 232, 121, 0.5), transparent 28%),
-    radial-gradient(circle at 52% 92%, rgba(44, 210, 255, 0.48), transparent 31%),
-    radial-gradient(circle at 12% 78%, rgba(111, 76, 255, 0.55), transparent 29%),
-    radial-gradient(circle at 52% 48%, rgba(244, 61, 255, 0.16), transparent 42%),
-    #020305;
-}
-
-.neo-reactive-preview::before {
-  content: "";
-  position: absolute;
-  z-index: 1;
-  left: 50%;
-  top: 50%;
-  width: 54%;
-  aspect-ratio: 1;
-  background: url("./assets/neo-logo.svg") center / contain no-repeat;
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  border-radius: 50%;
-  box-shadow:
-    0 0 16px rgba(48, 214, 255, 0.54),
-    0 0 30px rgba(230, 58, 255, 0.22);
-  transform: translate(-50%, -50%);
 }
 
 .studio-import-formats {
