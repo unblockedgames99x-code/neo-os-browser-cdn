@@ -23,6 +23,7 @@
     ].map(function (asset) { return new URL("nextnode-browser/" + asset, base).href; })),
     browserWisp: "wss://probuildingsupplies.com/w/",
     browserWispServers: Object.freeze([
+      Object.freeze({ name: "NextNode Wisp", url: "wss://nextnode9124.b-cdn.net/w/" }),
       Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
       Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" }),
       Object.freeze({ name: "Reeyuki Wisp", url: "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/" }),
