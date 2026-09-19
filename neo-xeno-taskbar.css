@@ -265,7 +265,7 @@ html[data-taskbar-style="xeno"] .neo-xeno-taskbar-close:not([hidden]) {
   border: 0;
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
-  transition: opacity 190ms ease, visibility 0s linear 220ms;
+  transition: visibility 0s linear var(--neo-command-close-duration, 210ms);
 }
 
 .xeno-command-dismiss:is(.is-opening, .is-open, .is-closing) {
@@ -275,10 +275,29 @@ html[data-taskbar-style="xeno"] .neo-xeno-taskbar-close:not([hidden]) {
 .xeno-command-dismiss.is-open {
   opacity: 1;
   pointer-events: auto;
-  transition-delay: 0s;
+}
+
+.xeno-command-dismiss.is-opening.is-open {
+  animation: xeno-command-backdrop-in var(--neo-command-open-duration, 340ms) cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.xeno-command-dismiss.is-closing {
+  animation: xeno-command-backdrop-out var(--neo-command-close-duration, 210ms) ease-in both;
+}
+
+@keyframes xeno-command-backdrop-in {
+  from { opacity: 0; -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); }
+  to { opacity: 1; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+}
+
+@keyframes xeno-command-backdrop-out {
+  from { opacity: 1; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+  to { opacity: 0; -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); }
 }
 
 .xeno-command-center {
+  --xeno-command-hidden-y: calc(-50% + 26px);
+  --xeno-command-open-y: -50%;
   position: fixed;
   z-index: 610;
   top: calc(50% + (var(--topbar-height, 42px) / 2));
@@ -298,9 +317,9 @@ html[data-taskbar-style="xeno"] .neo-xeno-taskbar-close:not([hidden]) {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translate3d(-50%, calc(-50% + 18px), 0) scale(.965);
+  transform: translate3d(-50%, var(--xeno-command-hidden-y), 0) scale(.93);
   transform-origin: 50% 50%;
-  transition: opacity 190ms ease, transform 240ms cubic-bezier(.16, 1, .3, 1), visibility 0s linear 240ms;
+  transition: visibility 0s linear var(--neo-command-close-duration, 210ms);
 }
 
 .xeno-command-center[data-mode="apps"] {
@@ -314,8 +333,65 @@ html[data-taskbar-style="xeno"] .neo-xeno-taskbar-close:not([hidden]) {
 .xeno-command-center.is-open {
   opacity: 1;
   pointer-events: auto;
-  transform: translate3d(-50%, -50%, 0) scale(1);
-  transition-delay: 0s;
+  transform: translate3d(-50%, var(--xeno-command-open-y), 0) scale(1);
+}
+
+.xeno-command-center.is-opening.is-open {
+  will-change: opacity, transform, filter;
+  animation: xeno-command-open var(--neo-command-open-duration, 340ms) cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.xeno-command-center.is-closing {
+  will-change: opacity, transform, filter;
+  animation: xeno-command-close var(--neo-command-close-duration, 210ms) cubic-bezier(.55, 0, .9, .45) both;
+}
+
+@keyframes xeno-command-open {
+  0% {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translate3d(-50%, var(--xeno-command-hidden-y), 0) scale(.93);
+  }
+  72% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(-50%, calc(var(--xeno-command-open-y) - 2px), 0) scale(1.008);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(-50%, var(--xeno-command-open-y), 0) scale(1);
+  }
+}
+
+@keyframes xeno-command-close {
+  0% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(-50%, var(--xeno-command-open-y), 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(7px);
+    transform: translate3d(-50%, calc(var(--xeno-command-open-y) + 16px), 0) scale(.955);
+  }
+}
+
+@keyframes xeno-command-content-in {
+  from { opacity: 0; transform: translate3d(0, 10px, 0) scale(.992); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+.xeno-command-center.is-opening.is-open .xeno-command-searchbar,
+.xeno-command-center.is-opening.is-open .xeno-command-heading,
+.xeno-command-center.is-opening.is-open .xeno-command-results,
+.xeno-command-center.is-opening.is-open .xeno-command-empty {
+  animation: xeno-command-content-in var(--neo-command-content-duration, 250ms) cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.xeno-command-center.is-opening.is-open .xeno-command-heading { animation-delay: var(--neo-command-stagger-one, 28ms); }
+.xeno-command-center.is-opening.is-open .xeno-command-results,
+.xeno-command-center.is-opening.is-open .xeno-command-empty { animation-delay: var(--neo-command-stagger-two, 52ms); }
 }
 
 .xeno-command-center[hidden],
@@ -592,13 +668,15 @@ html[data-taskbar-style="xeno"] .neo-xeno-taskbar-close:not([hidden]) {
   html[data-taskbar-style="xeno"] .taskbar .dock-button { max-width: min(184px, 62vw) !important; }
   .xeno-command-center,
   .xeno-command-center[data-mode="apps"] {
+    --xeno-command-hidden-y: 20px;
+    --xeno-command-open-y: 0px;
     top: calc(var(--topbar-height, 42px) + 10px);
     width: calc(100vw - 20px);
     max-height: calc(100dvh - var(--topbar-height, 42px) - 20px);
     border-radius: 14px;
-    transform: translate3d(-50%, 14px, 0) scale(.98);
+    transform: translate3d(-50%, var(--xeno-command-hidden-y), 0) scale(.95);
   }
-  .xeno-command-center.is-open { transform: translate3d(-50%, 0, 0) scale(1); }
+  .xeno-command-center.is-open { transform: translate3d(-50%, var(--xeno-command-open-y), 0) scale(1); }
   .xeno-command-searchbar { min-height: 50px; margin: 12px 12px 0; padding: 0 12px; gap: 9px; }
   .xeno-command-searchbar input { height: 48px; font-size: 16px; }
   .xeno-command-searchbar kbd { display: none; }

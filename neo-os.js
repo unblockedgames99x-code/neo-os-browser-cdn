@@ -1672,6 +1672,11 @@
     root.style.setProperty("--neo-window-open-duration", Math.round(300 * animationDurationScale) + "ms");
     root.style.setProperty("--neo-window-restore-duration", Math.round(260 * animationDurationScale) + "ms");
     root.style.setProperty("--neo-window-close-duration", Math.round(210 * animationDurationScale) + "ms");
+    root.style.setProperty("--neo-command-open-duration", Math.round(340 * animationDurationScale) + "ms");
+    root.style.setProperty("--neo-command-close-duration", Math.round(210 * animationDurationScale) + "ms");
+    root.style.setProperty("--neo-command-content-duration", Math.round(250 * animationDurationScale) + "ms");
+    root.style.setProperty("--neo-command-stagger-one", Math.round(28 * animationDurationScale) + "ms");
+    root.style.setProperty("--neo-command-stagger-two", Math.round(52 * animationDurationScale) + "ms");
     root.style.setProperty("--neo-taskbar-foreground", taskbarUsesLightSurface ? "#111317" : "#ffffff");
     root.style.setProperty("--neo-accent", accent.visible);
     root.style.setProperty("--neo-accent-visible", accent.visible);
@@ -3333,7 +3338,7 @@
       xenoCommandMotionTimer = window.setTimeout(function () {
         xenoCommand.classList.remove("is-opening");
         if (xenoCommandDismiss) xenoCommandDismiss.classList.remove("is-opening");
-      }, 260);
+      }, Math.round(370 * (100 / settings.animationSpeed)));
       return;
     }
     if (xenoCommand.hidden || xenoCommand.classList.contains("is-closing")) {
@@ -3351,7 +3356,7 @@
     if (xenoCommandReturnFocus && document.contains(xenoCommandReturnFocus)) xenoCommandReturnFocus.focus({ preventScroll: true });
     xenoCommandReturnFocus = null;
     if (effectiveReducedMotion()) finishXenoCommandClose();
-    else xenoCommandMotionTimer = window.setTimeout(finishXenoCommandClose, 220);
+    else xenoCommandMotionTimer = window.setTimeout(finishXenoCommandClose, Math.round(235 * (100 / settings.animationSpeed)));
   }
 
   function xenoDesktopShortcutAllowed(target) {
