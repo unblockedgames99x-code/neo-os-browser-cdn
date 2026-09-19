@@ -4351,6 +4351,26 @@ html[data-interface-style] .neo-minimized-tray {
   display: none !important;
 }
 
+/* Every desktop title-bar mode shares the same restored-window silhouette.
+   Keep maximized and app-fullscreen windows square so they meet the display
+   edges cleanly. The body inherits the outer lower corners while Ultra and
+   Standard continue clipping their full-width title strips normally. */
+@media (min-width: 701px) {
+  html[data-window-bar-style] .neo-window:not(.is-maximized):not(.is-tab-fullscreen) {
+    --neo-restored-window-radius: 12px;
+    border-radius: var(--neo-restored-window-radius) !important;
+  }
+
+  html[data-window-bar-style] .neo-window:not(.is-maximized):not(.is-tab-fullscreen) > .window-body {
+    border-bottom-left-radius: inherit !important;
+    border-bottom-right-radius: inherit !important;
+  }
+
+  html[data-window-bar-style] .neo-window:is(.is-maximized, .is-tab-fullscreen) {
+    border-radius: 0 !important;
+  }
+}
+
 @media (forced-colors: active) {
   html[data-taskbar-style="current"] .taskbar-start-button:focus-visible,
   html[data-taskbar-style="current"] .taskbar .dock-button:focus-visible {
