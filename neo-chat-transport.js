@@ -530,6 +530,35 @@
     return { message: message, transport: "local" };
   }
 
+  function localEditMessage(request) {
+    var state = parseLocalState();
+    var account = localSession(state, request && request.token);
+    var messageId = String(request && request.messageId || "");
+    var text = String(request && request.text || "").trim();
+    var message = state.messages.find(function (candidate) { return candidate && String(candidate.id || "") === messageId; });
+    if (!message) throw chatError("That message could not be found.", "message_not_found", 404);
+    if (String(message.userId || "") !== account.id) throw chatError("You can only edit your own messages.", "message_forbidden", 403);
+    if (!text && !message.attachment) throw chatError("A message cannot be empty.", "empty_message", 400);
+    if (text.length > 1000) throw chatError("Messages can be up to 1,000 characters.", "message_too_large", 413);
+    message.text = text;
+    message.editedAt = Date.now();
+    writeLocalState(state);
+    return { message: message, transport: "local" };
+  }
+
+  function localDeleteMessage(request) {
+    var state = parseLocalState();
+    var account = localSession(state, request && request.token);
+    var messageId = String(request && request.messageId || "");
+    var index = state.messages.findIndex(function (candidate) { return candidate && String(candidate.id || "") === messageId; });
+    if (index < 0) throw chatError("That message could not be found.", "message_not_found", 404);
+    var message = state.messages[index];
+    if (String(message.userId || "") !== account.id) throw chatError("You can only delete your own messages.", "message_forbidden", 403);
+    state.messages.splice(index, 1);
+    writeLocalState(state);
+    return { id: messageId, roomId: String(message.room || "global"), deleted: true, transport: "local" };
+  }
+
   function localUpload(request) {
     localSession(parseLocalState(), request && request.token);
     var name = String(request && request.name || "Attachment").slice(0, 120);
@@ -557,6 +586,8 @@
     if (name === "neoChatCreateRoom") return localCreateRoom(payload);
     if (name === "neoChatUploadAttachment") return localUpload(payload);
     if (name === "neoChatSendMessage") return localSend(payload);
+    if (name === "neoChatEditMessage") return localEditMessage(payload);
+    if (name === "neoChatDeleteMessage") return localDeleteMessage(payload);
     if (name === "neoChatSignOut") return localSignOut(payload);
     throw chatError("That NEO Chat action is unavailable.", "unknown_action", 400);
   }
@@ -671,6 +702,8 @@
     createRoom: function (token, username, signal) { return call("neoChatCreateRoom", { token: token, username: username }, signal); },
     upload: function (token, attachment, signal) { return call("neoChatUploadAttachment", { token: token, name: attachment.name, type: attachment.type, size: attachment.size, dataBase64: attachment.dataBase64 }, signal).then(function (payload) { return payload && payload.attachment || null; }); },
     send: function (token, text, roomId, clientId, attachment, signal) { return call("neoChatSendMessage", { token: token, text: text, roomId: roomId, clientId: clientId, attachment: attachment || null }, signal); },
+    edit: function (token, messageId, text, signal) { return call("neoChatEditMessage", { token: token, messageId: messageId, text: text }, signal); },
+    remove: function (token, messageId, signal) { return call("neoChatDeleteMessage", { token: token, messageId: messageId }, signal); },
     signOut: function (token, signal) { return call("neoChatSignOut", { token: token }, signal); }
   });
 })();
