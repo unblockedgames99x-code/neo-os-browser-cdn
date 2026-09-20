@@ -207,6 +207,8 @@ html[data-taskbar-style="figure"] #app-launcher .category-group > span {
   grid-area: category-name;
   justify-self: start !important;
   max-width: 120px !important;
+  box-sizing: border-box !important;
+  padding-left: 4px !important;
   color: rgba(244, 248, 247, .9) !important;
   font-size: 11px !important;
   font-weight: 650;

@@ -241,6 +241,8 @@ html[data-interface-style="modern"]:not([data-taskbar-style="figure"]) #app-laun
   grid-area: category-name !important;
   justify-self: start !important;
   max-width: 100% !important;
+  box-sizing: border-box !important;
+  padding-left: 3px !important;
   overflow: hidden !important;
   font-size: 12px !important;
   font-weight: 680 !important;
