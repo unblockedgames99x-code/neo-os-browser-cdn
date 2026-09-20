@@ -115,8 +115,9 @@
     <link rel="stylesheet" href="./neo-taskbar-quick-settings.css?v=20260912-alignment-v2" />
     <link rel="stylesheet" href="./neo-interface-styles.css?v=20260919-rounded-restored-windows-v1&amp;launcher=centered-v3&amp;settings=combined-v1&amp;widgets=no-scrollbars-v1&amp;previews=current-state-v1&amp;widget-background=transparent-v1" />
     <link rel="stylesheet" href="./neo-xeno-taskbar.css?v=20260919-command-motion-v2" />
-    <link rel="stylesheet" href="./neo-figure-taskbar.css?v=20260919-figure-v1" />
+    <link rel="stylesheet" href="./neo-figure-taskbar.css?v=20260919-thin-rail-v2" />
     <link rel="stylesheet" href="./neo-taskbar-app-visibility.css?v=20260919-adaptive-overlay-v1" />
+    <link rel="stylesheet" href="./neo-taskbar-now-playing.css?v=20260919-compact-player-v1" />
   </head>
   <body>
     <a class="skip-link" href="#neo-desktop">Skip to desktop</a>
@@ -523,6 +524,24 @@
           </button>
           <div class="dock" id="neo-dock" aria-label="Apps"></div>
         </div>
+        <section class="taskbar-now-playing" data-taskbar-now-playing aria-label="Now playing" aria-live="polite" hidden>
+          <button class="taskbar-now-playing-open" type="button" data-taskbar-now-playing-open>
+            <span class="taskbar-now-playing-art">
+              <img data-taskbar-now-playing-cover width="32" height="32" alt="" referrerpolicy="no-referrer" hidden />
+              <span class="taskbar-now-playing-fallback app-icon-stream" data-taskbar-now-playing-fallback><img class="app-image-icon" src="./assets/spotify-official.png?v=20260827-user-artwork-v1" width="32" height="32" alt="" /></span>
+            </span>
+            <span class="taskbar-now-playing-copy">
+              <strong data-taskbar-now-playing-title>Nothing playing</strong>
+              <small data-taskbar-now-playing-subtitle>NEO Music</small>
+            </span>
+          </button>
+          <span class="taskbar-now-playing-controls" aria-label="Playback controls">
+            <button type="button" data-now-playing-action="previous" aria-label="Previous track"><svg class="icon" aria-hidden="true"><use href="#i-skip-back"></use></svg></button>
+            <button type="button" data-now-playing-action="toggle" data-taskbar-now-playing-toggle aria-label="Play"><svg class="icon" aria-hidden="true"><use href="#i-play"></use></svg></button>
+            <button type="button" data-now-playing-action="next" aria-label="Next track"><svg class="icon" aria-hidden="true"><use href="#i-skip-forward"></use></svg></button>
+            <button type="button" data-taskbar-now-playing-volume aria-label="Mute"><svg class="icon" aria-hidden="true"><use href="#i-volume"></use></svg></button>
+          </span>
+        </section>
         <div class="taskbar-tray" aria-label="System status">
           <button class="taskbar-network taskbar-quick-button" id="taskbar-network" type="button" data-taskbar-quick-toggle aria-label="Open quick settings" aria-expanded="false" aria-controls="taskbar-quick-settings" title="Quick settings">
             <span aria-hidden="true"></span><svg class="icon" aria-hidden="true"><use href="#i-wifi"></use></svg><svg class="icon" aria-hidden="true"><use href="#i-volume"></use></svg>
@@ -1460,7 +1479,7 @@
     <script src="./neo-chat-experience.js" defer></script>
     <script src="./neo-desktop-platform.js?v=20260919-browser-search-v1&amp;styles=kali-v1&amp;tab=custom-url-v1&amp;themes=expanded-v1&amp;rainmeter=controls-v1&amp;editor=proxy-links-v2&amp;settings=combined-v1&amp;motion=animation-speed-v1" defer></script>
     <script src="./neo-leave-guard.js?v=20260907-anti-close-v1" defer></script>
-    <script src="./neo-os.js?v=20260919-browser-search-v1&amp;styles=kali-v1&amp;apps=cleanup-v1&amp;taskbar=adaptive-overlay-v1&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3-animation-speed-v1&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=motion-v1&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;artwork=stable-cover-v2&amp;rainmeter=amber-arc-v1&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;window-bar=maximized-ultra-v1&amp;proxy=resource-v2&amp;games=aether-v1&amp;taskbar-glass=transparency-v1&amp;xeno=command-motion-v2&amp;figure=taskbar-v1&amp;close=hard-v1" defer></script>
+    <script src="./neo-os.js?v=20260919-browser-search-v1&amp;styles=kali-v1&amp;apps=cleanup-v1&amp;taskbar=compact-player-v1&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3-animation-speed-v1&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=motion-v1&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;artwork=stable-cover-v2&amp;rainmeter=amber-arc-v1&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;window-bar=maximized-ultra-v1&amp;proxy=resource-v2&amp;games=aether-v1&amp;taskbar-glass=transparency-v1&amp;xeno=command-motion-v2&amp;figure=thin-rail-v2&amp;close=hard-v1" defer></script>
     <script src="./neo-command-palette.js?v=20260912-command-palette-v1" defer></script>
     <script src="./neo-taskbar-quick-settings.js?v=20260910-quick-settings-v1" defer></script>
     <script src="./neo-backup.js?v=20260830-backup-v1" defer></script>

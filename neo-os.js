@@ -52,8 +52,11 @@
   var desktopShortcutLayer = document.getElementById("desktop-shortcuts");
   var activeAppLabel = document.getElementById("active-app-label");
   var nowPlayingWidget = document.querySelector("[data-widget='now-playing']");
+  var taskbarNowPlaying = document.querySelector("[data-taskbar-now-playing]");
   var nowPlayingState = null;
   var nowPlayingLevelTimer = 0;
+  var taskbarNowPlayingHideTimer = 0;
+  var taskbarVolumeBeforeMute = 1;
   var gameNowPlayingOverlay = null;
   var gameNowPlayingDrag = null;
   var GAME_NOW_PLAYING_POSITION_KEY = "neo_os_game_now_playing_position_v1";
@@ -914,6 +917,8 @@
     if (!nowPlayingState) return;
     var volume = Math.max(0, Math.min(1, Number(value) || 0));
     nowPlayingState.volume = volume;
+    nowPlayingState.muted = volume <= 0.001;
+    if (volume > 0.001) taskbarVolumeBeforeMute = volume;
     var input = nowPlayingWidget && nowPlayingWidget.querySelector("[data-now-playing-volume]");
     var output = nowPlayingWidget && nowPlayingWidget.querySelector("[data-now-playing-volume-output]");
     var percentage = Math.round(volume * 100);
@@ -929,6 +934,7 @@
       gameInput.setAttribute("aria-valuetext", percentage + " percent");
     }
     if (gameOutput) gameOutput.textContent = percentage + "%";
+    renderTaskbarNowPlaying();
     if (nowPlayingState.source === "local-music") {
       loadFeatureRuntime().then(function (runtime) {
         if (runtime && typeof runtime.setVolume === "function") runtime.setVolume(volume);
@@ -1017,6 +1023,66 @@
       if (!current) showFallback();
     };
     preload.src = cover;
+  }
+
+  function setTaskbarNowPlayingVisible(visible) {
+    if (!taskbarNowPlaying) return;
+    window.clearTimeout(taskbarNowPlayingHideTimer);
+    taskbarNowPlayingHideTimer = 0;
+    if (visible) {
+      taskbarNowPlaying.hidden = false;
+      window.requestAnimationFrame(function () {
+        if (taskbarNowPlaying && !taskbarNowPlaying.hidden) taskbarNowPlaying.classList.add("is-visible");
+      });
+      return;
+    }
+    taskbarNowPlaying.classList.remove("is-visible");
+    taskbarNowPlayingHideTimer = window.setTimeout(function () {
+      if (taskbarNowPlaying && !taskbarNowPlaying.classList.contains("is-visible")) taskbarNowPlaying.hidden = true;
+    }, settings.reduceMotion || systemPrefersReducedMotion() ? 0 : 190);
+  }
+
+  function renderTaskbarNowPlaying() {
+    if (!taskbarNowPlaying) return;
+    if (!nowPlayingState) {
+      setTaskbarNowPlayingVisible(false);
+      return;
+    }
+    var state = nowPlayingState;
+    var app = apps[state.appId] || apps.media;
+    var open = taskbarNowPlaying.querySelector("[data-taskbar-now-playing-open]");
+    var title = taskbarNowPlaying.querySelector("[data-taskbar-now-playing-title]");
+    var subtitle = taskbarNowPlaying.querySelector("[data-taskbar-now-playing-subtitle]");
+    var image = taskbarNowPlaying.querySelector("[data-taskbar-now-playing-cover]");
+    var fallback = taskbarNowPlaying.querySelector("[data-taskbar-now-playing-fallback]");
+    var controls = taskbarNowPlaying.querySelector(".taskbar-now-playing-controls");
+    var toggle = taskbarNowPlaying.querySelector("[data-taskbar-now-playing-toggle]");
+    var volume = taskbarNowPlaying.querySelector("[data-taskbar-now-playing-volume]");
+    taskbarNowPlaying.dataset.mediaSource = state.source;
+    taskbarNowPlaying.classList.toggle("is-playing", state.playing === true);
+    if (open) {
+      open.dataset.app = state.appId;
+      open.setAttribute("aria-label", "Open " + app.title + " for " + state.title);
+    }
+    if (title) title.textContent = state.title || "Nothing playing";
+    if (subtitle) subtitle.textContent = state.subtitle || app.subtitle || "Now playing";
+    if (fallback) {
+      fallback.className = "taskbar-now-playing-fallback " + appIconClass(state.icon || app.icon || "music");
+      fallback.innerHTML = iconMarkup(state.icon || app.icon || "music");
+    }
+    syncMediaCover(image, fallback, taskbarNowPlaying, state.cover);
+    if (controls) controls.hidden = state.transport !== true;
+    if (toggle) {
+      toggle.innerHTML = iconMarkup(state.playing ? "pause" : "play");
+      toggle.setAttribute("aria-label", state.playing ? "Pause" : "Play");
+    }
+    if (volume) {
+      var muted = state.muted === true || state.volume <= 0.001;
+      volume.hidden = state.volumeControl !== true;
+      volume.classList.toggle("is-muted", muted);
+      volume.setAttribute("aria-label", muted ? "Unmute" : "Mute");
+    }
+    setTaskbarNowPlayingVisible(true);
   }
 
   function alignGameNowPlayingPopover() {
@@ -1193,6 +1259,7 @@
         closeNowPlayingVolume();
         nowPlayingWidget.hidden = true;
         if (topbarMedia) topbarMedia.hidden = true;
+        renderTaskbarNowPlaying();
         syncGameNowPlayingOverlay();
         window.dispatchEvent(new CustomEvent("neo-now-playing-change", {
           detail: { active: false, source: source }
@@ -1231,6 +1298,7 @@
       playing: playing,
       paused: paused,
       volume: hasVolume ? volume : (nowPlayingState && nowPlayingState.source === source ? nowPlayingState.volume : 1),
+      muted: detail.muted === true,
       volumeControl: hasVolume,
       transport: detail.transport === true
     };
@@ -1316,6 +1384,7 @@
       toggle.innerHTML = iconMarkup(playing ? "pause" : "play");
       toggle.setAttribute("aria-label", playing ? "Pause" : "Play");
     }
+    renderTaskbarNowPlaying();
     syncGameNowPlayingOverlay();
     window.dispatchEvent(new CustomEvent("neo-now-playing-change", {
       detail: Object.assign({ active: true }, nowPlayingState)
@@ -2189,6 +2258,13 @@
       });
     } else if (performanceMode() === "ultimate") {
       if (apps.control && apps.control.installed) visibleIds.push("control");
+    } else if (settings.taskbarStyle === "figure") {
+      ["browser", "games", "stream", "youtube-app", "chat", "files", "media", "paint", "terminal", "control"].forEach(function (id) {
+        if (apps[id] && apps[id].launcher && apps[id].installed && visibleIds.indexOf(id) === -1) visibleIds.push(id);
+      });
+      normalizePinnedAppOrder().forEach(function (id) {
+        if (apps[id] && apps[id].installed && apps[id].pinned && visibleIds.indexOf(id) === -1) visibleIds.push(id);
+      });
     } else {
       normalizePinnedAppOrder().forEach(function (id) {
         if (apps[id] && apps[id].installed && apps[id].pinned && visibleIds.indexOf(id) === -1) visibleIds.push(id);
@@ -2198,7 +2274,7 @@
       if (apps[id] && visibleIds.indexOf(id) === -1) visibleIds.push(id);
     });
     var availableIds = visibleIds;
-    var next = runningTaskbarOrder.filter(function (id, index, ids) {
+    var next = settings.taskbarStyle === "figure" ? availableIds.slice() : runningTaskbarOrder.filter(function (id, index, ids) {
       return availableIds.indexOf(id) !== -1 && ids.indexOf(id) === index;
     });
     availableIds.forEach(function (id) { if (next.indexOf(id) === -1) next.push(id); });
@@ -8710,6 +8786,16 @@
         return;
       }
       if (nowPlayingWidget && nowPlayingWidget.classList.contains("is-volume-open") && !event.target.closest(".now-playing-widget")) closeNowPlayingVolume();
+      var taskbarVolume = event.target.closest("[data-taskbar-now-playing-volume]");
+      if (taskbarVolume) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!nowPlayingState || !nowPlayingState.volumeControl) return;
+        var taskbarMuted = nowPlayingState.muted === true || nowPlayingState.volume <= 0.001;
+        if (!taskbarMuted && nowPlayingState.volume > 0.001) taskbarVolumeBeforeMute = nowPlayingState.volume;
+        setNowPlayingVolume(taskbarMuted ? Math.max(0.05, taskbarVolumeBeforeMute || 1) : 0);
+        return;
+      }
       var notificationToggle = event.target.closest("[data-notification-toggle]");
       if (notificationToggle) {
         event.preventDefault();

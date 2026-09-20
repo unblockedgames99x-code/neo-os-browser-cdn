@@ -8,8 +8,8 @@
 html[data-taskbar-style="figure"] {
   --neo-taskbar-horizontal-avoid: 0px !important;
   --neo-taskbar-vertical-avoid: 0px !important;
-  --figure-taskbar-height: 43px;
-  --figure-taskbar-gap: 3px;
+  --figure-taskbar-height: 30px;
+  --figure-taskbar-gap: 1px;
 }
 
 html[data-taskbar-style="figure"][data-taskbar-position] .window-layer,
@@ -268,13 +268,13 @@ html[data-taskbar-style="figure"] #app-launcher .launcher-category-browse:is(:ho
 }
 
 html[data-taskbar-style="figure"][data-taskbar-position] .taskbar {
-  --dock-hit: 31px;
-  --dock-art: 23px;
+  --dock-hit: 22px;
+  --dock-art: 17px;
   position: fixed !important;
   z-index: 5200 !important;
   top: auto !important;
   right: auto !important;
-  bottom: calc(9px + env(safe-area-inset-bottom)) !important;
+  bottom: calc(7px + env(safe-area-inset-bottom)) !important;
   left: 50% !important;
   display: flex !important;
   flex-flow: row nowrap !important;
@@ -282,24 +282,24 @@ html[data-taskbar-style="figure"][data-taskbar-position] .taskbar {
   justify-content: center !important;
   width: max-content !important;
   min-width: 0 !important;
-  max-width: calc(100vw - 18px) !important;
+  max-width: calc(100vw - 14px) !important;
   height: var(--figure-taskbar-height) !important;
   min-height: var(--figure-taskbar-height) !important;
   max-height: var(--figure-taskbar-height) !important;
-  padding: 5px 7px !important;
+  padding: 3px 6px !important;
   gap: var(--figure-taskbar-gap) !important;
   overflow: hidden !important;
-  color: rgba(244, 249, 247, .96) !important;
+  color: rgba(238, 244, 242, .9) !important;
   background:
-    linear-gradient(180deg, rgba(117, 132, 128, .38), rgba(46, 57, 56, .54)) !important;
-  border: 1px solid rgba(210, 225, 220, .28) !important;
-  border-radius: 9px !important;
+    linear-gradient(180deg, rgba(75, 84, 82, .32), rgba(25, 31, 31, .48)) !important;
+  border: 1px solid rgba(211, 224, 219, .15) !important;
+  border-radius: 6px !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .13),
-    inset 0 -1px 0 rgba(0, 0, 0, .12),
-    0 6px 18px rgba(0, 0, 0, .28) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(1.18) !important;
-  backdrop-filter: blur(18px) saturate(1.18) !important;
+    inset 0 1px 0 rgba(255, 255, 255, .075),
+    inset 0 -1px 0 rgba(0, 0, 0, .14),
+    0 4px 12px rgba(0, 0, 0, .24) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.08) !important;
+  backdrop-filter: blur(14px) saturate(1.08) !important;
   transform: translate3d(-50%, 0, 0) !important;
   transition: opacity 160ms ease, transform 190ms cubic-bezier(.2, .8, .2, 1) !important;
 }
@@ -320,8 +320,8 @@ html[data-taskbar-style="figure"] .taskbar-center {
   justify-content: center !important;
   width: auto !important;
   min-width: 0 !important;
-  height: 31px !important;
-  max-height: 31px !important;
+  height: 22px !important;
+  max-height: 22px !important;
   padding: 0 !important;
   gap: var(--figure-taskbar-gap) !important;
   overflow: hidden !important;
@@ -338,9 +338,9 @@ html[data-taskbar-style="figure"] .taskbar .dock {
   justify-content: flex-start !important;
   width: auto !important;
   min-width: 0 !important;
-  max-width: calc(100vw - 66px) !important;
-  height: 31px !important;
-  max-height: 31px !important;
+  max-width: calc(100vw - 54px) !important;
+  height: 22px !important;
+  max-height: 22px !important;
   margin: 0 !important;
   padding: 0 !important;
   gap: var(--figure-taskbar-gap) !important;
@@ -374,12 +374,12 @@ html[data-taskbar-style="figure"] .taskbar .dock-button {
   min-height: var(--dock-hit) !important;
   max-height: var(--dock-hit) !important;
   margin: 0 !important;
-  padding: 4px !important;
+  padding: 2px !important;
   gap: 0 !important;
   color: inherit !important;
   background: transparent !important;
   border: 0 !important;
-  border-radius: 6px !important;
+  border-radius: 4px !important;
   box-shadow: none !important;
   transform: translate3d(0, 0, 0) scale(1) !important;
   transition: background-color 130ms ease, transform 150ms cubic-bezier(.2, .8, .2, 1), opacity 130ms ease !important;
@@ -395,20 +395,20 @@ html[data-taskbar-style="figure"] .taskbar-start-button {
 html[data-taskbar-style="figure"][data-taskbar-position][data-taskbar-app-names] #neo-desktop .taskbar .taskbar-center > .taskbar-start-button,
 html[data-taskbar-style="figure"][data-taskbar-position][data-taskbar-app-names] #neo-desktop .taskbar #neo-dock > .dock-button {
   box-sizing: border-box !important;
-  width: 31px !important;
-  min-width: 31px !important;
-  max-width: 31px !important;
-  height: 31px !important;
-  min-height: 31px !important;
-  max-height: 31px !important;
-  flex: 0 0 31px !important;
+  width: 22px !important;
+  min-width: 22px !important;
+  max-width: 22px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  max-height: 22px !important;
+  flex: 0 0 22px !important;
 }
 
 html[data-taskbar-style="figure"] .taskbar-start-button:is(:hover, :focus-visible),
 html[data-taskbar-style="figure"] .taskbar .dock-button:is(:hover, :focus-visible) {
-  background: rgba(255, 255, 255, .09) !important;
-  box-shadow: inset 0 1px rgba(255, 255, 255, .08) !important;
-  transform: translate3d(0, -1px, 0) scale(1.045) !important;
+  background: rgba(255, 255, 255, .075) !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .055) !important;
+  transform: translate3d(0, -1px, 0) scale(1.08) !important;
 }
 
 html[data-taskbar-style="figure"] .taskbar-start-button:active,
@@ -428,8 +428,8 @@ html[data-taskbar-style="figure"] .taskbar-launcher-icon {
 
 html[data-taskbar-style="figure"] .taskbar-figure-logo {
   display: block !important;
-  width: 21px !important;
-  height: 21px !important;
+  width: 16px !important;
+  height: 16px !important;
   object-fit: contain !important;
   filter: saturate(.88) brightness(.98);
 }
@@ -445,7 +445,7 @@ html[data-taskbar-style="figure"] .taskbar .dock-button .spotify-vector {
   min-height: var(--dock-art) !important;
   max-height: var(--dock-art) !important;
   object-fit: contain !important;
-  border-radius: 5px !important;
+  border-radius: 4px !important;
   transform: none !important;
   filter: saturate(.84) brightness(.96);
 }
@@ -517,14 +517,14 @@ html[data-mobile-keyboard="true"][data-taskbar-style="figure"][data-taskbar-posi
 
 @media (max-width: 640px) {
   html[data-taskbar-style="figure"] {
-    --figure-taskbar-height: 41px;
+    --figure-taskbar-height: 30px;
   }
 
   html[data-taskbar-style="figure"][data-taskbar-position] .taskbar {
-    --dock-hit: 29px;
-    --dock-art: 21px;
+    --dock-hit: 22px;
+    --dock-art: 17px;
     max-width: calc(100vw - 12px) !important;
-    padding: 5px 6px !important;
+    padding: 3px 5px !important;
   }
 }
 
