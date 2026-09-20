@@ -45,6 +45,10 @@
     return Math.min(.94, Math.pow(clamp(value), 1.12) * .98 * clamp(gain));
   }
 
+  function windowInteracting() {
+    return Boolean(root.classList && root.classList.contains("is-window-interacting"));
+  }
+
   function normalize(values) {
     var source = Array.isArray(values) ? values : [];
     if (!source.length) return new Float32Array(BAND_COUNT);
@@ -114,11 +118,36 @@
     context.fill();
   }
 
+  function syncVisualizerGeometry() {
+    var taskbar = typeof document.querySelector === "function" ? document.querySelector(".taskbar") : null;
+    var viewportWidth = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
+    var center = viewportWidth / 2;
+    var width = Math.min(420, viewportWidth - 16);
+    if (taskbar) {
+      var taskbarBounds = taskbar.getBoundingClientRect();
+      var position = String(root.dataset.taskbarPosition || "left");
+      var horizontal = position === "top" || position === "bottom";
+      var workspaceLeft = position === "left" ? taskbarBounds.right : 0;
+      var workspaceRight = position === "right" ? taskbarBounds.left : viewportWidth;
+      var workspaceWidth = Math.max(1, workspaceRight - workspaceLeft);
+      center = workspaceLeft + workspaceWidth / 2;
+      width = horizontal
+        ? taskbarBounds.width + 64
+        : Math.max(300, taskbarBounds.width + 64);
+      width = Math.min(width, workspaceWidth - 16, viewportWidth - 16);
+    }
+    if (canvas.style && typeof canvas.style.setProperty === "function") {
+      canvas.style.setProperty("--neo-visualizer-center-x", Math.round(center) + "px");
+      canvas.style.setProperty("--neo-visualizer-width", Math.max(1, Math.round(width)) + "px");
+    }
+  }
+
   function resize() {
     resizeFrame = 0;
     if (!enabled) return;
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
+    syncVisualizerGeometry();
     var bounds = canvas.getBoundingClientRect();
     canvasWidth = bounds.width;
     canvasHeight = bounds.height;
@@ -140,7 +169,7 @@
 
   function draw(now, once) {
     frame = 0;
-    if (!enabled || document.hidden || root.classList.contains("is-window-interacting")) return;
+    if (!enabled || document.hidden || windowInteracting()) return;
     if (!once && now - lastFrame < 30) {
       frame = requestAnimationFrame(draw);
       return;
@@ -190,7 +219,7 @@
   }
 
   function schedule() {
-    if (enabled && !frame && !document.hidden && !root.classList.contains("is-window-interacting")) frame = requestAnimationFrame(draw);
+    if (enabled && !frame && !document.hidden && !windowInteracting()) frame = requestAnimationFrame(draw);
   }
 
   function syncMenu() {
@@ -253,10 +282,18 @@
   }
   window.addEventListener("resize", scheduleResize, { passive: true });
   // Refresh measurements only when geometry or theme changes, never per bar frame.
-  if (typeof ResizeObserver === "function") new ResizeObserver(scheduleResize).observe(canvas);
-  new MutationObserver(scheduleResize).observe(root, { attributes: true,
-    attributeFilter: ["class", "style", "data-neo-theme", "data-theme", "data-desktop-motion", "data-performance-mode", "data-taskbar-position"] });
-  reducedMotion.addEventListener("change", scheduleResize);
+  if (typeof ResizeObserver === "function") {
+    var geometryObserver = new ResizeObserver(scheduleResize);
+    geometryObserver.observe(canvas);
+    var taskbar = typeof document.querySelector === "function" ? document.querySelector(".taskbar") : null;
+    if (taskbar) geometryObserver.observe(taskbar);
+  }
+  window.addEventListener("neo-taskbar-layout-change", scheduleResize);
+  if (typeof MutationObserver === "function") {
+    new MutationObserver(scheduleResize).observe(root, { attributes: true,
+      attributeFilter: ["class", "style", "data-neo-theme", "data-theme", "data-desktop-motion", "data-performance-mode", "data-taskbar-position", "data-taskbar-style", "data-taskbar-app-names"] });
+  }
+  if (typeof reducedMotion.addEventListener === "function") reducedMotion.addEventListener("change", scheduleResize);
 
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) {
