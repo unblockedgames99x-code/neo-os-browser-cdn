@@ -115,7 +115,7 @@
 
   function normalizeTaskbarStyle(value) {
     value = String(value || "").toLowerCase();
-    return value === "transparent" || value === "typical" || value === "xeno" ? value : "current";
+    return value === "transparent" || value === "typical" || value === "xeno" || value === "figure" ? value : "current";
   }
 
   function normalizeTaskbarSurface(value) {
@@ -1860,6 +1860,7 @@
       var active = button.getAttribute("data-taskbar-position-option") === settings.taskbarPosition;
       button.classList.toggle("is-selected", active);
       button.setAttribute("aria-pressed", active ? "true" : "false");
+      button.disabled = settings.taskbarStyle === "figure";
     });
     host.querySelectorAll("[data-taskbar-style-option]").forEach(function (button) {
       var active = button.getAttribute("data-taskbar-style-option") === settings.taskbarStyle;
@@ -1903,9 +1904,13 @@
     });
     host.querySelectorAll("[data-taskbar-options-summary]").forEach(function (summary) {
       var position = settings.taskbarPosition.charAt(0).toUpperCase() + settings.taskbarPosition.slice(1);
-      var style = settings.taskbarStyle === "current" ? "Floating" : settings.taskbarStyle === "typical" ? "Full edge" : settings.taskbarStyle === "xeno" ? "XENO" : "Clear rail";
+      var style = settings.taskbarStyle === "current" ? "Floating" : settings.taskbarStyle === "typical" ? "Full edge" : settings.taskbarStyle === "xeno" ? "XENO" : settings.taskbarStyle === "figure" ? "Figure" : "Clear rail";
       var surface = settings.taskbarSurface.charAt(0).toUpperCase() + settings.taskbarSurface.slice(1);
-      summary.textContent = settings.taskbarStyle === "xeno" ? "Bottom center · XENO · Theme adaptive" : position + " · " + style + " · " + surface;
+      summary.textContent = settings.taskbarStyle === "xeno"
+        ? "Bottom center · XENO · Theme adaptive"
+        : settings.taskbarStyle === "figure"
+          ? "Bottom center · Figure · Smoky glass"
+          : position + " · " + style + " · " + surface;
     });
     var mode = performanceMode();
     host.querySelectorAll("[data-performance-mode-button]").forEach(function (button) {
@@ -2196,7 +2201,7 @@
     if (!dock || dock.dataset.scrollBound === "true") return;
     dock.dataset.scrollBound = "true";
     dock.addEventListener("wheel", function (event) {
-      if (settings.taskbarPosition !== "bottom" || dock.scrollWidth <= dock.clientWidth + 1) return;
+      if ((settings.taskbarPosition !== "bottom" && settings.taskbarStyle !== "figure") || dock.scrollWidth <= dock.clientWidth + 1) return;
       var delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
       if (!delta) return;
       var multiplier = event.deltaMode === 1 ? 18 : event.deltaMode === 2 ? Math.max(1, dock.clientWidth) : 1;
@@ -2329,7 +2334,7 @@
       if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
       clearRunningTaskbarDropMarkers(dock);
       var rect = button.getBoundingClientRect();
-      var vertical = settings.taskbarStyle !== "xeno" && (settings.taskbarPosition === "left" || settings.taskbarPosition === "right");
+      var vertical = settings.taskbarStyle !== "xeno" && settings.taskbarStyle !== "figure" && (settings.taskbarPosition === "left" || settings.taskbarPosition === "right");
       var placeAfter = vertical ? event.clientY >= rect.top + rect.height / 2 : event.clientX >= rect.left + rect.width / 2;
       button.classList.add(placeAfter ? "is-drop-after" : "is-drop-before");
     });
@@ -2338,7 +2343,7 @@
       if (!button || !runningTaskbarDragId) return;
       event.preventDefault();
       var rect = button.getBoundingClientRect();
-      var vertical = settings.taskbarStyle !== "xeno" && (settings.taskbarPosition === "left" || settings.taskbarPosition === "right");
+      var vertical = settings.taskbarStyle !== "xeno" && settings.taskbarStyle !== "figure" && (settings.taskbarPosition === "left" || settings.taskbarPosition === "right");
       var placeAfter = vertical ? event.clientY >= rect.top + rect.height / 2 : event.clientX >= rect.left + rect.width / 2;
       moveRunningTaskbarApp(runningTaskbarDragId, button.dataset.app, placeAfter);
       clearRunningTaskbarDropMarkers(dock);
@@ -2351,7 +2356,7 @@
     });
     dock.addEventListener("keydown", function (event) {
       if ((settings.taskbarStyle !== "xeno" && !settings.taskbarRunningApps) || !settings.taskbarAppDragging || !event.altKey || !event.shiftKey) return;
-      var vertical = settings.taskbarStyle !== "xeno" && (settings.taskbarPosition === "left" || settings.taskbarPosition === "right");
+      var vertical = settings.taskbarStyle !== "xeno" && settings.taskbarStyle !== "figure" && (settings.taskbarPosition === "left" || settings.taskbarPosition === "right");
       var direction = vertical
         ? (event.key === "ArrowUp" ? -1 : (event.key === "ArrowDown" ? 1 : 0))
         : (event.key === "ArrowLeft" ? -1 : (event.key === "ArrowRight" ? 1 : 0));
@@ -2460,10 +2465,11 @@
     var taskbarRect = taskbar && taskbar.getBoundingClientRect();
     if (rect && topbarRect && topbarRect.height) bounds.top = Math.max(bounds.top, topbarRect.bottom - rect.top + 8);
     if (rect && taskbarRect && taskbarRect.width && taskbarRect.height) {
-      if (settings.taskbarPosition === "left") bounds.left = Math.max(bounds.left, taskbarRect.right - rect.left + 8);
-      if (settings.taskbarPosition === "right") bounds.right = Math.min(bounds.right, taskbarRect.left - rect.left - metrics.width - 8);
-      if (settings.taskbarPosition === "top") bounds.top = Math.max(bounds.top, taskbarRect.bottom - rect.top + 8);
-      if (settings.taskbarPosition === "bottom") bounds.bottom = Math.min(bounds.bottom, taskbarRect.top - rect.top - metrics.height - 8);
+      var taskbarPosition = settings.taskbarStyle === "figure" ? "bottom" : settings.taskbarPosition;
+      if (taskbarPosition === "left") bounds.left = Math.max(bounds.left, taskbarRect.right - rect.left + 8);
+      if (taskbarPosition === "right") bounds.right = Math.min(bounds.right, taskbarRect.left - rect.left - metrics.width - 8);
+      if (taskbarPosition === "top") bounds.top = Math.max(bounds.top, taskbarRect.bottom - rect.top + 8);
+      if (taskbarPosition === "bottom") bounds.bottom = Math.min(bounds.bottom, taskbarRect.top - rect.top - metrics.height - 8);
     }
     bounds.right = Math.max(bounds.left, bounds.right);
     bounds.bottom = Math.max(bounds.top, bounds.bottom);
@@ -8796,7 +8802,7 @@
         var style = normalizeTaskbarStyle(taskbarStyle.getAttribute("data-taskbar-style-option"));
         if (style !== settings.taskbarStyle) {
           setSetting("taskbarStyle", style);
-          showToast("Taskbar style changed", style === "current" ? "The floating dock layout is active." : style === "transparent" ? "The vertical clear-glass rail is active on the left." : style === "xeno" ? "Running apps now use XENO pills. Press Space to search or Ctrl for all apps." : "The taskbar now fills the selected edge.", "settings");
+          showToast("Taskbar style changed", style === "current" ? "The floating dock layout is active." : style === "transparent" ? "The vertical clear-glass rail is active on the left." : style === "xeno" ? "Running apps now use XENO pills. Press Space to search or Ctrl for all apps." : style === "figure" ? "The compact Figure rail is active at the bottom center." : "The taskbar now fills the selected edge.", "settings");
         }
         return;
       }

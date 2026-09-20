@@ -1,0 +1,306 @@
+/* Figure taskbar preset: a compact, low-profile smoky glass dock inspired by
+   Figure UBG's desktop rail, with NEO's own mark as the launcher. */
+
+.taskbar-figure-logo {
+  display: none;
+}
+
+html[data-taskbar-style="figure"] {
+  --neo-taskbar-horizontal-avoid: 0px !important;
+  --neo-taskbar-vertical-avoid: 0px !important;
+  --figure-taskbar-height: 43px;
+  --figure-taskbar-gap: 3px;
+}
+
+html[data-taskbar-style="figure"][data-taskbar-position] .window-layer,
+html.neo-auto-hide-bars[data-taskbar-style="figure"][data-taskbar-position] .window-layer {
+  inset: var(--topbar-height) 0 0 !important;
+}
+
+html[data-taskbar-style="figure"][data-taskbar-position] .app-launcher,
+html.neo-auto-hide-bars[data-taskbar-style="figure"][data-taskbar-position] .app-launcher {
+  inset: var(--topbar-height) 0 calc(var(--figure-taskbar-height) + 14px + env(safe-area-inset-bottom)) !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  transform: none !important;
+}
+
+html[data-taskbar-style="figure"][data-taskbar-position] .toast-region {
+  inset: auto 18px calc(var(--figure-taskbar-height) + 22px + env(safe-area-inset-bottom)) auto !important;
+}
+
+html[data-taskbar-style="figure"] .neo-minimized-tray {
+  right: 18px !important;
+  bottom: calc(var(--figure-taskbar-height) + 22px + env(safe-area-inset-bottom)) !important;
+  left: auto !important;
+}
+
+html[data-taskbar-style="figure"][data-taskbar-position] .taskbar {
+  --dock-hit: 31px;
+  --dock-art: 23px;
+  position: fixed !important;
+  z-index: 5200 !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: calc(9px + env(safe-area-inset-bottom)) !important;
+  left: 50% !important;
+  display: flex !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 18px) !important;
+  height: var(--figure-taskbar-height) !important;
+  min-height: var(--figure-taskbar-height) !important;
+  max-height: var(--figure-taskbar-height) !important;
+  padding: 5px 7px !important;
+  gap: var(--figure-taskbar-gap) !important;
+  overflow: hidden !important;
+  color: rgba(244, 249, 247, .96) !important;
+  background:
+    linear-gradient(180deg, rgba(117, 132, 128, .38), rgba(46, 57, 56, .54)) !important;
+  border: 1px solid rgba(210, 225, 220, .28) !important;
+  border-radius: 9px !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .13),
+    inset 0 -1px 0 rgba(0, 0, 0, .12),
+    0 6px 18px rgba(0, 0, 0, .28) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.18) !important;
+  backdrop-filter: blur(18px) saturate(1.18) !important;
+  transform: translate3d(-50%, 0, 0) !important;
+  transition: opacity 160ms ease, transform 190ms cubic-bezier(.2, .8, .2, 1) !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar::before,
+html[data-taskbar-style="figure"] .taskbar::after {
+  display: none !important;
+  content: none !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar-center {
+  position: static !important;
+  inset: auto !important;
+  display: flex !important;
+  flex: 0 1 auto !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 31px !important;
+  max-height: 31px !important;
+  padding: 0 !important;
+  gap: var(--figure-taskbar-gap) !important;
+  overflow: hidden !important;
+  background: transparent !important;
+  transform: none !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar .dock {
+  order: 1 !important;
+  display: flex !important;
+  flex: 0 1 auto !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 66px) !important;
+  height: 31px !important;
+  max-height: 31px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: var(--figure-taskbar-gap) !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  scrollbar-width: none !important;
+  touch-action: pan-x;
+}
+
+html[data-taskbar-style="figure"] .taskbar .dock::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar-start-button,
+html[data-taskbar-style="figure"][data-taskbar-app-names] .taskbar .dock-button,
+html[data-taskbar-style="figure"] .taskbar .dock-button {
+  position: relative !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  place-items: center !important;
+  flex: 0 0 var(--dock-hit) !important;
+  width: var(--dock-hit) !important;
+  min-width: var(--dock-hit) !important;
+  max-width: var(--dock-hit) !important;
+  height: var(--dock-hit) !important;
+  min-height: var(--dock-hit) !important;
+  max-height: var(--dock-hit) !important;
+  margin: 0 !important;
+  padding: 4px !important;
+  gap: 0 !important;
+  color: inherit !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  transform: translate3d(0, 0, 0) scale(1) !important;
+  transition: background-color 130ms ease, transform 150ms cubic-bezier(.2, .8, .2, 1), opacity 130ms ease !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar-start-button {
+  order: 0 !important;
+}
+
+/* Touch and running-app styles deliberately use stronger sizing selectors.
+   Figure owns its compact geometry on every input type, so pin the hit boxes
+   after those shared rules without changing their behavior in other presets. */
+html[data-taskbar-style="figure"][data-taskbar-position][data-taskbar-app-names] #neo-desktop .taskbar .taskbar-center > .taskbar-start-button,
+html[data-taskbar-style="figure"][data-taskbar-position][data-taskbar-app-names] #neo-desktop .taskbar #neo-dock > .dock-button {
+  box-sizing: border-box !important;
+  width: 31px !important;
+  min-width: 31px !important;
+  max-width: 31px !important;
+  height: 31px !important;
+  min-height: 31px !important;
+  max-height: 31px !important;
+  flex: 0 0 31px !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar-start-button:is(:hover, :focus-visible),
+html[data-taskbar-style="figure"] .taskbar .dock-button:is(:hover, :focus-visible) {
+  background: rgba(255, 255, 255, .09) !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .08) !important;
+  transform: translate3d(0, -1px, 0) scale(1.045) !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar-start-button:active,
+html[data-taskbar-style="figure"] .taskbar .dock-button:active {
+  transform: translate3d(0, 0, 0) scale(.94) !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar-start-button:focus-visible,
+html[data-taskbar-style="figure"] .taskbar .dock-button:focus-visible {
+  outline: 1px solid rgba(235, 246, 242, .72) !important;
+  outline-offset: 0 !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar-launcher-icon {
+  display: none !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar-figure-logo {
+  display: block !important;
+  width: 21px !important;
+  height: 21px !important;
+  object-fit: contain !important;
+  filter: saturate(.88) brightness(.98);
+}
+
+html[data-taskbar-style="figure"] .taskbar .dock-button .dock-app-art,
+html[data-taskbar-style="figure"] .taskbar .dock-button .app-image-icon,
+html[data-taskbar-style="figure"] .taskbar .dock-button .spotify-vector {
+  flex: 0 0 var(--dock-art) !important;
+  width: var(--dock-art) !important;
+  min-width: var(--dock-art) !important;
+  max-width: var(--dock-art) !important;
+  height: var(--dock-art) !important;
+  min-height: var(--dock-art) !important;
+  max-height: var(--dock-art) !important;
+  object-fit: contain !important;
+  border-radius: 5px !important;
+  transform: none !important;
+  filter: saturate(.84) brightness(.96);
+}
+
+html[data-taskbar-style="figure"] .taskbar .dock-button .dock-app-art .icon {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar .dock-app-name,
+html[data-taskbar-style="figure"] .taskbar-tray {
+  display: none !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar .dock-button::before {
+  display: none !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar .dock-button::after {
+  content: "" !important;
+  position: absolute !important;
+  right: auto !important;
+  bottom: 1px !important;
+  left: 50% !important;
+  display: block !important;
+  width: 3px !important;
+  height: 2px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: rgba(229, 239, 236, .84) !important;
+  opacity: 0 !important;
+  transform: translateX(-50%) !important;
+  box-shadow: none !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar .dock-button.is-running::after,
+html[data-taskbar-style="figure"] .taskbar .dock-button.is-active::after {
+  opacity: 1 !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar .dock-button.is-active {
+  background: rgba(255, 255, 255, .075) !important;
+}
+
+html[data-taskbar-style="figure"] .taskbar .dock-button.is-minimized {
+  opacity: .62 !important;
+}
+
+html.has-window-snap-mode[data-taskbar-style="figure"][data-taskbar-position] .taskbar,
+html[data-mobile-keyboard="true"][data-taskbar-style="figure"][data-taskbar-position] .taskbar {
+  transform: translate3d(-50%, 150%, 0) !important;
+  opacity: 0 !important;
+}
+
+.taskbar-style-preview.is-figure::after {
+  right: auto;
+  bottom: 5px;
+  left: 50%;
+  width: 48px;
+  height: 8px;
+  border: 1px solid rgba(211, 225, 221, .3);
+  border-radius: 3px;
+  background:
+    radial-gradient(circle, rgba(222, 234, 230, .88) 0 1.5px, transparent 1.8px) 5px 50% / 7px 7px repeat-x,
+    linear-gradient(180deg, rgba(112, 128, 124, .52), rgba(42, 53, 52, .68));
+  box-shadow: 0 3px 7px rgba(0, 0, 0, .42), inset 0 1px rgba(255, 255, 255, .1);
+  transform: translateX(-50%);
+}
+
+@media (max-width: 640px) {
+  html[data-taskbar-style="figure"] {
+    --figure-taskbar-height: 41px;
+  }
+
+  html[data-taskbar-style="figure"][data-taskbar-position] .taskbar {
+    --dock-hit: 29px;
+    --dock-art: 21px;
+    max-width: calc(100vw - 12px) !important;
+    padding: 5px 6px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-taskbar-style="figure"] .taskbar,
+  html[data-taskbar-style="figure"] .taskbar * {
+    transition: none !important;
+  }
+}

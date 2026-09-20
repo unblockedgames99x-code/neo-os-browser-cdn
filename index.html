@@ -112,6 +112,7 @@
     <link rel="stylesheet" href="./neo-taskbar-quick-settings.css?v=20260912-alignment-v2" />
     <link rel="stylesheet" href="./neo-interface-styles.css?v=20260919-rounded-restored-windows-v1&amp;launcher=centered-v3&amp;settings=combined-v1&amp;widgets=no-scrollbars-v1&amp;previews=current-state-v1&amp;widget-background=transparent-v1" />
     <link rel="stylesheet" href="./neo-xeno-taskbar.css?v=20260919-command-motion-v2" />
+    <link rel="stylesheet" href="./neo-figure-taskbar.css?v=20260919-figure-v1" />
   </head>
   <body>
     <a class="skip-link" href="#neo-desktop">Skip to desktop</a>
@@ -513,6 +514,7 @@
         <div class="taskbar-center">
           <button class="taskbar-start-button" type="button" data-open-launcher aria-label="Open applications" aria-controls="app-launcher" aria-expanded="false" data-tooltip="Apps">
             <svg class="icon taskbar-launcher-icon" aria-hidden="true"><use href="#i-apps"></use></svg>
+            <img class="taskbar-figure-logo" src="./assets/neo-logo.svg" width="22" height="22" alt="" aria-hidden="true" draggable="false" />
             <span class="sr-only">Apps</span>
           </button>
           <div class="dock" id="neo-dock" aria-label="Apps"></div>
@@ -1228,6 +1230,7 @@
               <button type="button" data-taskbar-style-option="transparent" aria-pressed="false"><span class="taskbar-style-preview is-transparent" aria-hidden="true"></span><span><strong>Transparent</strong><small>Vertical glass rail</small></span></button>
               <button type="button" data-taskbar-style-option="typical" aria-pressed="false"><span class="taskbar-style-preview is-typical" aria-hidden="true"></span><span><strong>Typical</strong><small>Full edge bar</small></span></button>
               <button type="button" data-taskbar-style-option="xeno" aria-pressed="false"><span class="taskbar-style-preview is-xeno" aria-hidden="true"></span><span><strong>XENO</strong><small>Running apps · Space search · Ctrl menu</small></span></button>
+              <button type="button" data-taskbar-style-option="figure" aria-pressed="false"><span class="taskbar-style-preview is-figure" aria-hidden="true"></span><span><strong>Figure</strong><small>Compact smoky glass dock</small></span></button>
             </div>
           </div>
           <div class="taskbar-option-group">
@@ -1445,7 +1448,7 @@
     <script src="./neo-chat-experience.js" defer></script>
     <script src="./neo-desktop-platform.js?v=20260919-browser-search-v1&amp;styles=kali-v1&amp;tab=custom-url-v1&amp;themes=expanded-v1&amp;rainmeter=controls-v1&amp;editor=proxy-links-v2&amp;settings=combined-v1&amp;motion=animation-speed-v1" defer></script>
     <script src="./neo-leave-guard.js?v=20260907-anti-close-v1" defer></script>
-    <script src="./neo-os.js?v=20260919-browser-search-v1&amp;styles=kali-v1&amp;apps=cleanup-v1&amp;taskbar=app-names-v2&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3-animation-speed-v1&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=motion-v1&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;artwork=stable-cover-v2&amp;rainmeter=amber-arc-v1&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;window-bar=maximized-ultra-v1&amp;proxy=resource-v2&amp;games=aether-v1&amp;taskbar-glass=transparency-v1&amp;xeno=command-motion-v2&amp;close=hard-v1" defer></script>
+    <script src="./neo-os.js?v=20260919-browser-search-v1&amp;styles=kali-v1&amp;apps=cleanup-v1&amp;taskbar=app-names-v2&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3-animation-speed-v1&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=motion-v1&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;artwork=stable-cover-v2&amp;rainmeter=amber-arc-v1&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;window-bar=maximized-ultra-v1&amp;proxy=resource-v2&amp;games=aether-v1&amp;taskbar-glass=transparency-v1&amp;xeno=command-motion-v2&amp;figure=taskbar-v1&amp;close=hard-v1" defer></script>
     <script src="./neo-command-palette.js?v=20260912-command-palette-v1" defer></script>
     <script src="./neo-taskbar-quick-settings.js?v=20260910-quick-settings-v1" defer></script>
     <script src="./neo-backup.js?v=20260830-backup-v1" defer></script>
