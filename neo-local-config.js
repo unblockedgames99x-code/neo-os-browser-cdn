@@ -7,9 +7,17 @@
   var base = new URL(configuredAssetBase, document.currentScript.src);
   var previewBase = new URL("http://127.0.0.1:3092/neo-os/");
   var upstreamBrowserRoot = new URL("https://nextnode9124.b-cdn.net/");
+  var runtimeHost = String(window.location && window.location.hostname || "").toLowerCase();
+  var localRuntime = Boolean(
+    window.location && window.location.protocol === "file:" ||
+    runtimeHost === "localhost" ||
+    runtimeHost === "127.0.0.1" ||
+    runtimeHost === "0.0.0.0" ||
+    runtimeHost === "::1"
+  );
   window.NEO_LOCAL_CONFIG = Object.freeze({
-    enabled: true,
-    externalIntegrations: false,
+    enabled: localRuntime,
+    externalIntegrations: !localRuntime,
     onlineApps: Object.freeze(["chat", "games", "movies"]),
     assetBase: base.href,
     music: new URL("music-v2/index.html?v=20260919-scholarnook-v1&theme=system-v1&widgets=live-v1", base).href,
@@ -46,5 +54,6 @@
     playableGames: Object.freeze(["grandmaster-chess", "quantum-clicker", "tetris"]),
     resolve: function (path) { return new URL(path, base).href; }
   });
-  document.documentElement.dataset.localPreview = "true";
+  if (localRuntime) document.documentElement.dataset.localPreview = "true";
+  else document.documentElement.dataset.deployment = "production";
 })();

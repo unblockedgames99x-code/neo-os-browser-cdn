@@ -313,24 +313,16 @@
     if (!state.sessions || typeof state.sessions !== "object") state.sessions = {};
     if (!state.rooms || typeof state.rooms !== "object") state.rooms = {};
     if (!Array.isArray(state.messages)) state.messages = [];
-    if (!state.messages.length) {
-      state.accounts["neo_system"] = {
-        id: "neo_system",
-        username: "NEO System",
-        bio: "Local preview guide",
-        mood: "System",
-        status: "online",
-        createdAt: Date.now()
-      };
-      state.messages.push({
-        id: "neo_welcome",
-        clientId: "",
-        room: "global",
-        userId: "neo_system",
-        user: "NEO System",
-        text: "Welcome to NEO Chat. In this preview, messages stay on this device. Your Google Script deployment uses the shared NEO relay.",
-        time: Date.now()
-      });
+    var hadLegacyWelcome = Boolean(state.accounts.neo_system) || state.messages.some(function (message) {
+      return message && String(message.id || "") === "neo_welcome";
+    });
+    state.messages = state.messages.filter(function (message) {
+      return message && String(message.id || "") !== "neo_welcome";
+    });
+    delete state.accounts.neo_system;
+    if (hadLegacyWelcome) {
+      try { localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify(state)); }
+      catch (error) {}
     }
     return state;
   }
@@ -384,8 +376,8 @@
       id: randomId("u_"),
       username: username,
       usernameKey: usernameKey,
-      bio: "Device profile",
-      mood: "Local preview",
+      bio: "NEO member",
+      mood: "On-device fallback",
       status: "online",
       createdAt: Date.now(),
       lastSentAt: 0
@@ -544,7 +536,7 @@
     var type = String(request && request.type || "application/octet-stream").slice(0, 100);
     var size = Math.max(0, Number(request && request.size || 0));
     var dataBase64 = String(request && request.dataBase64 || "");
-    if (!dataBase64 || size > 750 * 1024) throw chatError("Local preview attachments can be up to 750 KB.", "attachment_too_large", 413);
+    if (!dataBase64 || size > 750 * 1024) throw chatError("On-device attachments can be up to 750 KB.", "attachment_too_large", 413);
     return { attachment: { name: name, type: type, size: size, url: "data:" + type + ";base64," + dataBase64 } };
   }
 
@@ -648,12 +640,23 @@
     });
   }
 
+  function withoutLegacyWelcome(payload) {
+    if (!payload || typeof payload !== "object") return payload;
+    if (Array.isArray(payload.messages)) {
+      payload.messages = payload.messages.filter(function (message) {
+        return message && String(message.id || "") !== "neo_welcome";
+      });
+    }
+    if (payload.profiles && typeof payload.profiles === "object") delete payload.profiles.neo_system;
+    return payload;
+  }
+
   window.NEO_CHAT_TRANSPORT = Object.freeze({
     mode: mode,
     modeLabel: function () {
       if (isCloudAvailable()) return "Shared NEO relay";
       if (bridgeCandidate && (!bridgeUnavailable || bridgeHostExpected)) return "Connecting to NEO relay";
-      return "This device";
+      return "On-device fallback";
     },
     createProfile: function (username, password, signal, requestId) {
       return call("neoChatCreateProfile", { username: username, password: password, requestId: String(requestId || "") }, signal);
@@ -661,7 +664,9 @@
     login: function (username, password, signal) { return call("neoChatLogin", { username: username, password: password }, signal); },
     resume: function (token, signal) { return call("neoChatResume", { token: token }, signal); },
     updateProfile: function (token, profile, signal) { return call('neoChatUpdateProfile',{token:token,profile:profile},signal); },
-    state: function (token, compact, signal) { return call("neoChatState", { token: token, compact: Boolean(compact) }, signal); },
+    state: function (token, compact, signal) {
+      return call("neoChatState", { token: token, compact: Boolean(compact) }, signal).then(withoutLegacyWelcome);
+    },
     search: function (token, query, exact, signal) { return call("neoChatSearchUsers", { token: token, query: query, exact: Boolean(exact) }, signal); },
     createRoom: function (token, username, signal) { return call("neoChatCreateRoom", { token: token, username: username }, signal); },
     upload: function (token, attachment, signal) { return call("neoChatUploadAttachment", { token: token, name: attachment.name, type: attachment.type, size: attachment.size, dataBase64: attachment.dataBase64 }, signal).then(function (payload) { return payload && payload.attachment || null; }); },

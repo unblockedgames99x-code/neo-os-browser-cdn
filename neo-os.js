@@ -4396,7 +4396,7 @@
       if (!file) return;
       var localOnly = window.NEO_CHAT_TRANSPORT && window.NEO_CHAT_TRANSPORT.mode() === "local";
       var maximum = localOnly ? 750 * 1024 : 6 * 1024 * 1024;
-      if (file.size > maximum) { feedback.textContent = localOnly ? "Local preview attachments can be up to 750 KB." : "Attachments can be up to 6 MB."; return; }
+      if (file.size > maximum) { feedback.textContent = localOnly ? "On-device attachments can be up to 750 KB." : "Attachments can be up to 6 MB."; return; }
       var allowed = /^(image|video|audio)\//.test(file.type) || /^(application\/pdf|text\/plain|application\/(zip|x-zip-compressed))$/.test(file.type);
       if (!allowed) { feedback.textContent = "Choose a photo, video, audio, PDF, text, or ZIP file."; return; }
       var reader = new FileReader();
@@ -4452,7 +4452,7 @@
       title.textContent = name;
       var localOnly = window.NEO_CHAT_TRANSPORT && window.NEO_CHAT_TRANSPORT.mode() === "local";
       subtitle.textContent = state.error ? "Unavailable" : (state.selected === "global"
-        ? (localOnly ? "Device-only preview · Slow mode 5s" : "Shared public conversation · Slow mode 5s")
+        ? (localOnly ? "On-device fallback · Slow mode 5s" : "Shared public conversation · Slow mode 5s")
         : (isServerRoom(room) ? "Shared space · Slow mode 5s" : "Private conversation · Slow mode 5s"));
       thread.setAttribute("aria-label", name + " messages");
       headingAvatar.classList.toggle("is-global", state.selected === "global");

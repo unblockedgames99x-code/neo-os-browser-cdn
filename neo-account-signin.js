@@ -61,7 +61,7 @@ function mountAccountSignIn(container, show, onSuccess, options) {
   copy.textContent = deviceOnly ? 'Device-local profiles only. No cross-device chat or public account security. Do not reuse an important password.' : 'Use your NEO username and password to open shared Chat.';
   if (mode) {
     var cloud = window.NEO_CHAT_TRANSPORT.mode() === "cloud";
-    mode.textContent = cloud ? window.NEO_CHAT_TRANSPORT.modeLabel() : "Saved on this device for this preview";
+    mode.textContent = cloud ? window.NEO_CHAT_TRANSPORT.modeLabel() : "Saved on this device as a fallback";
     mode.dataset.transport = cloud ? "cloud" : "local";
   }
 
