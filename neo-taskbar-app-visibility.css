@@ -1,16 +1,10 @@
-/* App-aware taskbar visibility. Every normal or maximized window keeps the
-   taskbar overlay. It animates away only for an actual app-fullscreen window. */
+/* The taskbar belongs to the desktop. Any visible app window animates it away. */
 html[data-taskbar-app-state="overlay"] .window-layer,
 html[data-taskbar-app-state="hidden"] .window-layer {
   inset: var(--topbar-height) 0 0 !important;
 }
 
-html[data-taskbar-app-state="overlay"] .taskbar {
-  z-index: 5200 !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
-
+html[data-taskbar-app-state="overlay"] .taskbar,
 html[data-taskbar-app-state="hidden"] .taskbar {
   opacity: 0 !important;
   pointer-events: none !important;

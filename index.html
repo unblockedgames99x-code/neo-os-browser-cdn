@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-boot="pending" data-neo-app="shell" data-interface-style="modern" data-wallpaper="we-steam-1403160205" data-performance-mode="normal" data-auto-performance-active="false" data-animation-speed="100" data-taskbar-position="left" data-taskbar-style="current" data-taskbar-surface="glass" data-taskbar-outline="true" data-taskbar-running-apps="true" data-taskbar-app-names="false" data-taskbar-app-mode="fullscreen" data-taskbar-app-state="desktop" data-window-bar-style="ultra" data-desktop-system-widget="false" data-desktop-active-app-widget="false" data-desktop-now-playing-widget="false">
+<html lang="en" data-boot="pending" data-neo-app="shell" data-interface-style="modern" data-wallpaper="we-steam-1403160205" data-performance-mode="normal" data-auto-performance-active="false" data-animation-speed="100" data-taskbar-position="left" data-taskbar-style="current" data-taskbar-surface="glass" data-taskbar-outline="true" data-taskbar-running-apps="true" data-taskbar-app-names="false" data-taskbar-app-mode="desktop" data-taskbar-app-state="desktop" data-window-bar-style="ultra" data-desktop-system-widget="false" data-desktop-active-app-widget="false" data-desktop-now-playing-widget="false">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fastly.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http://127.0.0.1:3092 http://localhost:3092; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: http://127.0.0.1:3092 http://localhost:3092 https://a.luminsdk.com https://fastly.jsdelivr.net https://cdn.jsdelivr.net https://gcore.jsdelivr.net https://quantil.jsdelivr.net https://pipedapi.ducks.party https://api.piped.private.coffee https://lol.samidy.workers.dev https://lunchbreak.dyercountylawncare.workers.dev https://neo-stratus-api-w6nw.onrender.com wss://nextnode9124.b-cdn.net wss://support.pired.org wss://girlspreples.com wss://northstreetumc.org wss://pcesc.com wss://kcchallengevbc.com wss://slcbmooc.org wss://probuildingsupplies.com wss://wisp.mercurywork.shop wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app wss://reeyukiwisp.onrender.com wss://w2.qwq.sh wss://api.personalloanonline.net wss://www.goldenbasketballacademy.space wss://www.atlantaclassical.info wss://www.booksforschool.online; frame-src 'self' blob: https://a.luminsdk.com https://nextnode9124.b-cdn.net https://fastly.jsdelivr.net https://cdn.jsdelivr.net https://gcore.jsdelivr.net https://quantil.jsdelivr.net; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
@@ -22,7 +22,7 @@
         var interfaceStyle = "modern";
         var windowBarStyle = "ultra";
         var animationSpeed = 100;
-        var taskbarAppMode = "fullscreen";
+        var taskbarAppMode = "desktop";
         try {
           var saved = JSON.parse(localStorage.getItem("neo_os_settings_v1") || "{}");
           mode = saved.performanceMode;
@@ -32,7 +32,6 @@
           }
           var savedAnimationSpeed = Number(saved.animationSpeed);
           if (Number.isFinite(savedAnimationSpeed)) animationSpeed = Math.max(50, Math.min(200, Math.round(savedAnimationSpeed / 25) * 25));
-          taskbarAppMode = saved.taskbarAppMode === "always" ? "always" : "fullscreen";
           if (mode !== "normal" && mode !== "performance" && mode !== "ultimate") {
             mode = saved.performance === "low" ? "performance" : "normal";
           }
@@ -115,7 +114,7 @@
     <link rel="stylesheet" href="./neo-taskbar-quick-settings.css?v=20260912-alignment-v2" />
     <link rel="stylesheet" href="./neo-interface-styles.css?v=20260919-rounded-restored-windows-v1&amp;launcher=centered-v3&amp;settings=combined-v1&amp;widgets=no-scrollbars-v1&amp;previews=current-state-v1&amp;widget-background=transparent-v1" />
     <link rel="stylesheet" href="./neo-xeno-taskbar.css?v=20260919-command-motion-v2" />
-    <link rel="stylesheet" href="./neo-taskbar-app-visibility.css?v=20260920-fullscreen-only-v1" />
+    <link rel="stylesheet" href="./neo-taskbar-app-visibility.css?v=20260920-desktop-only-v2" />
     <link rel="stylesheet" href="./neo-taskbar-now-playing.css?v=20260919-compact-player-v1" />
     <link rel="stylesheet" href="./neo-launcher-alignment.css?v=20260920-category-label-v4" />
   </head>
@@ -1284,13 +1283,6 @@
             </label>
           </div>
           <div class="taskbar-option-group">
-            <label class="select-row taskbar-app-visibility-setting">
-              <span><strong>Taskbar in apps</strong><small>Stay over every app and hide only in app fullscreen</small></span>
-              <select data-setting="taskbarAppMode" aria-label="Taskbar visibility in apps">
-                <option value="fullscreen">Hide in fullscreen</option>
-                <option value="always">Always show</option>
-              </select>
-            </label>
             <label class="toggle-row taskbar-outline-toggle">
               <span><strong>Outline</strong><small>Show the glass edge and highlight ring</small></span>
               <input type="checkbox" data-setting="taskbarOutline" checked />
@@ -1476,7 +1468,7 @@
     <script src="./neo-chat-experience.js" defer></script>
     <script src="./neo-desktop-platform.js?v=20260919-browser-search-v1&amp;styles=kali-v1&amp;tab=custom-url-v1&amp;themes=expanded-v1&amp;rainmeter=controls-v1&amp;editor=proxy-links-v2&amp;settings=combined-v1&amp;motion=animation-speed-v1" defer></script>
     <script src="./neo-leave-guard.js?v=20260907-anti-close-v1" defer></script>
-    <script src="./neo-os.js?v=20260919-browser-search-v1&amp;styles=kali-v1&amp;apps=cleanup-v1&amp;taskbar=compact-player-v1&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3-animation-speed-v1&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=aligned-grid-v2&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;taskbar-visibility=fullscreen-only-v1&amp;artwork=stable-cover-v2&amp;rainmeter=orbit-weekday-v2&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;window-bar=maximized-ultra-v1&amp;proxy=resource-v2&amp;games=aether-v1&amp;taskbar-glass=transparency-v1&amp;xeno=command-motion-v2&amp;figure=removed-v1&amp;close=hard-v1" defer></script>
+    <script src="./neo-os.js?v=20260919-browser-search-v1&amp;styles=kali-v1&amp;apps=cleanup-v1&amp;taskbar=compact-player-v1&amp;drive=polish-v1&amp;theme=20260912-acrylic-theme-v1&amp;runtime=20260907-runtime-recovery-v2&amp;motion=window-drag-v3-animation-speed-v1&amp;custom=tab-url-v1&amp;tab=cdn-blank-title-v3&amp;context=hover-v1&amp;launcher=aligned-grid-v2&amp;wallpaper=resume-v2&amp;auto-performance=v2&amp;boot=universal-loader-v2&amp;chat=standalone-v1&amp;taskbar-visibility=desktop-only-v2&amp;artwork=stable-cover-v2&amp;rainmeter=orbit-weekday-v2&amp;widgets=logo-v1&amp;desktop=no-home-apps-v1&amp;settings=combined-v1&amp;music-widgets=live-v1&amp;windows=top-gap-v1&amp;window-bar=maximized-ultra-v1&amp;proxy=resource-v2&amp;games=aether-v1&amp;taskbar-glass=transparency-v1&amp;xeno=command-motion-v2&amp;figure=removed-v1&amp;close=hard-v1" defer></script>
     <script src="./neo-command-palette.js?v=20260912-command-palette-v1" defer></script>
     <script src="./neo-taskbar-quick-settings.js?v=20260910-quick-settings-v1" defer></script>
     <script src="./neo-backup.js?v=20260830-backup-v1" defer></script>

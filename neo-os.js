@@ -127,8 +127,7 @@
   }
 
   function normalizeTaskbarAppMode(value) {
-    value = String(value || "").toLowerCase();
-    return value === "always" ? "always" : "fullscreen";
+    return "desktop";
   }
 
   function normalizeDockIconSize(value) {
@@ -227,7 +226,7 @@
     taskbarRunningApps: true,
     taskbarAppDragging: true,
     taskbarAppNames: false,
-    taskbarAppMode: "fullscreen",
+    taskbarAppMode: "desktop",
     windowBarStyle: "ultra",
     interfaceStyle: "modern",
     cursorTheme: "system",
@@ -334,7 +333,7 @@
     savedSettings.browserSearchEngine = "duckduckgo";
   }
   if (savedDesignVersion < 29 && !savedSettings.taskbarAppMode) {
-    savedSettings.taskbarAppMode = "fullscreen";
+    savedSettings.taskbarAppMode = "desktop";
   }
   if (savedDesignVersion < 30) {
     savedSettings.taskbarAppMode = normalizeTaskbarAppMode(savedSettings.taskbarAppMode);
@@ -5965,23 +5964,10 @@
     return win;
   }
 
-  function appWindowFullscreen(win) {
-    return Boolean(
-      win &&
-      !win.classList.contains("is-minimized") &&
-      !win.classList.contains("is-closing") &&
-      win.classList.contains("is-tab-fullscreen")
-    );
-  }
-
   function syncTaskbarAppVisibility() {
-    var active = windowLayer && windowLayer.querySelector(".neo-window.is-active:not(.is-minimized):not(.is-closing)");
+    var visibleApp = windowLayer && windowLayer.querySelector(".neo-window:not(.is-minimized):not(.is-closing)");
     var mode = normalizeTaskbarAppMode(settings.taskbarAppMode);
-    var state = "desktop";
-    if (active) {
-      if (mode === "fullscreen" && appWindowFullscreen(active)) state = "hidden";
-      else state = "overlay";
-    }
+    var state = visibleApp ? "hidden" : "desktop";
     root.dataset.taskbarAppMode = mode;
     root.dataset.taskbarAppState = state;
     var taskbar = document.querySelector(".taskbar");
@@ -6173,6 +6159,7 @@
       window.clearTimeout(win._neoResizeTimer);
       window.clearTimeout(win._neoCloseTimer);
       win.remove();
+      syncTaskbarAppVisibility();
     }
     win.classList.remove("is-open", "is-active");
     win.setAttribute("aria-hidden", "true");
@@ -6211,6 +6198,7 @@
     else win.removeAttribute("aria-hidden");
     syncAutoPerformanceMode();
     renderDock();
+    syncTaskbarAppVisibility();
     window.dispatchEvent(new CustomEvent("neo-window-state-change", {
       detail: { id: win.dataset.appId || "", minimized: Boolean(minimized), closed: false }
     }));
