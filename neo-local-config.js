@@ -18,7 +18,7 @@
   window.NEO_LOCAL_CONFIG = Object.freeze({
     enabled: localRuntime,
     externalIntegrations: !localRuntime,
-    onlineApps: Object.freeze(["chat", "games", "movies"]),
+    onlineApps: Object.freeze(["chat", "youtube-app", "games", "movies"]),
     assetBase: base.href,
     music: new URL("music-v2/index.html?v=20260919-scholarnook-v1&theme=system-v1&widgets=live-v1", base).href,
     browser: new URL("nextnode-browser/index.html?v=20260919-auto-wisp-v1", base).href,

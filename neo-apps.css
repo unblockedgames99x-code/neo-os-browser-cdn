@@ -575,6 +575,21 @@
   object-fit: contain !important;
 }
 
+.app-icon-youtube {
+  overflow: visible !important;
+  color: transparent !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.app-icon-youtube .app-image-icon {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
 /* The Media Player uses finished circular artwork. Do not put the generic
    solid media tile behind it in the launcher. */
 .launcher-app[data-app="media"] .launcher-app-icon.app-icon-media-player {

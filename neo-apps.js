@@ -50,6 +50,20 @@
       category: "Media",
       aliases: ["movies", "films", "cinema", "tv", "shows", "streaming"]
     },
+    "youtube-app": {
+      id: "youtube-app",
+      title: "YouTube",
+      subtitle: "Account-free videos, search, Shorts, and pop-out playback",
+      icon: "youtube",
+      route: "./neo-youtube/index.html?build=20260912-shorts-feed-v1",
+      keepAlive: false,
+      width: 1180,
+      height: 760,
+      launcher: true,
+      pinned: false,
+      category: "Media",
+      aliases: ["youtube", "videos", "video", "channels", "shorts", "youtube shorts"]
+    },
     notes: {
       id: "notes",
       title: "Notes",
@@ -188,6 +202,16 @@
       localStorage.setItem(retiredVideoMigrationKey, "1");
     }
 
+    var restoredYouTubeMigrationKey = "neo_os_restore_youtube_app_v3";
+    if (localStorage.getItem(restoredYouTubeMigrationKey) !== "1") {
+      var installedYouTubeApps = JSON.parse(localStorage.getItem("neo_os_installed_apps_v1") || "null");
+      if (Array.isArray(installedYouTubeApps) && installedYouTubeApps.indexOf("youtube-app") === -1) {
+        installedYouTubeApps.push("youtube-app");
+        localStorage.setItem("neo_os_installed_apps_v1", JSON.stringify(installedYouTubeApps));
+      }
+      localStorage.setItem(restoredYouTubeMigrationKey, "1");
+    }
+
     var mergedMp3MigrationKey = "neo_os_merge_mp3_into_music_v1";
     if (localStorage.getItem(mergedMp3MigrationKey) !== "1") {
       ["neo_os_pinned_apps_v1", "neo_os_installed_apps_v1"].forEach(function (key) {
@@ -273,7 +297,7 @@
 
     var focusedCatalogMigrationKey = "neo_os_focused_app_catalog_v1";
     if (localStorage.getItem(focusedCatalogMigrationKey) !== "1") {
-      var retiredAppIds = ["discord", "youtube-app", "geometry-dash", "neo-cloud", "nowgg", "neo-ai"];
+      var retiredAppIds = ["discord", "geometry-dash", "neo-cloud", "nowgg", "neo-ai"];
       ["neo_os_pinned_apps_v1", "neo_os_installed_apps_v1"].forEach(function (key) {
         var savedApps = JSON.parse(localStorage.getItem(key) || "null");
         if (!Array.isArray(savedApps)) return;
