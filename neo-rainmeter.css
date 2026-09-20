@@ -410,6 +410,98 @@
   text-shadow: none;
 }
 
+/* Dark amber weekday dial with the metallic orbit from the supplied skin. */
+.rainmeter-clock[data-rainmeter-ready="true"][data-rainmeter-style="amber-arc"] {
+  --rainmeter-arc-amber: #d0a06a;
+  position: fixed;
+  width: min(330px, calc(100vw - 24px));
+  min-height: 126px;
+  display: grid;
+  place-items: center;
+  padding: 24px 28px 16px;
+  overflow: hidden;
+  color: var(--rainmeter-arc-amber);
+  background:
+    radial-gradient(ellipse at 50% -18%, rgba(127, 93, 53, .34) 0 18%, rgba(48, 38, 29, .2) 43%, rgba(5, 6, 8, .94) 78%),
+    linear-gradient(155deg, rgba(38, 31, 25, .94), rgba(3, 4, 6, .98));
+  border: 1px solid rgba(202, 165, 115, .16);
+  border-radius: 56% 56% 32px 32px / 40% 40% 26px 26px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 228, 183, .12),
+    inset 0 -20px 42px rgba(0, 0, 0, .46),
+    0 16px 32px rgba(0, 0, 0, .32);
+  isolation: isolate;
+  text-align: center;
+}
+
+.rainmeter-clock[data-rainmeter-style="amber-arc"]::before,
+.rainmeter-clock[data-rainmeter-style="amber-arc"]::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 50%;
+}
+
+.rainmeter-clock[data-rainmeter-style="amber-arc"]::before {
+  top: -80px;
+  left: -18px;
+  width: calc(100% + 36px);
+  height: 110px;
+  background: radial-gradient(ellipse at center, transparent 0 66%, rgba(212, 178, 127, .78) 67% 69%, transparent 70%);
+  filter: drop-shadow(0 1px 1px rgba(255, 228, 182, .2)) drop-shadow(0 4px 8px rgba(0, 0, 0, .7));
+  transform: rotate(2deg);
+}
+
+.rainmeter-clock[data-rainmeter-style="amber-arc"]::after {
+  top: -74px;
+  left: -14px;
+  width: calc(100% + 28px);
+  height: 106px;
+  background: radial-gradient(ellipse at center, transparent 0 65%, rgba(101, 69, 38, .86) 66% 67%, transparent 68%);
+  transform: rotate(2deg);
+}
+
+.rainmeter-clock[data-rainmeter-style="amber-arc"] :is(.rainmeter-kicker, .rainmeter-time, .rainmeter-date) {
+  display: none;
+}
+
+.rainmeter-clock[data-rainmeter-style="amber-arc"] .rainmeter-weekday {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  gap: .13em;
+  width: 100%;
+  margin: 0;
+  color: var(--rainmeter-arc-amber);
+  font-family: "NEO Weekday", "Century Gothic", "Avenir Next", sans-serif;
+  font-size: clamp(26px, 3vw, 34px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  -webkit-text-stroke: .2px rgba(255, 217, 160, .28);
+}
+
+.rainmeter-clock[data-rainmeter-style="amber-arc"] .rainmeter-weekday span {
+  display: block;
+  min-width: .55em;
+  font: inherit;
+  text-align: center;
+}
+
+.rainmeter-clock[data-rainmeter-style="amber-arc"][data-rainmeter-shadow="true"] .rainmeter-weekday {
+  text-shadow:
+    0 0 2px rgba(255, 226, 178, .76),
+    0 0 9px rgba(213, 147, 76, .52),
+    0 2px 6px rgba(0, 0, 0, .92);
+}
+
+.rainmeter-clock[data-rainmeter-style="amber-arc"][data-rainmeter-shadow="false"] .rainmeter-weekday {
+  text-shadow: none;
+}
+
 .rainmeter-clock[data-rainmeter-position="top-left"] {
   top: clamp(26px, 4.5vh, 46px);
   right: auto;
@@ -675,6 +767,33 @@
   letter-spacing: .16em;
   text-shadow: 0 1px 6px rgba(0, 0, 0, .48);
 }
+.rainmeter-style-preview.is-amber-arc {
+  position: relative;
+  min-height: 30px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: #d0a06a;
+  background: radial-gradient(ellipse at 50% 0, #403127 0, #090a0c 74%);
+  border: 1px solid rgba(208, 160, 106, .18);
+  border-radius: 50% 50% 7px 7px / 36% 36% 7px 7px;
+  font-family: "NEO Weekday", "Century Gothic", sans-serif;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: .16em;
+  text-shadow: 0 0 5px rgba(213, 147, 76, .74);
+}
+.rainmeter-style-preview.is-amber-arc::before {
+  content: "";
+  position: absolute;
+  top: -19px;
+  left: -4px;
+  width: calc(100% + 8px);
+  height: 27px;
+  background: radial-gradient(ellipse at center, transparent 0 62%, rgba(222, 187, 134, .86) 64% 68%, transparent 70%);
+  border-radius: 50%;
+  transform: rotate(2deg);
+}
 
 .rainmeter-colors { display: flex; align-items: center; gap: 8px; }
 .rainmeter-color {
@@ -850,6 +969,8 @@
   .rainmeter-clock[data-rainmeter-style="wheel"] { width: calc(100vw - 24px); }
   .rainmeter-clock[data-rainmeter-style="wheel"] .rainmeter-weekday { gap: .08em; font-size: clamp(29px, 9vw, 48px); }
   .rainmeter-clock[data-rainmeter-style="glyph"] .rainmeter-weekday { gap: clamp(5px, 1.8vw, 9px); font-size: clamp(32px, 10vw, 48px); }
+  .rainmeter-clock[data-rainmeter-style="amber-arc"] { width: min(310px, calc(100vw - 24px)); min-height: 112px; }
+  .rainmeter-clock[data-rainmeter-style="amber-arc"] .rainmeter-weekday { gap: .13em; font-size: clamp(24px, 8vw, 34px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
