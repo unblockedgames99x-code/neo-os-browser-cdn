@@ -1305,9 +1305,13 @@ html[data-boot="complete"] .neo-login-gate:not([hidden]) { opacity: 1; }
 }
 
 .neo-login-panel > img {
+  display: block;
   width: 58px;
   height: 58px;
+  border: 0 !important;
   border-radius: 50%;
+  outline: 0 !important;
+  box-shadow: none !important;
   user-select: none;
   -webkit-user-drag: none;
 }
