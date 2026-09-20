@@ -860,6 +860,7 @@
       code: "./assets/vscode-official.png",
       duckduckgo: "./assets/duckduckgo.png",
       chat: "./assets/imessage-logo.png?v=20260908-imessage-logo-v2",
+      chatgpt: "./assets/neo-ai-logo.svg?v=20260920-ai-restored-v1",
       "google-drive": "./assets/google-drive.svg?v=20260824-drive-logo-v3",
       wallpaper: "./assets/wallpaper-engine.png",
       "media-player": "./assets/media-player.svg?v=20260827-high-resolution-v1",
@@ -1590,7 +1591,7 @@
   function interfaceStyleScopeForApp(app) {
     if (!app) return "shell";
     if (app.custom) return "bridge";
-    if (["browser", "stream", "chat", "games", "movies"].indexOf(app.id) !== -1) return "bridge";
+    if (["browser", "stream", "chat", "games", "movies", "neo-ai"].indexOf(app.id) !== -1) return "bridge";
     if (["skins", "vscode", "terminal"].indexOf(app.id) !== -1) return "native";
     if (app.template || app.lazy || app.runtime) return "native";
     return "shell";

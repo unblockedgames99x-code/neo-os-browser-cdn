@@ -64,6 +64,20 @@
       category: "Media",
       aliases: ["youtube", "videos", "video", "channels", "shorts", "youtube shorts"]
     },
+    "neo-ai": {
+      id: "neo-ai",
+      title: "NEO AI",
+      subtitle: "Chat, images, web search, and study tools",
+      icon: "chatgpt",
+      route: "./neo-ai/index.html?v=20260920-ai-restored-v1",
+      keepAlive: true,
+      width: 1120,
+      height: 760,
+      launcher: true,
+      pinned: false,
+      category: "Productivity",
+      aliases: ["neo ai", "ai", "assistant", "chatgpt", "chat gpt", "study", "web search", "image ai"]
+    },
     notes: {
       id: "notes",
       title: "Notes",
@@ -212,6 +226,16 @@
       localStorage.setItem(restoredYouTubeMigrationKey, "1");
     }
 
+    var restoredNeoAiMigrationKey = "neo_os_restore_neo_ai_v2";
+    if (localStorage.getItem(restoredNeoAiMigrationKey) !== "1") {
+      var installedAiApps = JSON.parse(localStorage.getItem("neo_os_installed_apps_v1") || "null");
+      if (Array.isArray(installedAiApps) && installedAiApps.indexOf("neo-ai") === -1) {
+        installedAiApps.push("neo-ai");
+        localStorage.setItem("neo_os_installed_apps_v1", JSON.stringify(installedAiApps));
+      }
+      localStorage.setItem(restoredNeoAiMigrationKey, "1");
+    }
+
     var mergedMp3MigrationKey = "neo_os_merge_mp3_into_music_v1";
     if (localStorage.getItem(mergedMp3MigrationKey) !== "1") {
       ["neo_os_pinned_apps_v1", "neo_os_installed_apps_v1"].forEach(function (key) {
@@ -297,7 +321,7 @@
 
     var focusedCatalogMigrationKey = "neo_os_focused_app_catalog_v1";
     if (localStorage.getItem(focusedCatalogMigrationKey) !== "1") {
-      var retiredAppIds = ["discord", "geometry-dash", "neo-cloud", "nowgg", "neo-ai"];
+      var retiredAppIds = ["discord", "geometry-dash", "neo-cloud", "nowgg"];
       ["neo_os_pinned_apps_v1", "neo_os_installed_apps_v1"].forEach(function (key) {
         var savedApps = JSON.parse(localStorage.getItem(key) || "null");
         if (!Array.isArray(savedApps)) return;
