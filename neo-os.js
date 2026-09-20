@@ -5968,13 +5968,19 @@
     return Boolean(app && (app.launchMode === "direct-game" || app.gameId || /^custom-app-game-/.test(String(app.id || ""))));
   }
 
+  function taskbarAvoidanceWindowActive(win) {
+    if (!win || win.classList.contains("is-minimized") || win.classList.contains("is-closing")) return false;
+    if (String(win.dataset.appId || "") === "chat") return true;
+    return gameWindowActive(win);
+  }
+
   function syncTaskbarAppVisibility() {
     var active = windowLayer && windowLayer.querySelector(".neo-window.is-active:not(.is-minimized):not(.is-closing)");
     var mode = normalizeTaskbarAppMode(settings.taskbarAppMode);
     var state = "desktop";
     if (active) {
       if (mode === "desktop") state = "hidden";
-      else if (mode === "adaptive" && gameWindowActive(active)) state = "hidden";
+      else if (mode === "adaptive" && taskbarAvoidanceWindowActive(active)) state = "hidden";
       else state = "overlay";
     }
     root.dataset.taskbarAppMode = mode;
