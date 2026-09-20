@@ -5972,6 +5972,8 @@
     root.dataset.taskbarAppState = state;
     var taskbar = document.querySelector(".taskbar");
     if (taskbar) taskbar.setAttribute("aria-hidden", state === "hidden" ? "true" : "false");
+    var topbar = document.querySelector(".topbar");
+    if (topbar) topbar.setAttribute("aria-hidden", state === "hidden" ? "true" : "false");
   }
 
   function activateWindow(win) {

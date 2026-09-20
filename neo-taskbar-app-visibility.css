@@ -10,6 +10,25 @@ html[data-taskbar-app-state="hidden"] .taskbar {
   pointer-events: none !important;
 }
 
+html[data-taskbar-app-state="hidden"] .topbar {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Maximized apps are true edge-to-edge surfaces. Positioning against the
+   viewport removes both the window inset and the hidden status-bar reserve. */
+html[data-taskbar-app-state="hidden"] .neo-window:is(.is-maximized, .is-tab-fullscreen) {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
 html[data-taskbar-app-state="hidden"][data-taskbar-position="left"]:not([data-taskbar-style="typical"]):not([data-taskbar-style="xeno"]):not([data-taskbar-style="figure"]) .taskbar {
   transform: translate(-160%, -50%) !important;
 }
