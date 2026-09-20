@@ -864,7 +864,7 @@
       "google-drive": "./assets/google-drive.svg?v=20260824-drive-logo-v3",
       wallpaper: "./assets/wallpaper-engine.png",
       "media-player": "./assets/media-player.svg?v=20260827-high-resolution-v1",
-      youtube: "./assets/youtube.svg?v=20260920-youtube-restored-v1",
+      youtube: "./assets/youtube.svg?v=20260920-youtube-logo-v2",
       "html-games": "./assets/html-games.svg?v=20260827-blue-controller-v1",
       widgets: "./assets/widgets.svg?v=20260907-widgets-logo-v1",
       steam: "./assets/steam.svg?v=20260919-current-steam-logo-v2",
