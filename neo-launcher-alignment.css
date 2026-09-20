@@ -273,11 +273,7 @@ html[data-interface-style="modern"]:not([data-taskbar-style="figure"]) #app-laun
 }
 
 html[data-interface-style="modern"]:not([data-taskbar-style="figure"]) #app-launcher .launcher-category-browse::after {
-  content: "›";
-  font-size: 17px;
-  font-weight: 400;
-  line-height: 1;
-  transform: translateY(-1px);
+  content: none;
 }
 
 html[data-interface-style="modern"]:not([data-taskbar-style="figure"]) #app-launcher .launcher-category-browse:is(:hover, :focus-visible) {
@@ -318,6 +314,55 @@ html[data-interface-style="modern"]:not([data-taskbar-style="figure"]) #app-laun
   max-height: 28px !important;
   flex-basis: 28px !important;
   border-radius: 6px !important;
+}
+
+/* Every launcher mode gets a designed category action. Without this shared
+   rule, non-Modern modes fall back to the browser's gray default button. */
+#app-launcher .launcher-category-browse {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 8px 5px 10px;
+  color: color-mix(in srgb, var(--desktop-text, #f5f5f7) 76%, transparent);
+  background: color-mix(in srgb, var(--desktop-surface, #15171c) 82%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 620;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, transform 150ms cubic-bezier(.2, .8, .2, 1);
+}
+
+#app-launcher .launcher-category-browse::after {
+  content: none !important;
+}
+
+#app-launcher .launcher-category-browse-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+#app-launcher .launcher-category-browse:is(:hover, :focus-visible) {
+  color: var(--desktop-text, #f5f5f7);
+  background: color-mix(in srgb, var(--desktop-accent, #4aa6ff) 16%, var(--desktop-surface, #15171c));
+  border-color: color-mix(in srgb, var(--desktop-accent, #4aa6ff) 44%, transparent);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+#app-launcher .launcher-category-browse:active {
+  transform: translateY(0) scale(.97);
 }
 
 @media (max-width: 760px) {

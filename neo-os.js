@@ -3146,7 +3146,15 @@
       var browse = document.createElement("button");
       browse.type = "button";
       browse.className = "launcher-category-browse";
-      browse.textContent = "View all";
+      var browseLabel = document.createElement("span");
+      browseLabel.textContent = "View all";
+      var browseIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      browseIcon.setAttribute("class", "icon launcher-category-browse-icon");
+      browseIcon.setAttribute("aria-hidden", "true");
+      var browseIconUse = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      browseIconUse.setAttribute("href", "#i-arrow-right");
+      browseIcon.appendChild(browseIconUse);
+      browse.append(browseLabel, browseIcon);
       browse.setAttribute("aria-label", "View all " + category + " applications");
       browse.addEventListener("click", function () {
         launcherSearch.value = category;
