@@ -123,6 +123,11 @@
     return value === "solid" || value === "gradient" ? value : "glass";
   }
 
+  function normalizeTaskbarAppMode(value) {
+    value = String(value || "").toLowerCase();
+    return value === "always" || value === "desktop" ? value : "adaptive";
+  }
+
   function normalizeDockIconSize(value) {
     return String(value || "").toLowerCase() === "normal" ? "normal" : "large";
   }
@@ -189,7 +194,7 @@
   }
 
   var defaultSettings = {
-    designVersion: 28,
+    designVersion: 29,
     wallpaper: "we-steam-1403160205",
     wallpaperFavorites: [],
     wallpaperRecent: [],
@@ -219,6 +224,7 @@
     taskbarRunningApps: true,
     taskbarAppDragging: true,
     taskbarAppNames: false,
+    taskbarAppMode: "adaptive",
     windowBarStyle: "ultra",
     interfaceStyle: "modern",
     cursorTheme: "system",
@@ -324,10 +330,14 @@
   if (savedDesignVersion < 28 && !savedSettings.browserSearchEngine) {
     savedSettings.browserSearchEngine = "duckduckgo";
   }
+  if (savedDesignVersion < 29 && !savedSettings.taskbarAppMode) {
+    savedSettings.taskbarAppMode = "adaptive";
+  }
   savedSettings.performanceMode = normalizePerformanceMode(savedSettings.performanceMode);
   savedSettings.taskbarPosition = normalizeTaskbarPosition(savedSettings.taskbarPosition);
   savedSettings.taskbarStyle = normalizeTaskbarStyle(savedSettings.taskbarStyle);
   savedSettings.taskbarSurface = normalizeTaskbarSurface(savedSettings.taskbarSurface);
+  savedSettings.taskbarAppMode = normalizeTaskbarAppMode(savedSettings.taskbarAppMode);
   savedSettings.dockIconSize = normalizeDockIconSize(savedSettings.dockIconSize);
   savedSettings.windowBarStyle = normalizeWindowBarStyle(savedSettings.windowBarStyle);
   savedSettings.interfaceStyle = normalizeInterfaceStyle(savedSettings.interfaceStyle);
@@ -366,7 +376,7 @@
   delete savedSettings.taskbarOpacity;
   delete savedSettings.taskbarBlur;
   delete savedSettings.taskbarTintStrength;
-  savedSettings.designVersion = 28;
+  savedSettings.designVersion = 29;
   var settings = Object.assign({}, defaultSettings, savedSettings);
   var appliedTabAppearanceSignature = "";
   // Preserve explicit wallpaper sound/pause choices across reloads.
@@ -1627,6 +1637,7 @@
       settings.taskbarAppNames = false;
     }
     settings.taskbarSurface = normalizeTaskbarSurface(settings.taskbarSurface);
+    settings.taskbarAppMode = normalizeTaskbarAppMode(settings.taskbarAppMode);
     settings.windowBarStyle = normalizeWindowBarStyle(settings.windowBarStyle);
     settings.interfaceStyle = normalizeInterfaceStyle(settings.interfaceStyle);
     settings.customCursorData = isValidCustomCursorData(settings.customCursorData) ? String(settings.customCursorData) : "";
@@ -1666,6 +1677,7 @@
     root.dataset.taskbarRunningApps = settings.taskbarRunningApps ? "true" : "false";
     root.dataset.taskbarAppDragging = settings.taskbarAppDragging ? "true" : "false";
     root.dataset.taskbarAppNames = settings.taskbarAppNames ? "true" : "false";
+    root.dataset.taskbarAppMode = settings.taskbarAppMode;
     root.dataset.windowBarStyle = settings.windowBarStyle;
     root.dataset.interfaceStyle = settings.interfaceStyle;
     if (typeof window.__neoSyncInterfaceCss === "function") window.__neoSyncInterfaceCss();
@@ -1738,6 +1750,7 @@
       });
     }
     syncAutoPerformanceMode();
+    syncTaskbarAppVisibility();
     syncSettingControls();
     applyWidgetLayout();
     setupWeatherCanvas();
@@ -5865,6 +5878,27 @@
     return win;
   }
 
+  function gameWindowActive(win) {
+    if (!win || win.classList.contains("is-minimized") || win.classList.contains("is-closing")) return false;
+    var app = apps[win.dataset.appId];
+    return Boolean(app && (app.launchMode === "direct-game" || app.gameId || /^custom-app-game-/.test(String(app.id || ""))));
+  }
+
+  function syncTaskbarAppVisibility() {
+    var active = windowLayer && windowLayer.querySelector(".neo-window.is-active:not(.is-minimized):not(.is-closing)");
+    var mode = normalizeTaskbarAppMode(settings.taskbarAppMode);
+    var state = "desktop";
+    if (active) {
+      if (mode === "desktop") state = "hidden";
+      else if (mode === "adaptive" && gameWindowActive(active)) state = "hidden";
+      else state = "overlay";
+    }
+    root.dataset.taskbarAppMode = mode;
+    root.dataset.taskbarAppState = state;
+    var taskbar = document.querySelector(".taskbar");
+    if (taskbar) taskbar.setAttribute("aria-hidden", state === "hidden" ? "true" : "false");
+  }
+
   function activateWindow(win) {
     if (!win) return;
     openWindows.forEach(function (item) { item.classList.remove("is-active"); });
@@ -5879,6 +5913,7 @@
       if (id === "stream") showStreamNowPlaying();
     }
     if (settings.taskbarStyle === "xeno") renderDock();
+    syncTaskbarAppVisibility();
   }
 
   function activateTopWindow() {
@@ -5891,6 +5926,7 @@
     else {
       activeAppLabel.textContent = "Desktop";
       renderActiveWidget(apps.browser);
+      syncTaskbarAppVisibility();
     }
   }
 
