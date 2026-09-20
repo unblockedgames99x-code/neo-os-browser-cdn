@@ -118,7 +118,7 @@
 
   function normalizeTaskbarStyle(value) {
     value = String(value || "").toLowerCase();
-    return value === "transparent" || value === "typical" || value === "xeno" || value === "figure" ? value : "current";
+    return value === "transparent" || value === "typical" || value === "xeno" ? value : "current";
   }
 
   function normalizeTaskbarSurface(value) {
