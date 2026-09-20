@@ -1,5 +1,5 @@
-/* App-aware taskbar visibility. Regular applications use the taskbar as an
-   overlay; games can reclaim the entire viewport without destroying the dock. */
+/* App-aware taskbar visibility. Every normal or maximized window keeps the
+   taskbar overlay. It animates away only for an actual app-fullscreen window. */
 html[data-taskbar-app-state="overlay"] .window-layer,
 html[data-taskbar-app-state="hidden"] .window-layer {
   inset: var(--topbar-height) 0 0 !important;

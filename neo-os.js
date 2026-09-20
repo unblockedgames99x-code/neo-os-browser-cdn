@@ -128,7 +128,7 @@
 
   function normalizeTaskbarAppMode(value) {
     value = String(value || "").toLowerCase();
-    return value === "always" || value === "desktop" ? value : "adaptive";
+    return value === "always" ? "always" : "fullscreen";
   }
 
   function normalizeDockIconSize(value) {
@@ -197,7 +197,7 @@
   }
 
   var defaultSettings = {
-    designVersion: 29,
+    designVersion: 30,
     wallpaper: "we-steam-1403160205",
     wallpaperFavorites: [],
     wallpaperRecent: [],
@@ -227,7 +227,7 @@
     taskbarRunningApps: true,
     taskbarAppDragging: true,
     taskbarAppNames: false,
-    taskbarAppMode: "adaptive",
+    taskbarAppMode: "fullscreen",
     windowBarStyle: "ultra",
     interfaceStyle: "modern",
     cursorTheme: "system",
@@ -334,7 +334,10 @@
     savedSettings.browserSearchEngine = "duckduckgo";
   }
   if (savedDesignVersion < 29 && !savedSettings.taskbarAppMode) {
-    savedSettings.taskbarAppMode = "adaptive";
+    savedSettings.taskbarAppMode = "fullscreen";
+  }
+  if (savedDesignVersion < 30) {
+    savedSettings.taskbarAppMode = normalizeTaskbarAppMode(savedSettings.taskbarAppMode);
   }
   savedSettings.performanceMode = normalizePerformanceMode(savedSettings.performanceMode);
   savedSettings.taskbarPosition = normalizeTaskbarPosition(savedSettings.taskbarPosition);
@@ -379,7 +382,7 @@
   delete savedSettings.taskbarOpacity;
   delete savedSettings.taskbarBlur;
   delete savedSettings.taskbarTintStrength;
-  savedSettings.designVersion = 29;
+  savedSettings.designVersion = 30;
   var settings = Object.assign({}, defaultSettings, savedSettings);
   var appliedTabAppearanceSignature = "";
   // Preserve explicit wallpaper sound/pause choices across reloads.
@@ -5962,16 +5965,13 @@
     return win;
   }
 
-  function gameWindowActive(win) {
-    if (!win || win.classList.contains("is-minimized") || win.classList.contains("is-closing")) return false;
-    var app = apps[win.dataset.appId];
-    return Boolean(app && (app.launchMode === "direct-game" || app.gameId || /^custom-app-game-/.test(String(app.id || ""))));
-  }
-
-  function taskbarAvoidanceWindowActive(win) {
-    if (!win || win.classList.contains("is-minimized") || win.classList.contains("is-closing")) return false;
-    if (String(win.dataset.appId || "") === "chat") return true;
-    return gameWindowActive(win);
+  function appWindowFullscreen(win) {
+    return Boolean(
+      win &&
+      !win.classList.contains("is-minimized") &&
+      !win.classList.contains("is-closing") &&
+      win.classList.contains("is-tab-fullscreen")
+    );
   }
 
   function syncTaskbarAppVisibility() {
@@ -5979,8 +5979,7 @@
     var mode = normalizeTaskbarAppMode(settings.taskbarAppMode);
     var state = "desktop";
     if (active) {
-      if (mode === "desktop") state = "hidden";
-      else if (mode === "adaptive" && taskbarAvoidanceWindowActive(active)) state = "hidden";
+      if (mode === "fullscreen" && appWindowFullscreen(active)) state = "hidden";
       else state = "overlay";
     }
     root.dataset.taskbarAppMode = mode;
@@ -8742,7 +8741,10 @@
     window.addEventListener("neo-media-levels", function (event) {
       renderNowPlayingLevels(event.detail || {});
     });
-    window.addEventListener("neo-tab-fullscreen-change", syncGameNowPlayingOverlay);
+    window.addEventListener("neo-tab-fullscreen-change", function () {
+      syncGameNowPlayingOverlay();
+      syncTaskbarAppVisibility();
+    });
 
     if (launcherDismissLayer) launcherDismissLayer.addEventListener("click", function (event) {
       event.preventDefault();
