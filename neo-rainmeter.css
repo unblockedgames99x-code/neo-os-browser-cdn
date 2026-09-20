@@ -468,24 +468,28 @@
 .rainmeter-clock[data-rainmeter-style="amber-arc"] .rainmeter-weekday {
   position: relative;
   z-index: 3;
-  display: flex;
-  justify-content: center;
-  gap: .13em;
+  display: block;
   width: 100%;
   margin: 0;
   color: var(--rainmeter-arc-amber);
-  font-family: "NEO Weekday", "Century Gothic", "Avenir Next", sans-serif;
-  font-size: clamp(28px, 3vw, 34px);
-  font-weight: 400;
+  font-family: "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans Symbols 2", "Segoe UI Symbol", sans-serif;
+  font-size: clamp(26px, 2.7vw, 30px);
+  font-weight: 700;
   line-height: 1;
-  letter-spacing: .035em;
+  letter-spacing: .16em;
   text-transform: uppercase;
-  -webkit-text-stroke: .15px rgba(245, 194, 137, .24);
+  white-space: nowrap;
+  -webkit-text-stroke: .1px rgba(245, 194, 137, .18);
 }
 
 .rainmeter-clock[data-rainmeter-style="amber-arc"] .rainmeter-weekday span {
+  display: none;
+}
+
+.rainmeter-clock[data-rainmeter-style="amber-arc"] .rainmeter-weekday::after {
+  content: attr(data-rainmeter-reference-day);
   display: block;
-  min-width: .5em;
+  width: 100%;
   font: inherit;
   text-align: center;
 }
@@ -776,9 +780,9 @@
   background: none;
   border: 0;
   border-radius: 0;
-  font-family: "NEO Weekday", "Century Gothic", sans-serif;
-  font-size: 9px;
-  font-weight: 400;
+  font-family: "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans Symbols 2", "Segoe UI Symbol", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
   letter-spacing: .16em;
   text-shadow: 0 0 4px rgba(176, 111, 65, .54);
 }
@@ -982,7 +986,7 @@
   .rainmeter-clock[data-rainmeter-style="wheel"] .rainmeter-weekday { gap: .08em; font-size: clamp(29px, 9vw, 48px); }
   .rainmeter-clock[data-rainmeter-style="glyph"] .rainmeter-weekday { gap: clamp(5px, 1.8vw, 9px); font-size: clamp(32px, 10vw, 48px); }
   .rainmeter-clock[data-rainmeter-style="amber-arc"] { width: min(330px, calc(100vw - 24px)); min-height: 100px; padding: 20px 18px 24px; }
-  .rainmeter-clock[data-rainmeter-style="amber-arc"] .rainmeter-weekday { gap: .1em; font-size: clamp(25px, 8vw, 32px); }
+  .rainmeter-clock[data-rainmeter-style="amber-arc"] .rainmeter-weekday { font-size: clamp(24px, 7.4vw, 29px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

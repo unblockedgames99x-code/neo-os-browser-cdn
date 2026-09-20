@@ -2027,6 +2027,13 @@
     return Math.min(max, Math.max(min, Number.isFinite(value) ? value : min));
   }
 
+  var rainmeterReferenceGlyphs = {
+    A: "卂", B: "乃", C: "匚", D: "ᗪ", E: "乇", F: "千", G: "Ꮆ",
+    H: "卄", I: "丨", J: "ﾌ", K: "Ҝ", L: "ㄥ", M: "爪", N: "几",
+    O: "ㄖ", P: "卩", Q: "Ɋ", R: "尺", S: "丂", T: "ㄒ", U: "ㄩ",
+    V: "ᐯ", W: "山", X: "乂", Y: "ㄚ", Z: "乙"
+  };
+
   function updateClock() {
     var now = new Date();
     var dayName = new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(now);
@@ -2052,6 +2059,9 @@
       }
       if (rainmeterWeekday) {
         delete rainmeterWeekday.dataset.rainmeterGlyphDay;
+        rainmeterWeekday.dataset.rainmeterReferenceDay = Array.from(dayName.toUpperCase()).map(function (letter) {
+          return rainmeterReferenceGlyphs[letter] || letter;
+        }).join("");
         var weekdayLetters = document.createDocumentFragment();
         Array.from(dayName.toUpperCase()).forEach(function (letter) {
           var glyph = document.createElement("span");
