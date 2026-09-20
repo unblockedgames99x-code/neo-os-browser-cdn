@@ -2034,6 +2034,57 @@
     V: "ᐯ", W: "山", X: "乂", Y: "ㄚ", Z: "乙"
   };
 
+  var rainmeterGlyphCanvas = document.createElement("canvas");
+  var rainmeterGlyphContext = rainmeterGlyphCanvas.getContext("2d");
+  var rainmeterGlyphFont = '"Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans Symbols 2", "Segoe UI Symbol", sans-serif';
+
+  function createRainmeterReferenceGlyph(letter, symbol) {
+    var namespace = "http://www.w3.org/2000/svg";
+    var cellWidth = letter === "I" ? 22 : (letter === "M" || letter === "W" ? 38 : 34);
+    var cellHeight = 44;
+    var svg = document.createElementNS(namespace, "svg");
+    svg.setAttribute("class", "rainmeter-reference-glyph");
+    svg.setAttribute("viewBox", "0 0 " + cellWidth + " " + cellHeight);
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+
+    var text = document.createElementNS(namespace, "text");
+    text.textContent = symbol;
+    text.setAttribute("x", "0");
+    text.setAttribute("y", "0");
+    text.setAttribute("fill", "currentColor");
+    text.setAttribute("font-family", rainmeterGlyphFont);
+    text.setAttribute("font-size", "100");
+    text.setAttribute("font-weight", "700");
+
+    var left = 0;
+    var right = 100;
+    var ascent = 80;
+    var descent = 20;
+    if (rainmeterGlyphContext) {
+      rainmeterGlyphContext.font = "700 100px " + rainmeterGlyphFont;
+      var metrics = rainmeterGlyphContext.measureText(symbol);
+      left = Number(metrics.actualBoundingBoxLeft) || 0;
+      right = Number(metrics.actualBoundingBoxRight) || Number(metrics.width) || 100;
+      ascent = Number(metrics.actualBoundingBoxAscent) || 80;
+      descent = Number(metrics.actualBoundingBoxDescent) || 20;
+    }
+
+    var inkWidth = Math.max(1, left + right);
+    var inkHeight = Math.max(1, ascent + descent);
+    var scaleY = 36 / inkHeight;
+    var scaleX = Math.min(scaleY, (cellWidth - 3) / inkWidth);
+    var inkCenter = (right - left) / 2;
+    var translateX = cellWidth / 2 - inkCenter * scaleX;
+    var translateY = 4 + ascent * scaleY;
+    text.setAttribute("transform", "translate(" + translateX.toFixed(3) + " " + translateY.toFixed(3) + ") scale(" + scaleX.toFixed(4) + " " + scaleY.toFixed(4) + ")");
+    text.dataset.rainmeterInkTop = "4";
+    text.dataset.rainmeterInkBottom = "40";
+    svg.appendChild(text);
+    return svg;
+  }
+
   function updateClock() {
     var now = new Date();
     var dayName = new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(now);
@@ -2066,7 +2117,10 @@
         Array.from(dayName.toUpperCase()).forEach(function (letter) {
           var glyph = document.createElement("span");
           glyph.setAttribute("aria-hidden", "true");
+          glyph.dataset.rainmeterLetter = letter;
+          glyph.dataset.rainmeterReferenceGlyph = rainmeterReferenceGlyphs[letter] || letter;
           glyph.textContent = letter;
+          glyph.appendChild(createRainmeterReferenceGlyph(letter, glyph.dataset.rainmeterReferenceGlyph));
           weekdayLetters.appendChild(glyph);
         });
         rainmeterWeekday.setAttribute("aria-label", dayName);

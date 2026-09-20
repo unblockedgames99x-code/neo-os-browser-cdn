@@ -84,7 +84,7 @@
     '    <button class="rainmeter-style-option" type="button" data-rainmeter-style="botanical" aria-pressed="false"><span class="rainmeter-style-preview is-botanical" aria-hidden="true">SAT</span><span>Botanical</span></button>',
     '    <button class="rainmeter-style-option" type="button" data-rainmeter-style="wheel" aria-pressed="false"><span class="rainmeter-style-preview is-wheel" aria-hidden="true">17:46</span><span>Wheel</span></button>',
     '    <button class="rainmeter-style-option" type="button" data-rainmeter-style="glyph" aria-pressed="false"><span class="rainmeter-style-preview is-glyph" aria-hidden="true">SAT</span><span>Glyph</span></button>',
-    '    <button class="rainmeter-style-option" type="button" data-rainmeter-style="amber-arc" aria-pressed="false"><span class="rainmeter-style-preview is-amber-arc" aria-hidden="true">丂卂ㄒㄩ尺ᗪ卂ㄚ</span><span>Amber Arc</span></button>',
+    '    <button class="rainmeter-style-option" type="button" data-rainmeter-style="amber-arc" aria-pressed="false"><span class="rainmeter-style-preview is-amber-arc" aria-hidden="true"><span>千</span><span>尺</span><span>丨</span><span>ᗪ</span><span>卂</span><span>ㄚ</span></span><span>Mond</span></button>',
     '  </div>',
     '</div>',
     '<div class="rainmeter-editor-section">',
