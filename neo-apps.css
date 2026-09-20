@@ -575,6 +575,16 @@
   object-fit: contain !important;
 }
 
+/* The Media Player uses finished circular artwork. Do not put the generic
+   solid media tile behind it in the launcher. */
+.launcher-app[data-app="media"] .launcher-app-icon.app-icon-media-player {
+  overflow: visible !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
 .launcher-app[data-app="files"] .launcher-app-icon.app-icon-google-drive,
 .taskbar .dock-button[data-app="files"] .dock-app-art.app-icon-google-drive,
 .neo-window[data-app-id="files"] .window-app-icon.app-icon-google-drive {
