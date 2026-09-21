@@ -187,7 +187,7 @@
 
   function normalizeTabAppearance(value) {
     value = String(value || "").toLowerCase();
-    return tabAppearancePresets.some(function (preset) { return preset.id === value; }) ? value : "neo";
+    return tabAppearancePresets.some(function (preset) { return preset.id === value; }) ? value : "classroom";
   }
 
   function normalizeBrowserSearchEngine(value) {
@@ -196,7 +196,7 @@
   }
 
   var defaultSettings = {
-    designVersion: 30,
+    designVersion: 31,
     wallpaper: "we-steam-1403160205",
     wallpaperFavorites: [],
     wallpaperRecent: [],
@@ -232,7 +232,7 @@
     cursorTheme: "system",
     customCursorData: "",
     customCursorName: "",
-    tabAppearance: "neo",
+    tabAppearance: "classroom",
     customTabTitle: "My tab",
     customTabIcon: "",
     taskbarTint: "#767c84",
@@ -337,6 +337,9 @@
   }
   if (savedDesignVersion < 30) {
     savedSettings.taskbarAppMode = normalizeTaskbarAppMode(savedSettings.taskbarAppMode);
+  }
+  if (savedDesignVersion < 31 && (!savedSettings.tabAppearance || savedSettings.tabAppearance === "neo")) {
+    savedSettings.tabAppearance = "classroom";
   }
   savedSettings.performanceMode = normalizePerformanceMode(savedSettings.performanceMode);
   savedSettings.taskbarPosition = normalizeTaskbarPosition(savedSettings.taskbarPosition);
@@ -8473,7 +8476,7 @@
       }
       try {
         popup.document.open();
-        popup.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NEO OS</title><style>html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050505;color:#fff;font:16px Arial,sans-serif}body{display:grid;place-items:center}iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#050505}</style></head><body><p id="neo-blank-status">Loading NEO OS…</p></body></html>');
+        popup.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Home - Classroom</title><style>html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050505;color:#fff;font:16px Arial,sans-serif}body{display:grid;place-items:center}iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#050505}</style></head><body><p id="neo-blank-status">Loading NEO OS…</p></body></html>');
         popup.document.close();
         var frame = popup.document.createElement("iframe");
         frame.title = "NEO OS";
