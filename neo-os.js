@@ -2034,9 +2034,40 @@
     V: "ᐯ", W: "山", X: "乂", Y: "ㄚ", Z: "乙"
   };
 
-  var rainmeterGlyphCanvas = document.createElement("canvas");
-  var rainmeterGlyphContext = rainmeterGlyphCanvas.getContext("2d");
-  var rainmeterGlyphFont = '"Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans Symbols 2", "Segoe UI Symbol", sans-serif';
+  /*
+   * A small custom vector alphabet keeps the Mond wordmark angular on every
+   * platform.  Using CJK-looking Unicode characters here made the result
+   * depend on the visitor's fallback font, which is why several glyphs became
+   * rounded on Windows.  These paths share one square-ended stroke system.
+   */
+  var rainmeterWordmarkPaths = {
+    A: "M5 38 V16 H22 V6 H29 V38 M5 27 H29",
+    B: "M5 6 H21 L28 12 V19 L22 22 L28 25 V32 L22 38 H5 Z M5 22 H22",
+    C: "M29 6 H11 L5 12 V32 L11 38 H29",
+    D: "M5 6 V38 H20 L29 29 V15 L20 6 Z",
+    E: "M5 8 H27 M16 6 V31 L21 38 H29",
+    F: "M7 13 H29 M18 6 V38 M11 8 L25 6",
+    G: "M29 10 L25 6 H11 L5 12 V32 L11 38 H29 V23 H19",
+    H: "M5 6 V38 M29 6 V38 M5 17 H29",
+    I: "M11 6 V38",
+    J: "M5 6 H29 V31 L22 38 H11 L5 32",
+    K: "M5 6 V38 M29 6 L5 28 M16 21 L30 38",
+    L: "M5 6 V38 H29",
+    M: "M4 6 V38 M14 6 L10 38 M24 6 L28 38 M34 6 V38",
+    N: "M5 38 V6 H29 V38",
+    O: "M5 6 H29 V38 H5 Z",
+    P: "M5 38 V6 H22 L29 13 V21 L22 28 H5",
+    Q: "M11 6 H23 L29 12 V32 L23 38 H11 L5 32 V12 Z M20 29 L31 40",
+    R: "M5 38 V6 H29 V20 H14 M14 20 L29 38",
+    S: "M29 6 H6 V21 H27 V38 H5",
+    T: "M4 6 H30 M17 6 V38",
+    U: "M5 6 V30 H13 V38 H29 V6",
+    V: "M4 6 L14 38 H20 L30 6",
+    W: "M4 6 V38 H34 V6 M19 17 V38",
+    X: "M5 6 L29 38 M29 6 L5 38",
+    Y: "M5 6 V21 H18 M29 6 V38 M18 21 H29",
+    Z: "M5 6 H29 L5 38 H29"
+  };
 
   function createRainmeterReferenceGlyph(letter, symbol) {
     var namespace = "http://www.w3.org/2000/svg";
@@ -2045,43 +2076,24 @@
     var svg = document.createElementNS(namespace, "svg");
     svg.setAttribute("class", "rainmeter-reference-glyph");
     svg.setAttribute("viewBox", "0 0 " + cellWidth + " " + cellHeight);
-    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
     svg.setAttribute("aria-hidden", "true");
     svg.setAttribute("focusable", "false");
 
-    var text = document.createElementNS(namespace, "text");
-    text.textContent = symbol;
-    text.setAttribute("x", "0");
-    text.setAttribute("y", "0");
-    text.setAttribute("fill", "currentColor");
-    text.setAttribute("font-family", rainmeterGlyphFont);
-    text.setAttribute("font-size", "100");
-    text.setAttribute("font-weight", "700");
+    svg.dataset.rainmeterSymbol = symbol;
 
-    var left = 0;
-    var right = 100;
-    var ascent = 80;
-    var descent = 20;
-    if (rainmeterGlyphContext) {
-      rainmeterGlyphContext.font = "700 100px " + rainmeterGlyphFont;
-      var metrics = rainmeterGlyphContext.measureText(symbol);
-      left = Number(metrics.actualBoundingBoxLeft) || 0;
-      right = Number(metrics.actualBoundingBoxRight) || Number(metrics.width) || 100;
-      ascent = Number(metrics.actualBoundingBoxAscent) || 80;
-      descent = Number(metrics.actualBoundingBoxDescent) || 20;
-    }
-
-    var inkWidth = Math.max(1, left + right);
-    var inkHeight = Math.max(1, ascent + descent);
-    var scaleY = 36 / inkHeight;
-    var scaleX = Math.min(scaleY, (cellWidth - 3) / inkWidth);
-    var inkCenter = (right - left) / 2;
-    var translateX = cellWidth / 2 - inkCenter * scaleX;
-    var translateY = 4 + ascent * scaleY;
-    text.setAttribute("transform", "translate(" + translateX.toFixed(3) + " " + translateY.toFixed(3) + ") scale(" + scaleX.toFixed(4) + " " + scaleY.toFixed(4) + ")");
-    text.dataset.rainmeterInkTop = "4";
-    text.dataset.rainmeterInkBottom = "40";
-    svg.appendChild(text);
+    var path = document.createElementNS(namespace, "path");
+    path.setAttribute("d", rainmeterWordmarkPaths[letter] || rainmeterWordmarkPaths.X);
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "currentColor");
+    path.setAttribute("stroke-width", "5");
+    path.setAttribute("stroke-linecap", "square");
+    path.setAttribute("stroke-linejoin", "miter");
+    path.setAttribute("stroke-miterlimit", "2");
+    path.dataset.rainmeterInkTop = "4";
+    path.dataset.rainmeterInkBottom = "40";
+    path.dataset.rainmeterLetter = letter;
+    svg.appendChild(path);
     return svg;
   }
 

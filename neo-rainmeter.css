@@ -410,6 +410,11 @@
   text-shadow: none;
 }
 
+/* Custom wordmark vectors are opt-in: never leak into the other presets. */
+.rainmeter-reference-glyph {
+  display: none;
+}
+
 /* Symbol-built weekday wordmark from the supplied Rainmeter reference. */
 .rainmeter-clock[data-rainmeter-ready="true"][data-rainmeter-style="amber-arc"] {
   --rainmeter-arc-white: #f5f7ff;
