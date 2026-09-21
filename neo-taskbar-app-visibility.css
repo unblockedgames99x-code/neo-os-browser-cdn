@@ -1,10 +1,9 @@
-/* The taskbar belongs to the desktop. Any visible app window animates it away. */
-html[data-taskbar-app-state="overlay"] .window-layer,
+/* Normal and minimized app windows keep the desktop taskbar available. Only
+   the active fullscreen/maximized app is allowed to move it off-screen. */
 html[data-taskbar-app-state="hidden"] .window-layer {
   inset: var(--topbar-height) 0 0 !important;
 }
 
-html[data-taskbar-app-state="overlay"] .taskbar,
 html[data-taskbar-app-state="hidden"] .taskbar {
   opacity: 0 !important;
   pointer-events: none !important;

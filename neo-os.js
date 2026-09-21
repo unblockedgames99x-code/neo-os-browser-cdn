@@ -6043,9 +6043,10 @@
   }
 
   function syncTaskbarAppVisibility() {
-    var visibleApp = windowLayer && windowLayer.querySelector(".neo-window:not(.is-minimized):not(.is-closing)");
+    var activeApp = windowLayer && windowLayer.querySelector(".neo-window.is-active:not(.is-minimized):not(.is-closing)");
+    var fullscreenApp = activeApp && activeApp.matches(".is-maximized, .is-tab-fullscreen");
     var mode = normalizeTaskbarAppMode(settings.taskbarAppMode);
-    var state = visibleApp ? "hidden" : "desktop";
+    var state = fullscreenApp ? "hidden" : "desktop";
     root.dataset.taskbarAppMode = mode;
     root.dataset.taskbarAppState = state;
     var taskbar = document.querySelector(".taskbar");
