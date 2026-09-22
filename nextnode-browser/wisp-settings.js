@@ -3,9 +3,10 @@
 
   var STORAGE_KEY = "neo:browser:wisp:v1";
   var MODE_KEY = "neo:browser:wisp-mode:v2";
-  var DEFAULT_WISP = "wss://cleanhost5896.b-cdn.net/w/";
+  var DEFAULT_WISP = "wss://cdn.northstreetumc.org/adblock/";
   var SERVERS = Object.freeze([
-    Object.freeze({ name: "Cleanhost Wisp", url: "wss://cleanhost5896.b-cdn.net/w/" }),
+    Object.freeze({ name: "Reference Wisp", url: "wss://cdn.northstreetumc.org/adblock/" }),
+    Object.freeze({ name: "Cleanhost Wisp", url: "wss://cleanhost5896.b-cdn.net/wisp/" }),
     Object.freeze({ name: "NextNode Wisp", url: "wss://nextnode9124.b-cdn.net/w/" }),
     Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
     Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" })

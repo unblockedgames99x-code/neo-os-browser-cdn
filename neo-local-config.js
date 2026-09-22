@@ -1,8 +1,8 @@
 (function () {
   "use strict";
   // Keep the Browser document and its service worker on the same host as NEO OS.
-  // The Browser uses Cleanhost's Chromebook-friendly WISP first and keeps a
-  // short fallback list for real transport failures.
+  // CDN copies use the public relay from the working reference build. The
+  // Cleanhost /wisp/ socket is same-origin only and rejects jsDelivr pages.
   // Edit this relative path or absolute asset origin; routes and resolve() both use it.
   var configuredAssetBase = "./";
   var base = new URL(configuredAssetBase, document.currentScript.src);
@@ -29,9 +29,10 @@
       "study/libcurl.js",
       "study/sf-engine.wasm"
     ].map(function (asset) { return new URL("nextnode-browser/" + asset, base).href; })),
-    browserWisp: "wss://cleanhost5896.b-cdn.net/w/",
+    browserWisp: "wss://cdn.northstreetumc.org/adblock/",
     browserWispServers: Object.freeze([
-      Object.freeze({ name: "Cleanhost Wisp", url: "wss://cleanhost5896.b-cdn.net/w/" }),
+      Object.freeze({ name: "Reference Wisp", url: "wss://cdn.northstreetumc.org/adblock/" }),
+      Object.freeze({ name: "Cleanhost Wisp", url: "wss://cleanhost5896.b-cdn.net/wisp/" }),
       Object.freeze({ name: "NextNode Wisp", url: "wss://nextnode9124.b-cdn.net/w/" }),
       Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
       Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" })

@@ -29,9 +29,10 @@
   // transport itself report a failure.  Starting ten WebSockets just to pick a
   // relay was especially expensive on managed Chromebooks, so NEO now follows
   // that connection model and only advances to a fallback after a real error.
-  const PREFERRED_WISP_RELAY = "wss://cleanhost5896.b-cdn.net/w/";
+  const PREFERRED_WISP_RELAY = "wss://cdn.northstreetumc.org/adblock/";
   const OFFICIAL_WISP_RELAYS = Object.freeze([
     PREFERRED_WISP_RELAY,
+    "wss://cleanhost5896.b-cdn.net/wisp/",
     "wss://nextnode9124.b-cdn.net/w/",
     "wss://probuildingsupplies.com/w/",
     "wss://wisp.mercurywork.shop/",
