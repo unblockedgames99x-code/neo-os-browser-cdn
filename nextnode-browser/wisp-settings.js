@@ -3,18 +3,12 @@
 
   var STORAGE_KEY = "neo:browser:wisp:v1";
   var MODE_KEY = "neo:browser:wisp-mode:v2";
-  var DEFAULT_WISP = "wss://probuildingsupplies.com/w/";
+  var DEFAULT_WISP = "wss://cleanhost5896.b-cdn.net/w/";
   var SERVERS = Object.freeze([
+    Object.freeze({ name: "Cleanhost Wisp", url: "wss://cleanhost5896.b-cdn.net/w/" }),
     Object.freeze({ name: "NextNode Wisp", url: "wss://nextnode9124.b-cdn.net/w/" }),
     Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
-    Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" }),
-    Object.freeze({ name: "Reeyuki Wisp", url: "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/" }),
-    Object.freeze({ name: "Reeyuki Wisp 2", url: "wss://reeyukiwisp.onrender.com/" }),
-    Object.freeze({ name: "Aether Relay 1", url: "wss://w2.qwq.sh/ws/" }),
-    Object.freeze({ name: "Aether Relay 2", url: "wss://api.personalloanonline.net/ws/" }),
-    Object.freeze({ name: "Aether Relay 3", url: "wss://www.goldenbasketballacademy.space/ws/" }),
-    Object.freeze({ name: "Aether Relay 4", url: "wss://www.atlantaclassical.info/ws/" }),
-    Object.freeze({ name: "Aether Relay 5", url: "wss://www.booksforschool.online/ws/" })
+    Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" })
   ]);
 
   function normalize(value) {

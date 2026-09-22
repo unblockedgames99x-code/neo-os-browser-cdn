@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><script src="./wisp-settings.js?v=20260919-auto-wisp-v1"></script><script src="../neo-ad-shield.js"></script>
+<head><script src="./wisp-settings.js?v=20260921-cleanhost-v1"></script><script src="../neo-ad-shield.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Browser</title>
@@ -592,6 +592,31 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
                   event.stopImmediatePropagation();
                   navigate(searchUrl(input.value||''));
                 }
+                function decodedSearchResult(anchor){
+                  if(!anchor)return'';
+                  var raw=String(anchor.getAttribute('href')||anchor.href||'').replace(/&amp;/g,'&').trim();
+                  if(!raw)return'';
+                  try{
+                    var local=new URL(raw,frame.contentWindow.location.href);
+                    if(local.origin===location.origin&&local.pathname.indexOf(TP+'study/uv/')===0){
+                      var parts=local.pathname.split('/');
+                      for(var index=parts.length-1;index>=0;index-=1){
+                        try{
+                          var decoded=decodeURIComponent(parts[index]);
+                          if(/^https?:\/\//i.test(decoded))return decoded;
+                        }catch(error){}
+                      }
+                    }
+                    if(/^https?:$/i.test(local.protocol)){
+                      if(/(^|\.)duckduckgo\.com$/i.test(local.hostname)&&/^\/l\/?$/i.test(local.pathname)){
+                        var redirected=local.searchParams.get('uddg');
+                        if(redirected&&/^https?:\/\//i.test(redirected))return redirected;
+                      }
+                      return local.href;
+                    }
+                  }catch(error){}
+                  return'';
+                }
                 frame.contentWindow.addEventListener('keydown',function(event){
                   if(event.key!=='Enter')return;
                   var target=event.target;
@@ -601,6 +626,15 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
                 frame.contentWindow.addEventListener('submit',function(event){
                   var form=event.target;
                   routeSearch(form&&form.querySelector&&form.querySelector('input[name="q"]'),event);
+                },true);
+                frame.contentWindow.addEventListener('click',function(event){
+                  if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||!tab||!isSearchProviderUrl(tab.url))return;
+                  var anchor=event.target&&event.target.closest?event.target.closest('a[href]'):null;
+                  var destination=decodedSearchResult(anchor);
+                  if(!destination)return;
+                  event.preventDefault();
+                  event.stopImmediatePropagation();
+                  navigate(destination);
                 },true);
               }catch(error){}
             });
@@ -654,5 +688,5 @@ html[data-neo-theme="frost"] .nt-brand-mark { filter: invert(1); }
         return looksLikeAddress?upstreamNormalize(value):searchUrl(value);
       };
     })();</script>
-<script src="./bookmark-dialog.js?v=20260920-working-bookmarks-v1"></script><script src="./auto-server-switch.js?v=20260919-auto-wisp-v1"></script><script src="./neo-devtools.js?v=20260919-docked-v1"></script></body>
+<script src="./bookmark-dialog.js?v=20260920-working-bookmarks-v1"></script><script src="./auto-server-switch.js?v=20260921-cleanhost-v1"></script><script src="./neo-devtools.js?v=20260919-docked-v1"></script></body>
 </html>

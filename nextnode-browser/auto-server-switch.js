@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var MAX_ATTEMPTS = 10;
+  var MAX_ATTEMPTS = 4;
   var SUCCESS_RESET_MS = 5000;
   var recoveryByFrame = new WeakMap();
   var bootRecovery = { attempts: 0, running: false, target: "" };

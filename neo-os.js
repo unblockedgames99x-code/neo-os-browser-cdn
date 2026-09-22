@@ -3726,14 +3726,13 @@
   }
 
   function loadBrowseRuntime() {
-    if (localOnly) return Promise.reject(new Error("Internet browsing is disabled in local preview. Open Browser for installed pages and local files."));
     if (window.NEO_BROWSER_ENGINE) return Promise.resolve(window.NEO_BROWSER_ENGINE);
     if (browseRuntimePromise) return browseRuntimePromise;
     browseRuntimePromise = new Promise(function (resolve, reject) {
       var existing = document.getElementById("neo-browse-runtime-script");
       var script = existing || document.createElement("script");
       script.id = "neo-browse-runtime-script";
-      script.src = "./neo-browser-runtime.js?v=20260918-chromebook-failover-v1";
+      script.src = "./neo-browser-runtime.js?v=20260921-cleanhost-v1";
       script.async = true;
       script.onload = function () {
         if (!window.NEO_BROWSER_ENGINE) {

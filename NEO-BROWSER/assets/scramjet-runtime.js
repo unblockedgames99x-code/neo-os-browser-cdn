@@ -38,19 +38,14 @@
     initialServiceWorker && new URL(initialServiceWorker.scriptURL).origin === pageBase.origin
   );
   const NEXTNODE_PROXY_ORIGIN = "https://nextnode9124.b-cdn.net/";
+  const CLEANHOST_WISP_RELAY = "wss://cleanhost5896.b-cdn.net/w/";
   const NEXTNODE_WISP_RELAY = "wss://nextnode9124.b-cdn.net/w/";
-  const DEFAULT_WISP_RELAY = NEXTNODE_WISP_RELAY;
+  const DEFAULT_WISP_RELAY = CLEANHOST_WISP_RELAY;
   const WISP_SERVERS = Object.freeze([
+    Object.freeze({ name: "Cleanhost Wisp", url: CLEANHOST_WISP_RELAY }),
     Object.freeze({ name: "NextNode Wisp", url: NEXTNODE_WISP_RELAY }),
     Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
     Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" }),
-    Object.freeze({ name: "Reeyuki Wisp", url: "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/" }),
-    Object.freeze({ name: "Reeyuki Wisp 2", url: "wss://reeyukiwisp.onrender.com/" }),
-    Object.freeze({ name: "Aether Relay 1", url: "wss://w2.qwq.sh/ws/" }),
-    Object.freeze({ name: "Aether Relay 2", url: "wss://api.personalloanonline.net/ws/" }),
-    Object.freeze({ name: "Aether Relay 3", url: "wss://www.goldenbasketballacademy.space/ws/" }),
-    Object.freeze({ name: "Aether Relay 4", url: "wss://www.atlantaclassical.info/ws/" }),
-    Object.freeze({ name: "Aether Relay 5", url: "wss://www.booksforschool.online/ws/" }),
   ]);
   const relayCacheKey = "neo:jet:last-relay:selected-v1";
   const preferredRelayKey = "neo:browser:wisp:v1";
@@ -185,98 +180,6 @@
       cachedRelay(),
       ...relayHosts,
     ].map(normalizeRelay).filter(Boolean))];
-  }
-
-  // Complete a tiny WISP protocol exchange. A plain WebSocket "open" event is
-  // not enough: overloaded relays often accept a socket but never carry data.
-  function probeRelay(url, timeoutMs = 3600) {
-    return new Promise((resolve) => {
-      let socket;
-      let finished = false;
-      let openedStream = false;
-      let requestStartedAt = 0;
-      const streamId = crypto.getRandomValues(new Uint32Array(1))[0] || 1;
-
-      const finish = (latency = null) => {
-        if (finished) return;
-        finished = true;
-        window.clearTimeout(timer);
-        try { socket?.close(); } catch {}
-        resolve(latency === null ? null : { url, latency });
-      };
-
-      const timer = window.setTimeout(() => finish(), timeoutMs);
-      try {
-        socket = new WebSocket(url);
-        socket.binaryType = "arraybuffer";
-      } catch {
-        finish();
-        return;
-      }
-
-      socket.onmessage = async (event) => {
-        let data = event.data;
-        try {
-          if (data instanceof Blob) data = await data.arrayBuffer();
-          if (!(data instanceof ArrayBuffer) || data.byteLength < 5) return;
-          const view = new DataView(data);
-          const packetType = view.getUint8(0);
-          const packetStream = view.getUint32(1, true);
-
-          if (!openedStream) {
-            if (packetType === 5 && packetStream === 0) {
-              socket.send(new Uint8Array([5, 0, 0, 0, 0, 2, 1]));
-              return;
-            }
-            if (packetType !== 3 || packetStream !== 0) return;
-
-            openedStream = true;
-            const host = new TextEncoder().encode("127.0.0.1");
-            const packet = new ArrayBuffer(8 + host.length);
-            const request = new DataView(packet);
-            request.setUint8(0, 1);
-            request.setUint32(1, streamId, true);
-            request.setUint8(5, 1);
-            request.setUint16(6, 1, true);
-            new Uint8Array(packet).set(host, 8);
-            requestStartedAt = performance.now();
-            socket.send(packet);
-            return;
-          }
-
-          if (packetStream === streamId) {
-            finish(Math.max(1, Math.round(performance.now() - requestStartedAt)));
-          }
-        } catch {
-          finish();
-        }
-      };
-      socket.onerror = () => finish();
-      socket.onclose = () => finish();
-    });
-  }
-
-  function firstResponsiveRelay(candidates, timeoutMs) {
-    return new Promise((resolve) => {
-      if (!candidates.length) {
-        resolve(null);
-        return;
-      }
-      let settled = false;
-      let remaining = candidates.length;
-      candidates.forEach((relay) => {
-        probeRelay(relay, timeoutMs).then((result) => {
-          if (settled) return;
-          if (result) {
-            settled = true;
-            resolve(result);
-            return;
-          }
-          remaining -= 1;
-          if (!remaining) resolve(null);
-        });
-      });
-    });
   }
 
   function waitForWorkerState(worker, expectedState) {
@@ -575,10 +478,9 @@
 
   async function selectTransport() {
     const candidates = relayCandidates();
-    const preferred = candidates.shift();
-    let selected = preferred ? await probeRelay(preferred, 1800) : null;
-    if (!selected) selected = await firstResponsiveRelay(candidates, 3800);
-    if (!selected) throw new Error("No compatible relay is currently reachable.");
+    const selectedUrl = candidates[0];
+    if (!selectedUrl) throw new Error("No compatible relay is configured.");
+    const selected = { url: selectedUrl, latency: 0 };
 
     let transport = null;
     try {

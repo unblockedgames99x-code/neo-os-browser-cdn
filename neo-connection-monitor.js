@@ -5,6 +5,7 @@
   var CHECK_TIMEOUT = 6000;
   var RELAY_ATTEMPT_TIMEOUT = 1800;
   var RELAY_URLS = [
+    "wss://cleanhost5896.b-cdn.net/w/",
     "wss://nextnode9124.b-cdn.net/w/",
     "wss://support.pired.org/lively/",
     "wss://girlspreples.com/lively/",

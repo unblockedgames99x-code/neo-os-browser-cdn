@@ -25,18 +25,16 @@
   // Use the user's selected endpoint first, then fail over only to the published
   // WISP endpoints. ChromeOS networks frequently block an individual relay, so
   // pinning the whole desktop to one socket makes every proxied app fail at once.
-  const PREFERRED_WISP_RELAY = "wss://nextnode9124.b-cdn.net/w/";
+  // Cleanhost uses one stable, same-stack Libcurl/WISP route and lets the
+  // transport itself report a failure.  Starting ten WebSockets just to pick a
+  // relay was especially expensive on managed Chromebooks, so NEO now follows
+  // that connection model and only advances to a fallback after a real error.
+  const PREFERRED_WISP_RELAY = "wss://cleanhost5896.b-cdn.net/w/";
   const OFFICIAL_WISP_RELAYS = Object.freeze([
     PREFERRED_WISP_RELAY,
+    "wss://nextnode9124.b-cdn.net/w/",
     "wss://probuildingsupplies.com/w/",
     "wss://wisp.mercurywork.shop/",
-    "wss://hurt-agata-liventcord-api-7072e9a6.koyeb.app/",
-    "wss://reeyukiwisp.onrender.com/",
-    "wss://w2.qwq.sh/ws/",
-    "wss://api.personalloanonline.net/ws/",
-    "wss://www.goldenbasketballacademy.space/ws/",
-    "wss://www.atlantaclassical.info/ws/",
-    "wss://www.booksforschool.online/ws/",
   ]);
   const WISP_PREFERENCE_KEY = "neo:browser:wisp:v1";
   const WISP_RELAY_CACHE_KEY = `neo-wisp-relay:${ENGINE_VERSION}:selected-v1`;
@@ -62,93 +60,6 @@
         timeoutId = window.setTimeout(() => reject(new Error(message)), milliseconds);
       }),
     ]).finally(() => window.clearTimeout(timeoutId));
-  }
-
-  function probeWispRelay(relay, timeoutMilliseconds = 3600) {
-    return new Promise((resolve, reject) => {
-      let socket;
-      let settled = false;
-      let openedStream = false;
-      const streamId = crypto.getRandomValues(new Uint32Array(1))[0] || 1;
-      const finish = (error) => {
-        if (settled) return;
-        settled = true;
-        window.clearTimeout(timeoutId);
-        try { socket?.close(); } catch (closeError) {}
-        if (error) reject(error);
-        else resolve(relay);
-      };
-      const timeoutId = window.setTimeout(
-        () => finish(new Error("The relay did not respond.")),
-        timeoutMilliseconds,
-      );
-      try {
-        socket = new WebSocket(relay);
-        socket.binaryType = "arraybuffer";
-        socket.addEventListener("message", async (event) => {
-          let data = event.data;
-          try {
-            if (data instanceof Blob) data = await data.arrayBuffer();
-            if (!(data instanceof ArrayBuffer) || data.byteLength < 5) return;
-            const view = new DataView(data);
-            const packetType = view.getUint8(0);
-            const packetStream = view.getUint32(1, true);
-
-            if (!openedStream) {
-              if (packetType === 5 && packetStream === 0) {
-                socket.send(new Uint8Array([5, 0, 0, 0, 0, 2, 1]));
-                return;
-              }
-              if (packetType !== 3 || packetStream !== 0) return;
-
-              openedStream = true;
-              const host = new TextEncoder().encode("127.0.0.1");
-              const packet = new ArrayBuffer(8 + host.length);
-              const request = new DataView(packet);
-              request.setUint8(0, 1);
-              request.setUint32(1, streamId, true);
-              request.setUint8(5, 1);
-              request.setUint16(6, 1, true);
-              new Uint8Array(packet).set(host, 8);
-              socket.send(packet);
-              return;
-            }
-
-            if (packetStream === streamId) finish();
-          } catch (error) {
-            finish(error);
-          }
-        });
-        socket.addEventListener("error", () => finish(new Error("The relay could not carry traffic.")), { once: true });
-        socket.addEventListener("close", () => finish(new Error("The relay closed before responding.")), { once: true });
-      } catch (error) {
-        finish(error);
-      }
-    });
-  }
-
-  function firstResponsiveWispRelay(candidates, timeoutMilliseconds) {
-    return new Promise((resolve, reject) => {
-      if (!candidates.length) {
-        reject(new Error("No web relay is available."));
-        return;
-      }
-      let remaining = candidates.length;
-      let lastError = null;
-      let settled = false;
-      candidates.forEach((relay) => {
-        probeWispRelay(relay, timeoutMilliseconds).then(() => {
-          if (settled) return;
-          settled = true;
-          resolve(relay);
-        }).catch((error) => {
-          if (settled) return;
-          lastError = error;
-          remaining -= 1;
-          if (!remaining) reject(lastError || new Error("No web relay is available."));
-        });
-      });
-    });
   }
 
   function normalizeWispRelay(value) {
@@ -186,23 +97,19 @@
 
   function selectWispRelay() {
     if (wispRelayPromise) return wispRelayPromise;
-    wispRelayPromise = (async () => {
+    wispRelayPromise = Promise.resolve().then(() => {
       const candidates = wispRelayCandidates();
       let remaining = candidates.filter((relay) => !failedWispRelays.has(relay));
       if (!remaining.length) {
         failedWispRelays.clear();
         remaining = candidates;
       }
-      const priority = remaining.shift();
-      let selected = "";
-      if (priority) {
-        selected = await probeWispRelay(priority, 1800).catch(() => "");
-      }
-      if (!selected) selected = await firstResponsiveWispRelay(remaining, 3800);
+      const selected = remaining[0];
+      if (!selected) throw new Error("No web relay is available.");
       activeWispRelay = selected;
       try { window.sessionStorage.setItem(WISP_RELAY_CACHE_KEY, selected); } catch (error) {}
       return selected;
-    })().catch((error) => {
+    }).catch((error) => {
       wispRelayPromise = null;
       throw error;
     });
