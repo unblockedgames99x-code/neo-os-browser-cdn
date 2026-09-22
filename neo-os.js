@@ -435,7 +435,7 @@
       title: "NEO Chat",
       subtitle: "Rooms, friends, forums, direct messages, and profiles",
       icon: "chat",
-      route: "./neo-chat/index.html?v=20260920-shared-message-actions-v1",
+      route: "./neo-chat/index.html?v=20260921-no-call-buttons-v1",
       width: 1180,
       height: 760,
       launcher: true,
