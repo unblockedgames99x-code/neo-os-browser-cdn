@@ -3,7 +3,7 @@
   <title>NEO Browser</title>
   <script><![CDATA[
     var browserFrame = null;
-    var workerUrl = new URL('sw.js?v=20260921-cdn-app-v1', location.href).href;
+    var workerUrl = new URL('sw.js?v=20260921-reference-runtime-v1', location.href).href;
     var workerScope = new URL('./', location.href).pathname;
     var controllerReloadKey = 'neo:browser-wrapper-controller:v1';
 

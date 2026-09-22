@@ -2,7 +2,7 @@
   "use strict";
 
   const pageBase = new URL("./", document.baseURI);
-  const serviceWorkerUrl = new URL("sw.js?v=20260921-cdn-app-v1", pageBase);
+  const serviceWorkerUrl = new URL("sw.js?v=20260921-reference-runtime-v1", pageBase);
   const serviceWorkerScope = pageBase.pathname;
   const proxyBase = new URL("~/", pageBase).pathname;
   const bareMuxWorkerUrl = new URL(
@@ -10,7 +10,7 @@
     pageBase,
   ).href;
   const bareMuxTransportUrl = new URL(
-    "scramjet/libcurl.mjs?v=20260910-nextnode-proxy-v1",
+    "scramjet/libcurl.mjs?v=20260921-reference-runtime-v1",
     pageBase,
   ).href;
   const bareMuxRuntimeUrl = new URL(
@@ -18,11 +18,11 @@
     pageBase,
   ).href;
   const jetCoreUrl = new URL(
-    "jet/jet.core.js?v=20260910-fast-browser-v2",
+    "jet/jet.core.js?v=20260921-reference-runtime-v1",
     pageBase,
   ).href;
   const jetApiUrl = new URL(
-    "jet/jet.api.js?v=20260910-fast-browser-v2",
+    "jet/jet.api.js?v=20260921-reference-runtime-v1",
     pageBase,
   ).href;
   if (location.href === "about:srcdoc") {
@@ -43,12 +43,16 @@
   // wrong endpoint and can return the host application instead of the target.
   const CLEANHOST_WISP_RELAY = "wss://cleanhost5896.b-cdn.net/wisp/";
   const REFERENCE_WISP_RELAY = "wss://cdn.northstreetumc.org/adblock/";
+  const REFERENCE_BACKUP_RELAY = "wss://athollcottage.com/connection/";
+  const REFERENCE_SECONDARY_RELAY = "wss://kristenblackburnvolleyballcamps.com/socket/";
   const NEXTNODE_WISP_RELAY = "wss://nextnode9124.b-cdn.net/w/";
   // Cleanhost's same-origin relay rejects third-party origins. The published
   // reference build uses this public relay for CDN-hosted copies.
-  const DEFAULT_WISP_RELAY = REFERENCE_WISP_RELAY;
+  const DEFAULT_WISP_RELAY = REFERENCE_BACKUP_RELAY;
   const WISP_SERVERS = Object.freeze([
-    Object.freeze({ name: "Reference Wisp", url: REFERENCE_WISP_RELAY }),
+    Object.freeze({ name: "Reference Wisp", url: REFERENCE_BACKUP_RELAY }),
+    Object.freeze({ name: "Reference Wisp 2", url: REFERENCE_SECONDARY_RELAY }),
+    Object.freeze({ name: "Reference Wisp 3", url: REFERENCE_WISP_RELAY }),
     Object.freeze({ name: "Cleanhost Wisp", url: CLEANHOST_WISP_RELAY }),
     Object.freeze({ name: "NextNode Wisp", url: NEXTNODE_WISP_RELAY }),
     Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
@@ -491,7 +495,16 @@
 
     let transport = null;
     try {
-      transport = await createBareMuxTransport(selected.url);
+      const { default: ReferenceTransport } = await import(bareMuxTransportUrl);
+      transport = new ReferenceTransport({ wisp: selected.url });
+      await initializeTransport(transport);
+    } catch (error) {
+      globalThis.__neoDirectTransportError = String(error?.stack || error?.message || error);
+      console.warn("[NEO] Direct reference transport unavailable; using the shared fallback.", error);
+      transport = null;
+    }
+    try {
+      if (!transport) transport = await createBareMuxTransport(selected.url);
     } catch (error) {
       globalThis.__neoSharedTransportError = String(error?.stack || error?.message || error);
       console.warn("[NEO] Shared transport unavailable; using the compatibility fallback.", error);

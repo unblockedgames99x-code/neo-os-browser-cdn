@@ -29,15 +29,17 @@
       "study/libcurl.js",
       "study/sf-engine.wasm"
     ].map(function (asset) { return new URL("nextnode-browser/" + asset, base).href; })),
-    browserWisp: "wss://cdn.northstreetumc.org/adblock/",
+    browserWisp: "wss://athollcottage.com/connection/",
     browserWispServers: Object.freeze([
-      Object.freeze({ name: "Reference Wisp", url: "wss://cdn.northstreetumc.org/adblock/" }),
+      Object.freeze({ name: "Reference Wisp", url: "wss://athollcottage.com/connection/" }),
+      Object.freeze({ name: "Reference Wisp 2", url: "wss://kristenblackburnvolleyballcamps.com/socket/" }),
+      Object.freeze({ name: "Reference Wisp 3", url: "wss://cdn.northstreetumc.org/adblock/" }),
       Object.freeze({ name: "Cleanhost Wisp", url: "wss://cleanhost5896.b-cdn.net/wisp/" }),
       Object.freeze({ name: "NextNode Wisp", url: "wss://nextnode9124.b-cdn.net/w/" }),
       Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
       Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" })
     ]),
-    appProxy: new URL("NEO-BROWSER/index.html?v=20260921-cleanhost-v2", base).href,
+    appProxy: new URL("NEO-BROWSER/index.html?v=20260921-reference-runtime-v1", base).href,
     gameDocumentRelay: "https://neo-stratus-api-w6nw.onrender.com/games/v1/document",
     gamesCatalog: new URL("../games/index.json", base).href,
     gamesCovers: new URL("../games/covers.json", base).href,

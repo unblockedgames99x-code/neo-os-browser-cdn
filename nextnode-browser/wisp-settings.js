@@ -3,9 +3,11 @@
 
   var STORAGE_KEY = "neo:browser:wisp:v1";
   var MODE_KEY = "neo:browser:wisp-mode:v2";
-  var DEFAULT_WISP = "wss://cdn.northstreetumc.org/adblock/";
+  var DEFAULT_WISP = "wss://athollcottage.com/connection/";
   var SERVERS = Object.freeze([
-    Object.freeze({ name: "Reference Wisp", url: "wss://cdn.northstreetumc.org/adblock/" }),
+    Object.freeze({ name: "Reference Wisp", url: "wss://athollcottage.com/connection/" }),
+    Object.freeze({ name: "Reference Wisp 2", url: "wss://kristenblackburnvolleyballcamps.com/socket/" }),
+    Object.freeze({ name: "Reference Wisp 3", url: "wss://cdn.northstreetumc.org/adblock/" }),
     Object.freeze({ name: "Cleanhost Wisp", url: "wss://cleanhost5896.b-cdn.net/wisp/" }),
     Object.freeze({ name: "NextNode Wisp", url: "wss://nextnode9124.b-cdn.net/w/" }),
     Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
