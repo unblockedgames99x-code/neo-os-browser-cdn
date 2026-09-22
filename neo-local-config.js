@@ -36,7 +36,7 @@
       Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),
       Object.freeze({ name: "Mercury Wisp", url: "wss://wisp.mercurywork.shop/" })
     ]),
-    appProxy: new URL("NEO-BROWSER/index.html?v=20260921-cleanhost-v1", base).href,
+    appProxy: new URL("NEO-BROWSER/index.html?v=20260921-cleanhost-v2", base).href,
     gameDocumentRelay: "https://neo-stratus-api-w6nw.onrender.com/games/v1/document",
     gamesCatalog: new URL("../games/index.json", base).href,
     gamesCovers: new URL("../games/covers.json", base).href,

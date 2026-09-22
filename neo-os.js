@@ -2030,76 +2030,6 @@
     return Math.min(max, Math.max(min, Number.isFinite(value) ? value : min));
   }
 
-  var rainmeterReferenceGlyphs = {
-    A: "卂", B: "乃", C: "匚", D: "ᗪ", E: "乇", F: "千", G: "Ꮆ",
-    H: "卄", I: "丨", J: "ﾌ", K: "Ҝ", L: "ㄥ", M: "爪", N: "几",
-    O: "ㄖ", P: "卩", Q: "Ɋ", R: "尺", S: "丂", T: "ㄒ", U: "ㄩ",
-    V: "ᐯ", W: "山", X: "乂", Y: "ㄚ", Z: "乙"
-  };
-
-  /*
-   * A small custom vector alphabet keeps the Mond wordmark angular on every
-   * platform.  Using CJK-looking Unicode characters here made the result
-   * depend on the visitor's fallback font, which is why several glyphs became
-   * rounded on Windows.  These paths share one square-ended stroke system.
-   */
-  var rainmeterWordmarkPaths = {
-    A: "M5 38 V16 H22 V6 H29 V38 M5 27 H29",
-    B: "M5 6 H21 L28 12 V19 L22 22 L28 25 V32 L22 38 H5 Z M5 22 H22",
-    C: "M29 6 H11 L5 12 V32 L11 38 H29",
-    D: "M5 6 V38 H20 L29 29 V15 L20 6 Z",
-    E: "M5 8 H27 M16 6 V31 L21 38 H29",
-    F: "M7 13 H29 M18 6 V38 M11 8 L25 6",
-    G: "M29 10 L25 6 H11 L5 12 V32 L11 38 H29 V23 H19",
-    H: "M5 6 V38 M29 6 V38 M5 17 H29",
-    I: "M11 6 V38",
-    J: "M5 6 H29 V31 L22 38 H11 L5 32",
-    K: "M5 6 V38 M29 6 L5 28 M16 21 L30 38",
-    L: "M5 6 V38 H29",
-    M: "M4 6 V38 M14 6 L10 38 M24 6 L28 38 M34 6 V38",
-    N: "M5 38 V6 H29 V38",
-    O: "M5 6 H29 V38 H5 Z",
-    P: "M5 38 V6 H22 L29 13 V21 L22 28 H5",
-    Q: "M11 6 H23 L29 12 V32 L23 38 H11 L5 32 V12 Z M20 29 L31 40",
-    R: "M5 38 V6 H29 V20 H14 M14 20 L29 38",
-    S: "M29 6 H6 V21 H27 V38 H5",
-    T: "M4 6 H30 M17 6 V38",
-    U: "M5 6 V30 H13 V38 H29 V6",
-    V: "M4 6 L14 38 H20 L30 6",
-    W: "M4 6 V38 H34 V6 M19 17 V38",
-    X: "M5 6 L29 38 M29 6 L5 38",
-    Y: "M5 6 V21 H18 M29 6 V38 M18 21 H29",
-    Z: "M5 6 H29 L5 38 H29"
-  };
-
-  function createRainmeterReferenceGlyph(letter, symbol) {
-    var namespace = "http://www.w3.org/2000/svg";
-    var cellWidth = letter === "I" ? 22 : (letter === "M" || letter === "W" ? 38 : 34);
-    var cellHeight = 44;
-    var svg = document.createElementNS(namespace, "svg");
-    svg.setAttribute("class", "rainmeter-reference-glyph");
-    svg.setAttribute("viewBox", "0 0 " + cellWidth + " " + cellHeight);
-    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-    svg.setAttribute("aria-hidden", "true");
-    svg.setAttribute("focusable", "false");
-
-    svg.dataset.rainmeterSymbol = symbol;
-
-    var path = document.createElementNS(namespace, "path");
-    path.setAttribute("d", rainmeterWordmarkPaths[letter] || rainmeterWordmarkPaths.X);
-    path.setAttribute("fill", "none");
-    path.setAttribute("stroke", "currentColor");
-    path.setAttribute("stroke-width", "5");
-    path.setAttribute("stroke-linecap", "square");
-    path.setAttribute("stroke-linejoin", "miter");
-    path.setAttribute("stroke-miterlimit", "2");
-    path.dataset.rainmeterInkTop = "4";
-    path.dataset.rainmeterInkBottom = "40";
-    path.dataset.rainmeterLetter = letter;
-    svg.appendChild(path);
-    return svg;
-  }
-
   function updateClock() {
     var now = new Date();
     var dayName = new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(now);
@@ -2125,17 +2055,12 @@
       }
       if (rainmeterWeekday) {
         delete rainmeterWeekday.dataset.rainmeterGlyphDay;
-        rainmeterWeekday.dataset.rainmeterReferenceDay = Array.from(dayName.toUpperCase()).map(function (letter) {
-          return rainmeterReferenceGlyphs[letter] || letter;
-        }).join("");
+        delete rainmeterWeekday.dataset.rainmeterReferenceDay;
         var weekdayLetters = document.createDocumentFragment();
         Array.from(dayName.toUpperCase()).forEach(function (letter) {
           var glyph = document.createElement("span");
           glyph.setAttribute("aria-hidden", "true");
-          glyph.dataset.rainmeterLetter = letter;
-          glyph.dataset.rainmeterReferenceGlyph = rainmeterReferenceGlyphs[letter] || letter;
           glyph.textContent = letter;
-          glyph.appendChild(createRainmeterReferenceGlyph(letter, glyph.dataset.rainmeterReferenceGlyph));
           weekdayLetters.appendChild(glyph);
         });
         rainmeterWeekday.setAttribute("aria-label", dayName);
@@ -5445,7 +5370,7 @@
   }
 
   function mountFrame(app, body) {
-    var browserBacked = app.id === "browser" || Boolean(app.custom);
+    var browserBacked = app.id === "browser" || Boolean(app.custom) || app.proxyApp === true;
     var directGame = app.launchMode === "direct-game";
     var fetchedDirectGame = directGame;
     function directGameDocumentRoute(route) {

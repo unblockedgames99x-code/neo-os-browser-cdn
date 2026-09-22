@@ -20,11 +20,12 @@
 
   function isConfiguredDirectSource(sourceUrl) {
     try {
-      var configured = window.NEO_LOCAL_CONFIG && window.NEO_LOCAL_CONFIG.browser;
-      if (!configured) return false;
       var source = new URL(sourceUrl, document.baseURI);
-      var browser = new URL(configured, document.baseURI);
-      return source.origin === browser.origin && source.pathname === browser.pathname;
+      var config = window.NEO_LOCAL_CONFIG || {};
+      return [config.browser, config.appProxy].filter(Boolean).some(function (configured) {
+        var browser = new URL(configured, document.baseURI);
+        return source.origin === browser.origin && source.pathname === browser.pathname;
+      });
     } catch (_error) {
       return false;
     }

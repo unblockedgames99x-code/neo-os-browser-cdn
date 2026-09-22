@@ -38,10 +38,17 @@
     initialServiceWorker && new URL(initialServiceWorker.scriptURL).origin === pageBase.origin
   );
   const NEXTNODE_PROXY_ORIGIN = "https://nextnode9124.b-cdn.net/";
-  const CLEANHOST_WISP_RELAY = "wss://cleanhost5896.b-cdn.net/w/";
+  // Cleanhost's production browser exposes its WISP transport at /wisp/.
+  // Keep this exact path in sync with the upstream browser; /w/ serves the
+  // wrong endpoint and can return the host application instead of the target.
+  const CLEANHOST_WISP_RELAY = "wss://cleanhost5896.b-cdn.net/wisp/";
+  const REFERENCE_WISP_RELAY = "wss://cdn.northstreetumc.org/adblock/";
   const NEXTNODE_WISP_RELAY = "wss://nextnode9124.b-cdn.net/w/";
-  const DEFAULT_WISP_RELAY = CLEANHOST_WISP_RELAY;
+  // Cleanhost's same-origin relay rejects third-party origins. The published
+  // reference build uses this public relay for CDN-hosted copies.
+  const DEFAULT_WISP_RELAY = REFERENCE_WISP_RELAY;
   const WISP_SERVERS = Object.freeze([
+    Object.freeze({ name: "Reference Wisp", url: REFERENCE_WISP_RELAY }),
     Object.freeze({ name: "Cleanhost Wisp", url: CLEANHOST_WISP_RELAY }),
     Object.freeze({ name: "NextNode Wisp", url: NEXTNODE_WISP_RELAY }),
     Object.freeze({ name: "Probuilding Wisp", url: "wss://probuildingsupplies.com/w/" }),

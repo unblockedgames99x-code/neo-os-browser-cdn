@@ -1,6 +1,15 @@
 (function () {
   "use strict";
 
+  function proxiedAppRoute(target) {
+    var browserRoute = window.NEO_LOCAL_CONFIG && window.NEO_LOCAL_CONFIG.appProxy
+      ? window.NEO_LOCAL_CONFIG.appProxy
+      : "./NEO-BROWSER/index.html?v=20260921-cleanhost-v2";
+    var separator = browserRoute.indexOf("?") === -1 ? "?" : "&";
+    return browserRoute + separator +
+      "neo-app-mode=1&neo-custom-app=1&neo-app-target=" + encodeURIComponent(target);
+  }
+
   window.NEO_EXTRA_APPS = Object.assign({}, window.NEO_EXTRA_APPS || {}, {
     stream: {
       id: "stream",
@@ -25,7 +34,7 @@
       title: "Steam",
       subtitle: "Browse and play your complete Steam library",
       icon: "steam",
-      route: "./neo-games/index.html?build=20260919-steam-client-v2",
+      route: "./neo-games/index.html?build=20260921-fern-only-v1",
       keepAlive: false,
       width: 1180,
       height: 760,
@@ -40,10 +49,8 @@
       title: "Movies",
       subtitle: "Movies and series through NEO's private web connection",
       icon: "movies",
-      template: "browser-template",
-      browserTarget: "https://cinecat.eu/",
-      browserDirect: false,
-      browserChrome: false,
+      route: proxiedAppRoute("https://cinecat.eu/"),
+      proxyApp: true,
       keepAlive: false,
       width: 1180,
       height: 760,
