@@ -3,8 +3,9 @@
 importScripts("./jet/jet.sw.js");
 importScripts("./assets/neo-ad-shield.js?v=20260912-sitewide-v2");
 
-const NEO_ASSET_CACHE = "neo-proxy-assets-v3";
+const NEO_ASSET_CACHE = "neo-proxy-assets-v9";
 const NEO_BROWSER_APP_PATH = new URL("./__neo_app__/", self.location.href).pathname;
+const NEO_CINECAT_BRIDGE_URL = new URL("./assets/cinecat-source-bridge.js?v=20260922-source-recovery-v10", self.location.href).href;
 const NEO_ASSET_MAX_AGE = 10 * 60 * 1000;
 const NEO_ASSET_MAX_BYTES = 5 * 1024 * 1024;
 const NEO_CACHEABLE_DESTINATIONS = new Set(["font", "image", "script", "style"]);
@@ -35,12 +36,35 @@ function needsHtmlContentType(request, destination) {
 
 async function routeNavigation(event, destination) {
   const response = await globalThis.$scramjetController.route(event);
-  if (!needsHtmlContentType(event.request, destination)) return response;
+  let isCinecatDocument = false;
+  try {
+    const url = new URL(destination);
+    isCinecatDocument = (url.hostname === "cinecat.eu" || url.hostname.endsWith(".cinecat.eu")) &&
+      (event.request.mode === "navigate" || ["document", "iframe"].includes(event.request.destination));
+  } catch (_error) {}
+
+  if (!needsHtmlContentType(event.request, destination) && !isCinecatDocument) return response;
   const headers = new Headers(response.headers);
-  headers.set("content-type", "text/html; charset=utf-8");
-  headers.delete("content-disposition");
-  headers.set("x-neo-game-document", "1");
-  return new Response(response.body, {
+  let body = response.body;
+  if (isCinecatDocument && /text\/html/i.test(headers.get("content-type") || "")) {
+    const html = await response.text();
+    const escapedBridgeUrl = NEO_CINECAT_BRIDGE_URL.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+    const bridgeTag = `<script src="${escapedBridgeUrl}" data-neo-cinecat-source-bridge="1"></script>`;
+    body = /<\/body>/i.test(html)
+      ? html.replace(/<\/body>/i, `${bridgeTag}</body>`)
+      : `${html}${bridgeTag}`;
+    headers.delete("content-length");
+    headers.delete("content-encoding");
+    headers.delete("content-security-policy");
+    headers.delete("content-security-policy-report-only");
+    headers.set("x-neo-cinecat-bridge", "1");
+  }
+  if (needsHtmlContentType(event.request, destination)) {
+    headers.set("content-type", "text/html; charset=utf-8");
+    headers.delete("content-disposition");
+    headers.set("x-neo-game-document", "1");
+  }
+  return new Response(body, {
     status: response.status,
     statusText: response.statusText,
     headers,

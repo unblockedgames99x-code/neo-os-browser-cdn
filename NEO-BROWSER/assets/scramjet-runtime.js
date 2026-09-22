@@ -2,7 +2,7 @@
   "use strict";
 
   const pageBase = new URL("./", document.baseURI);
-  const serviceWorkerUrl = new URL("sw.js?v=20260921-reference-runtime-v1", pageBase);
+  const serviceWorkerUrl = new URL("sw.js?v=20260922-cinecat-source-recovery-v10", pageBase);
   const serviceWorkerScope = pageBase.pathname;
   const proxyBase = new URL("~/", pageBase).pathname;
   const bareMuxWorkerUrl = new URL(
@@ -73,6 +73,7 @@
   let lastVisibleUrl = "";
   let selectedRelay = "";
   let bareMuxConnection = null;
+  let activeTransport = null;
   let navigationSerial = 0;
   let readySerial = 0;
 
@@ -211,7 +212,9 @@
     if (!worker?.scriptURL) return false;
     try {
       const active = new URL(worker.scriptURL);
-      return active.origin === serviceWorkerUrl.origin && active.pathname === serviceWorkerUrl.pathname;
+      return active.origin === serviceWorkerUrl.origin &&
+        active.pathname === serviceWorkerUrl.pathname &&
+        active.search === serviceWorkerUrl.search;
     } catch {
       return false;
     }
@@ -315,6 +318,57 @@
     }
     return [...fallback.entries()];
   }
+
+  async function responseBodyBuffer(body) {
+    if (!body) return new ArrayBuffer(0);
+    if (body instanceof ArrayBuffer) return body;
+    if (ArrayBuffer.isView(body)) {
+      return body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength);
+    }
+    return new Response(body).arrayBuffer();
+  }
+
+  window.addEventListener("message", async (event) => {
+    const message = event.data;
+    if (!message || message.type !== "neo:cinecat:transport-request") return;
+    const reply = event.ports?.[0];
+    if (!reply) return;
+    try {
+      if (!activeTransport) throw new Error("The movie network service is not ready.");
+      const remote = new URL(String(message.url || ""));
+      if (!/^https?:$/.test(remote.protocol)) throw new Error("Unsupported movie request protocol.");
+      const method = String(message.method || "GET").toUpperCase();
+      let body = message.body || null;
+      if (body && ArrayBuffer.isView(body)) {
+        body = body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength);
+      }
+      const response = await activeTransport.request(
+        remote,
+        method,
+        /^(?:GET|HEAD)$/.test(method) ? null : body,
+        Object.entries(message.headers || {}),
+      );
+      const responseBody = await responseBodyBuffer(response.body);
+      reply.postMessage({
+        ok: true,
+        response: {
+          status: response.status,
+          statusText: response.statusText || "",
+          headers: rawHeaderEntries(response.headers, new Headers()),
+          finalUrl: remote.href,
+          body: responseBody,
+        },
+      }, [responseBody]);
+    } catch (error) {
+      console.warn("[NEO Movies transport] failed", error instanceof Error ? error.message : String(error));
+      reply.postMessage({
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      reply.close();
+    }
+  });
 
   function createWorkerTransport(client) {
     return {
@@ -531,6 +585,7 @@
       await ensureServiceWorker();
 
       const transport = await selectTransport();
+      activeTransport = transport;
 
       controller = new globalThis.$scramjetController.Controller({
         serviceworker: navigator.serviceWorker.controller,
