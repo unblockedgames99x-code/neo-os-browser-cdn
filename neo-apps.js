@@ -71,6 +71,7 @@
       height: 760,
       launcher: true,
       pinned: false,
+      core: true,
       category: "Media",
       aliases: ["youtube", "videos", "video", "channels", "shorts", "youtube shorts"]
     },
@@ -226,7 +227,7 @@
       localStorage.setItem(retiredVideoMigrationKey, "1");
     }
 
-    var restoredYouTubeMigrationKey = "neo_os_restore_youtube_app_v3";
+    var restoredYouTubeMigrationKey = "neo_os_restore_youtube_app_v4";
     if (localStorage.getItem(restoredYouTubeMigrationKey) !== "1") {
       var installedYouTubeApps = JSON.parse(localStorage.getItem("neo_os_installed_apps_v1") || "null");
       if (Array.isArray(installedYouTubeApps) && installedYouTubeApps.indexOf("youtube-app") === -1) {
