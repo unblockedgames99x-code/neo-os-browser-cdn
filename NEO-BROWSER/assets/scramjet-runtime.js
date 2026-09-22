@@ -2,7 +2,7 @@
   "use strict";
 
   const pageBase = new URL("./", document.baseURI);
-  const serviceWorkerUrl = new URL("sw.js?v=20260912-game-doc-v2", pageBase);
+  const serviceWorkerUrl = new URL("sw.js?v=20260921-cdn-app-v1", pageBase);
   const serviceWorkerScope = pageBase.pathname;
   const proxyBase = new URL("~/", pageBase).pathname;
   const bareMuxWorkerUrl = new URL(

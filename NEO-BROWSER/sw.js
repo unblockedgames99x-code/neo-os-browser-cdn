@@ -4,6 +4,7 @@ importScripts("./jet/jet.sw.js");
 importScripts("./assets/neo-ad-shield.js?v=20260912-sitewide-v2");
 
 const NEO_ASSET_CACHE = "neo-proxy-assets-v3";
+const NEO_BROWSER_APP_PATH = new URL("./__neo_app__/", self.location.href).pathname;
 const NEO_ASSET_MAX_AGE = 10 * 60 * 1000;
 const NEO_ASSET_MAX_BYTES = 5 * 1024 * 1024;
 const NEO_CACHEABLE_DESTINATIONS = new Set(["font", "image", "script", "style"]);
@@ -108,6 +109,23 @@ async function routeStaticAsset(event) {
 }
 
 self.addEventListener("fetch", (event) => {
+  const requestUrl = new URL(event.request.url);
+  if (event.request.method === "GET" && requestUrl.pathname === NEO_BROWSER_APP_PATH) {
+    event.respondWith((async () => {
+      const indexUrl = new URL("./index.html", self.location.href);
+      const response = await fetch(indexUrl, { cache: "force-cache", credentials: "omit" });
+      if (!response.ok) return response;
+      const base = new URL("./", self.location.href).href;
+      const source = (await response.text()).replace(/<head(?:\s[^>]*)?>/i, (head) => (
+        `${head}<base href="${base.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}">`
+      ));
+      const headers = new Headers(response.headers);
+      headers.set("content-type", "text/html; charset=utf-8");
+      headers.delete("content-disposition");
+      return new Response(source, { status: 200, headers });
+    })());
+    return;
+  }
   if (globalThis.$scramjetController.shouldRoute(event)) {
     const destination = originalRequestUrl(event.request.url);
     if (globalThis.NEOAdShield?.shouldBlockUrl(destination)) {

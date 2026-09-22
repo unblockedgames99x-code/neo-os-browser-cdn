@@ -3,7 +3,7 @@
   <title>NEO Browser</title>
   <script><![CDATA[
     var browserFrame = null;
-    var workerUrl = new URL('sw.js?v=20260912-game-doc-v2', location.href).href;
+    var workerUrl = new URL('sw.js?v=20260921-cdn-app-v1', location.href).href;
     var workerScope = new URL('./', location.href).pathname;
     var controllerReloadKey = 'neo:browser-wrapper-controller:v1';
 
@@ -93,15 +93,10 @@
 
     window.addEventListener('load', function () {
       var host = document.getElementById('host');
-      ensureBrowserScope().then(function () { return fetch(new URL('index.html?build=nextnode-proxy-v1', location.href).href, {
-        cache: 'force-cache',
-        credentials: 'omit'
-      }); })
-        .then(function (response) {
-          if (!response.ok) throw new Error('Browser response ' + response.status);
-          return response.text();
-        })
-        .then(function (source) {
+      ensureBrowserScope().then(function () {
+          var target = new URL('__neo_app__/', location.href);
+          target.search = location.search;
+          target.hash = location.hash;
           var frame = document.createElementNS('http://www.w3.org/1999/xhtml', 'iframe');
           browserFrame = frame;
           frame.setAttribute('id', 'neo-browser');
@@ -109,7 +104,7 @@
           frame.setAttribute('allow', 'autoplay; picture-in-picture; clipboard-read; clipboard-write; fullscreen; gamepad; microphone; camera');
           frame.setAttribute('allowfullscreen', 'true');
           frame.setAttribute('style', 'position:fixed;inset:0;width:100%;height:100%;border:0;background:#0d1217');
-          frame.setAttribute('srcdoc', prepareBrowser(source));
+          frame.setAttribute('src', target.href);
           host.textContent = '';
           host.appendChild(frame);
         })
